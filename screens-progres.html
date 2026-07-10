@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Progres · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" class="active" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">PROGRES</p>
+          <h1>Update progres video</h1>
+          <p>Ubah status cepat · admin akan melihat perubahan.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brand-filter">
+        <p class="eyebrow">FILTER BRAND</p>
+        <div class="brand-chips" id="brand-chips">
+          <button type="button" class="brand-chip active" data-brand="all"><span class="dot"></span>Semua</button>
+          <button type="button" class="brand-chip" data-brand="Gipsy Research"><span class="dot"></span>Gipsy Research</button>
+          <button type="button" class="brand-chip" data-brand="Jamuzen"><span class="dot"></span>Jamuzen</button>
+          <button type="button" class="brand-chip" data-brand="Conventio"><span class="dot"></span>Conventio</button>
+          <button type="button" class="brand-chip" data-brand="CalmadeAI"><span class="dot"></span>CalmadeAI</button>
+        </div>
+      </div>
+
+      <section data-od-id="section-progres">
+        <div class="section-title">
+          <h2 class="h2">Video sedang dikerjakan</h2>
+          <div class="status-filter-block" id="progres-status-filter" role="tablist" aria-label="Filter status progres">
+            <button type="button" class="filter-pill active" data-status="all">Semua</button>
+            <button type="button" class="filter-pill" data-status="draft">Draft</button>
+            <button type="button" class="filter-pill" data-status="editing">Sedang diedit</button>
+            <button type="button" class="filter-pill" data-status="review">Menunggu review</button>
+            <button type="button" class="filter-pill" data-status="approved">Disetujui</button>
+            <button type="button" class="filter-pill" data-status="selesai">Selesai</button>
+          </div>
+        </div>
+        <div class="period-filter period-filter-sm" id="progres-period-filter" role="tablist" aria-label="Filter periode progres" style="margin-bottom: 14px;">
+          <button type="button" class="filter-pill" data-period="all">Semua waktu</button>
+          <button type="button" class="filter-pill" data-period="7">7 hari</button>
+          <button type="button" class="filter-pill active" data-period="30">30 hari</button>
+        </div>
+        <div id="progress-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      document.querySelectorAll('#brand-chips .brand-chip').forEach(chip => {
+        const b = chip.dataset.brand;
+        if (b === 'all') return;
+        if (!A.userBrands.includes(b)) chip.style.display = 'none';
+      });
+
+      const progressListEl = document.getElementById('progress-list');
+
+      // map label dropdown (Indonesia) ke key status (lowercase)
+      const STATUS_VALUE_MAP = {
+        'Draft':            'draft',
+        'Sedang diedit':    'editing',
+        'Menunggu review':  'review',
+        'Disetujui':        'approved',
+        'Selesai':          'selesai'
+      };
+
+      function renderProgress() {
+        progressListEl.innerHTML = '';
+        let items = A.data.progress.filter(p => A.userBrands.includes(p.brand));
+        if (currentBrandFilter !== 'all')   items = items.filter(p => p.brand === currentBrandFilter);
+        if (currentStatusFilter !== 'all')  items = items.filter(p => p.status === currentStatusFilter);
+        if (currentPeriodFilter != null)    items = items.filter(p => parseDaysAgo(p.meta) < currentPeriodFilter);
+        if (!items.length) {
+          progressListEl.innerHTML = '<div class="empty-state">Tidak ada video untuk filter ini.</div>';
+          return;
+        }
+        items.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'progress-row';
+          row.dataset.odId = item.id;
+          row.innerHTML = `
+            <div>
+              <strong>${item.title}</strong>
+              <small>${item.brand} · ${item.meta}</small>
+            </div>
+            <select class="progress-select">
+              <option ${item.status === 'draft' ? 'selected' : ''}>Draft</option>
+              <option ${item.status === 'editing' ? 'selected' : ''}>Sedang diedit</option>
+              <option ${item.status === 'review' ? 'selected' : ''}>Menunggu review</option>
+              <option ${item.status === 'approved' ? 'selected' : ''}>Disetujui</option>
+              <option ${item.status === 'selesai' ? 'selected' : ''}>Selesai</option>
+            </select>
+            <button type="button" class="btn btn-ghost">Detail →</button>
+          `;
+          row.querySelector('.btn-ghost').addEventListener('click', () => {
+            window.location.href = 'screens-progres-detail.html?id=' + encodeURIComponent(item.id);
+          });
+          row.querySelector('select').addEventListener('change', (e) => {
+            const newStatus = STATUS_VALUE_MAP[e.target.value] || e.target.value;
+            A.setStatusOverride(item.id, newStatus);
+            // mutate in-memory supaya render ulang setelah filter berubah konsisten
+            const idx = A.data.progress.findIndex(p => p.id === item.id);
+            if (idx >= 0) A.data.progress[idx] = Object.assign({}, A.data.progress[idx], { status: newStatus });
+            A.showToast('Status ' + item.title + ' diubah ke "' + e.target.value + '".');
+          });
+          progressListEl.appendChild(row);
+        });
+      }
+
+      let currentBrandFilter = 'all';
+      let currentStatusFilter = 'all';
+      let currentPeriodFilter = 30;
+
+      // mini period parser (cukup untuk filter progres; full version ada di screens-creator.html)
+      function parseDaysAgo(text) {
+        if (!text) return Infinity;
+        const t = String(text).toLowerCase().trim();
+        if (/\bbaru\b/.test(t) || /hari ini/.test(t)) return 0;
+        if (/\bkemarin\b/.test(t)) return 1;
+        let m = t.match(/(\d+)\s*jam/);   if (m) return 0;
+        m = t.match(/(\d+)\s*hari/);      if (m) return parseInt(m[1], 10);
+        m = t.match(/(\d+)\s*minggu/);    if (m) return parseInt(m[1], 10) * 7;
+        if (/\bminggu lalu\b/.test(t))    return 7;
+        m = t.match(/(\d+)\s*bulan/);     if (m) return parseInt(m[1], 10) * 30;
+        return Infinity;
+      }
+
+      document.querySelectorAll('#brand-chips .brand-chip').forEach(c => {
+        c.addEventListener('click', () => {
+          currentBrandFilter = c.dataset.brand;
+          document.querySelectorAll('#brand-chips .brand-chip').forEach(x => x.classList.toggle('active', x === c));
+          renderProgress();
+        });
+      });
+
+      // wire status filter chips
+      const statusFilterEl = document.getElementById('progres-status-filter');
+      statusFilterEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.filter-pill');
+        if (!btn) return;
+        statusFilterEl.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        currentStatusFilter = btn.dataset.status;
+        renderProgress();
+      });
+
+      // wire period filter chips
+      const periodFilterEl = document.getElementById('progres-period-filter');
+      periodFilterEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.filter-pill');
+        if (!btn) return;
+        periodFilterEl.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const v = btn.dataset.period;
+        currentPeriodFilter = v === 'all' ? null : parseInt(v, 10);
+        renderProgress();
+      });
+
+      renderProgress();
+    });
+  </script>
+</body>
+</html>

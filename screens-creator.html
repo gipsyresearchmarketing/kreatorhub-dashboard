@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ringkasan · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" class="active" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">DASBOR KREATOR</p>
+          <h1 id="page-greeting">Hai, Sasa, welcome back!</h1>
+          <p id="page-lead">Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.</p>
+        </div>
+      </div>
+
+      <!-- STAT TILES -->
+      <div class="stat-grid" data-od-id="stat-grid">
+        <div class="stat-tile accent">
+          <span class="stat-label">Brief aktif</span>
+          <span class="stat-value" id="stat-brief">—</span>
+          <span class="stat-meta">brief dari admin</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Video progres</span>
+          <span class="stat-value" id="stat-progress">—</span>
+          <span class="stat-meta">sedang dikerjakan</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Menunggu review</span>
+          <span class="stat-value" id="stat-review">—</span>
+          <span class="stat-meta">antrian admin</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Disetujui</span>
+          <span class="stat-value" id="stat-approved">—</span>
+          <span class="stat-meta">video live</span>
+        </div>
+        <div class="stat-tile success">
+          <span class="stat-label">Total fee</span>
+          <span class="stat-value currency" id="stat-total-fee">—</span>
+          <span class="stat-meta" id="stat-total-fee-meta">akumulasi semua video</span>
+        </div>
+      </div>
+
+      <!-- KPI TICKER -->
+      <div class="kpi-ticker" data-od-id="kpi-ticker">
+        <div class="kpi-icon">%</div>
+        <div class="kpi-body">
+          <span class="kpi-label">Tingkat komisi kamu</span>
+          <span class="kpi-value" id="ticker-commission">0,0%</span>
+          <span class="kpi-trend" id="ticker-trend">↑ vs periode lalu</span>
+          <span class="kpi-formula">fee ÷ grossRevenue × 100<br>+ baseline 7 hari = 7,2%</span>
+        </div>
+      </div>
+
+      <!-- DASHBOARD OVERVIEW (status + fee) -->
+      <div class="card dashboard-overview" style="margin-bottom: var(--gap-lg);" data-od-id="dashboard-overview">
+        <div class="section-title">
+          <h2 class="h2">Ringkasan kerjaan &amp; fee</h2>
+          <span class="meta">status video + pendapatan</span>
+        </div>
+
+        <div class="overview-grid">
+          <div class="overview-col" data-col="status">
+            <div class="overview-col-head">
+              <h3 class="overview-title">Status video</h3>
+              <div class="period-filter period-filter-sm" id="status-period-filter" role="tablist" aria-label="Filter periode status">
+                <button type="button" class="filter-pill" data-period="7">7h</button>
+                <button type="button" class="filter-pill" data-period="14">14h</button>
+                <button type="button" class="filter-pill active" data-period="30">30h</button>
+              </div>
+            </div>
+            <div class="donut-wrap" id="donut-wrap"></div>
+            <div class="status-list" id="status-list"></div>
+            <div class="breakdown" id="breakdown-bar" role="img" aria-label="Status video breakdown"></div>
+
+            <div class="komisi-divider"></div>
+            <div class="status-recent">
+              <div class="status-recent-head">
+                <span class="status-recent-title">Aktivitas terbaru</span>
+                <span class="status-recent-count" id="status-recent-count">—</span>
+              </div>
+              <div class="status-recent-filter" id="status-recent-filter" role="tablist" aria-label="Filter status aktivitas">
+                <button type="button" class="filter-pill active" data-status="all">Semua</button>
+                <button type="button" class="filter-pill" data-status="draft">Draft</button>
+                <button type="button" class="filter-pill" data-status="editing">Editing</button>
+                <button type="button" class="filter-pill" data-status="review">Review</button>
+                <button type="button" class="filter-pill" data-status="approved">Disetujui</button>
+                <button type="button" class="filter-pill" data-status="selesai">Selesai</button>
+                <button type="button" class="filter-pill" data-status="rejected">Ditolak</button>
+              </div>
+              <div id="recent-list"></div>
+            </div>
+          </div>
+
+          <div class="overview-col" data-col="fee">
+            <h3 class="overview-title">Pendapatan</h3>
+
+            <div class="revenue-summary" data-od-id="revenue-summary">
+              <div class="donut-wrap" id="revenue-donut"></div>
+              <div class="ltv-block">
+                <span class="ltv-label">Lifetime Value</span>
+                <span class="ltv-value currency" id="ltv-value">Rp 0</span>
+                <span class="ltv-meta" id="ltv-meta">—</span>
+              </div>
+            </div>
+
+            <div class="status-list" id="brand-list"></div>
+
+            <div class="komisi-divider"></div>
+
+            <div class="komisi-inline" data-od-id="komisi-chart">
+              <div class="komisi-inline-head">
+                <span class="komisi-inline-title">Pendapatan per periode</span>
+                <div class="period-filter period-filter-sm" id="period-filter" role="tablist" aria-label="Filter periode">
+                  <button type="button" class="filter-pill" data-period="7">7h</button>
+                  <button type="button" class="filter-pill active" data-period="30">30h</button>
+                  <button type="button" class="filter-pill" data-period="90">90h</button>
+                </div>
+              </div>
+
+              <div class="bar-chart-v bar-chart-v-stacked">
+                <div class="bars" id="komisi-bars"></div>
+                <div class="axis" id="komisi-axis"></div>
+              </div>
+
+              <div class="summary">
+                <span>Total · <span class="currency total" id="komisi-total">Rp 0</span></span>
+              </div>
+
+              <div class="legend-row">
+                <span class="lg-paid">Diterima <strong id="komisi-paid-amt">Rp 0</strong></span>
+                <span class="lg-pending">Menunggu <strong id="komisi-pending-amt">Rp 0</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROAS PERFORMANCE -->
+      <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="roas-perf">
+        <div class="section-title">
+          <h2 class="h2">Performa ROAS</h2>
+          <span class="meta">gross revenue ÷ ad spend</span>
+        </div>
+
+        <div class="roas-grid">
+          <div class="roas-hero">
+            <span class="roas-label">Overall ROAS</span>
+            <span class="roas-value" id="roas-overall">3,0×</span>
+            <span class="roas-meta" id="roas-meta">—</span>
+            <span class="roas-formula">Σ grossRev ÷ Σ adSpend</span>
+          </div>
+          <div class="roas-list" id="roas-list"></div>
+        </div>
+      </div>
+
+      <!-- RECENT ACTIVITY dipindah ke kolom Status video (lihat overview-col data-col="status") -->
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      // greeting + lead
+      document.getElementById('page-greeting').textContent = A.data.greeting;
+      document.getElementById('page-lead').textContent = A.data.lead;
+
+      // stat tiles
+      const briefs = A.data.briefs;
+      const progress = A.data.progress;
+      const history = A.data.history;
+      const payments = A.data.payments;
+      const waitingReview = progress.filter(p => p.status === 'review').length;
+      const approved = history.filter(h => h.status === 'approved').length;
+      const totalFee = payments.reduce((s, p) => s + p.fee, 0);
+      const fmtRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+      document.getElementById('stat-brief').textContent = briefs.length;
+      document.getElementById('stat-progress').textContent = progress.length;
+      document.getElementById('stat-review').textContent = waitingReview;
+      document.getElementById('stat-approved').textContent = approved;
+      document.getElementById('stat-total-fee').textContent = fmtRp.format(totalFee);
+      document.getElementById('stat-total-fee-meta').textContent = `dari ${payments.length} video`;
+
+      // status breakdown (filterable by period)
+      const STATUS_LABELS = {
+        draft:    'Draft',
+        review:   'Menunggu review',
+        revision: 'Revisi',
+        approved: 'Disetujui',
+        selesaid:   'Selesai',
+        rejected: 'Ditolak'
+      };
+      const STATUS_COLORS = {
+        draft:    'var(--muted)',
+        review:   'var(--warn)',
+        revision: 'var(--accent)',
+        approved: 'var(--success)',
+        selesaid:   'var(--done)',
+        rejected: 'var(--danger)'
+      };
+      const statusBarEl = document.getElementById('breakdown-bar');
+      const statusDonutEl = document.getElementById('donut-wrap');
+      const statusListEl = document.getElementById('status-list');
+
+      function renderStatusBreakdown(periodDays) {
+        const inRange = (t) => periodDays == null ? true : parseDaysAgo(t) < periodDays;
+        const progIn  = progress.filter(p => inRange(p.meta));
+        const histIn  = history.filter(h => inRange(h.when));
+        const counts = {
+          draft:    progIn.filter(p => p.status === 'draft').length,
+          review:   progIn.filter(p => p.status === 'review').length,
+          revision: progIn.filter(p => p.status === 'revision').length,
+          approved: histIn.filter(h => h.status === 'approved').length,
+          selesaid:   [...progIn, ...histIn].filter(x => x.status === 'selesaid').length,
+          rejected: histIn.filter(h => h.status === 'rejected').length
+        };
+        const total = counts.draft + counts.review + counts.revision + counts.approved + counts.selesaid + counts.rejected;
+
+        if (total === 0) {
+          statusDonutEl.innerHTML = '<div style="color: var(--muted); font-size: 12px;">Belum ada data</div>';
+          statusListEl.innerHTML = '<div class="empty-state" style="margin:0;">Tidak ada video pada periode ini.</div>';
+          statusBarEl.innerHTML = '<div style="flex:1;display:grid;place-items:center;color:var(--muted);font-size:12px;">Belum ada data</div>';
+          return;
+        }
+
+        const SIZE = 180, OUTER = 80, INNER = 52, CX = SIZE / 2, CY = SIZE / 2;
+        let acc = -Math.PI / 2;
+        const arcs = Object.keys(counts)
+          .filter(k => counts[k] > 0)
+          .map(k => {
+            const angle = (counts[k] / total) * Math.PI * 2;
+            if (angle < 0.001) return '';
+            const a0 = acc, a1 = acc + angle; acc = a1;
+            const big = angle > Math.PI ? 1 : 0;
+            const x0o = CX + OUTER * Math.cos(a0), y0o = CY + OUTER * Math.sin(a0);
+            const x1o = CX + OUTER * Math.cos(a1), y1o = CY + OUTER * Math.sin(a1);
+            const x0i = CX + INNER * Math.cos(a0), y0i = CY + INNER * Math.sin(a0);
+            const x1i = CX + INNER * Math.cos(a1), y1i = CY + INNER * Math.sin(a1);
+            const d = `M ${x0o} ${y0o} A ${OUTER} ${OUTER} 0 ${big} 1 ${x1o} ${y1o} L ${x1i} ${y1i} A ${INNER} ${INNER} 0 ${big} 0 ${x0i} ${y0i} Z`;
+            return `<path d="${d}" fill="${STATUS_COLORS[k]}" />`;
+          })
+          .filter(Boolean)
+          .join('');
+        statusDonutEl.innerHTML = `
+          <svg viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}" class="donut-svg" role="img" aria-label="Donut chart status video">
+            ${arcs}
+            <text x="${CX}" y="${CY - 2}" text-anchor="middle" class="donut-total">${total}</text>
+            <text x="${CX}" y="${CY + 16}" text-anchor="middle" class="donut-sub">${periodDays ? periodDays + ' hari' : 'Total video'}</text>
+          </svg>`;
+
+        const maxC = Math.max.apply(null, Object.values(counts));
+        statusListEl.innerHTML = Object.keys(counts)
+          .filter(k => counts[k] > 0)
+          .map(k => {
+            const pct = Math.round((counts[k] / total) * 100);
+            const w = maxC > 0 ? (counts[k] / maxC) * 100 : 0;
+            return `
+              <div class="status-row ${k}">
+                <div class="row-top">
+                  <span class="dot"></span>
+                  <span class="label">${STATUS_LABELS[k]}</span>
+                  <span class="count">${counts[k]}</span>
+                  <span class="pct">${pct}%</span>
+                </div>
+                <div class="row-bar"><span style="width: ${w}%"></span></div>
+              </div>`;
+          })
+          .join('');
+
+        // compact stacked bar (visual summary) — rejected sengaja dihilangkan
+        // karena info-nya sudah ditampilkan di donut + status list di atasnya
+        statusBarEl.innerHTML = Object.keys(counts)
+          .filter(k => counts[k] > 0 && k !== 'rejected')
+          .map(k => `<div class="seg ${k}" style="flex: ${counts[k]}" title="${STATUS_LABELS[k]}: ${counts[k]}"></div>`)
+          .join('');
+      }
+
+      // recent activity (top 5 paling baru, ter-filter by periode + status pilihan)
+      const RECENT_LABEL = { draft: 'Draft', editing: 'Editing', review: 'Review', approved: 'Disetujui', selesaid: 'Selesai', rejected: 'Ditolak' };
+      let currentPeriodDays = 30;
+      let currentStatusFilter = 'all';
+
+      function renderRecent() {
+        const inRange = (t) => currentPeriodDays == null ? true : parseDaysAgo(t) < currentPeriodDays;
+        const progIn = progress.filter(p => inRange(p.meta));
+        const histIn = history.filter(h => inRange(h.when));
+        const recentAll = [
+          ...progIn.filter(p => parseDaysAgo(p.meta) != null).map(p => ({
+            id: p.id, title: p.title, brand: p.brand, status: p.status,
+            meta: p.meta, daysAgo: parseDaysAgo(p.meta)
+          })),
+          ...histIn.filter(h => parseDaysAgo(h.when) != null).map(h => ({
+            id: h.id, title: h.title, brand: h.brand, status: h.status,
+            meta: h.when + (h.admin ? ' · ' + h.admin : ''),
+            daysAgo: parseDaysAgo(h.when)
+          }))
+        ];
+        const recentTotalInPeriod = recentAll.length;
+        const recentFiltered = currentStatusFilter === 'all'
+          ? recentAll
+          : recentAll.filter(r => r.status === currentStatusFilter);
+        const recentTop5 = recentFiltered.sort((a, b) => a.daysAgo - b.daysAgo).slice(0, 5);
+
+        const recentEl = document.getElementById('recent-list');
+        const recentCountEl = document.getElementById('status-recent-count');
+        const statusLabel = currentStatusFilter === 'all' ? '' : ' · ' + (RECENT_LABEL[currentStatusFilter] || currentStatusFilter);
+        const periodLabel = currentPeriodDays ? currentPeriodDays + ' hari' : '';
+        recentCountEl.textContent = `${recentFiltered.length}/${recentTotalInPeriod} video · ${periodLabel}${statusLabel}`;
+
+        if (!recentTop5.length) {
+          recentEl.innerHTML = '<div class="empty-state" style="margin:0;">Tidak ada aktivitas dengan filter ini.</div>';
+          return;
+        }
+        recentEl.innerHTML = recentTop5.map(r => {
+          const href = (r.status === 'draft' || r.status === 'editing')
+            ? 'screens-script.html?id=' + encodeURIComponent(r.id)
+            : 'screens-progres.html';
+          return `
+            <a class="progress-row" href="${href}" data-od-id="${r.id}">
+              <div>
+                <strong>${r.title}</strong>
+                <small>${r.brand} · ${r.meta}</small>
+              </div>
+              <span class="status ${r.status}">${RECENT_LABEL[r.status] || r.status}</span>
+              <span class="row-arrow">→</span>
+            </a>`;
+        }).join('');
+      }
+
+      // wire period filter (donut + list + bar + recent semua ke-refresh)
+      const statusPeriodEl = document.getElementById('status-period-filter');
+      statusPeriodEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.filter-pill');
+        if (!btn) return;
+        statusPeriodEl.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        currentPeriodDays = parseInt(btn.dataset.period, 10);
+        renderStatusBreakdown(currentPeriodDays);
+        renderRecent();
+      });
+
+      // wire status filter (recent list only)
+      const statusRecentFilterEl = document.getElementById('status-recent-filter');
+      statusRecentFilterEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.filter-pill');
+        if (!btn) return;
+        statusRecentFilterEl.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        currentStatusFilter = btn.dataset.status;
+        renderRecent();
+      });
+
+      renderStatusBreakdown(30);
+      renderRecent();
+
+      // ---- KPI ticker (animated commission %) ----
+      const totalAdSpend = payments.reduce((s, p) => s + p.adSpend, 0);
+      const totalGrossRev = payments.reduce((s, p) => s + p.grossRevenue, 0);
+      const commissionPct = totalGrossRev > 0 ? (totalFee / totalGrossRev * 100) : 0;
+      const tickerEl = document.getElementById('ticker-commission');
+      const tickerTrendEl = document.getElementById('ticker-trend');
+      // trend vs 7-day baseline (commission % jika cuma dihitung dari yang submittedAt < 7 hari)
+      function commissionPctAt(periodDays) {
+        const inP = payments.filter(p => parseDaysAgo(p.submittedAt) < periodDays);
+        const gr = inP.reduce((s, p) => s + p.grossRevenue, 0);
+        const tf = inP.reduce((s, p) => s + p.fee, 0);
+        return gr > 0 ? (tf / gr * 100) : 0;
+      }
+      function fmtPct(v) { return v.toFixed(1).replace('.', ',') + '%'; }
+      function fmtPctPeriod(v) { return v.toFixed(1).replace('.', ',') + '%'; }
+
+      const tickerDuration = 1800;
+      const tickerStart = performance.now();
+      function tickTicker(now) {
+        const elapsed = now - tickerStart;
+        const p = Math.min(elapsed / tickerDuration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        tickerEl.textContent = fmtPct(commissionPct * eased);
+        if (p < 1) requestAnimationFrame(tickTicker);
+        else {
+          tickerEl.textContent = fmtPct(commissionPct);
+          // trend: vs 7 hari
+          const pct7 = commissionPctAt(7);
+          const diff = commissionPct - pct7;
+          const arrow = diff >= 0 ? '↑' : '↓';
+          const cls = diff >= 0 ? 'pos' : 'neg';
+          tickerTrendEl.innerHTML = `<span>${arrow} ${fmtPct(Math.abs(diff))} vs 7 hari</span>`;
+          tickerTrendEl.dataset.dir = cls;
+        }
+      }
+      requestAnimationFrame(tickTicker);
+
+      // ---- revenue per brand (donut + LTV + brand list) ----
+      const BRAND_PALETTE = [
+        'var(--accent)', 'var(--success)', 'var(--warn)',
+        'var(--danger)', 'var(--muted)'
+      ];
+      const fmtFeeShort = (v) => {
+        if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + 'jt';
+        if (v >= 1_000)     return Math.round(v / 1_000) + 'rb';
+        return String(v);
+      };
+      const brandTotals = {};
+      payments.forEach(p => { brandTotals[p.brand] = (brandTotals[p.brand] || 0) + p.fee; });
+      const sortedBrands = Object.keys(brandTotals)
+        .map(b => ({ brand: b, value: brandTotals[b] }))
+        .sort((a, b) => b.value - a.value);
+      const totalBrandFee = sortedBrands.reduce((s, b) => s + b.value, 0);
+
+      // donut per brand
+      const RSIZE = 140, ROUTER = 62, RINNER = 38, RCX = RSIZE / 2, RCY = RSIZE / 2;
+      let racc = -Math.PI / 2;
+      const rarcs = sortedBrands.map((b, i) => {
+        const angle = b.value / totalBrandFee * Math.PI * 2;
+        if (angle < 0.001) return '';
+        const a0 = racc, a1 = racc + angle; racc = a1;
+        const big = angle > Math.PI ? 1 : 0;
+        const x0o = RCX + ROUTER * Math.cos(a0), y0o = RCY + ROUTER * Math.sin(a0);
+        const x1o = RCX + ROUTER * Math.cos(a1), y1o = RCY + ROUTER * Math.sin(a1);
+        const x0i = RCX + RINNER * Math.cos(a0), y0i = RCY + RINNER * Math.sin(a0);
+        const x1i = RCX + RINNER * Math.cos(a1), y1i = RCY + RINNER * Math.sin(a1);
+        const d = `M ${x0o} ${y0o} A ${ROUTER} ${ROUTER} 0 ${big} 1 ${x1o} ${y1o} L ${x1i} ${y1i} A ${RINNER} ${RINNER} 0 ${big} 0 ${x0i} ${y0i} Z`;
+        return `<path d="${d}" fill="${BRAND_PALETTE[i % BRAND_PALETTE.length]}" />`;
+      }).filter(Boolean).join('');
+      document.getElementById('revenue-donut').innerHTML = `
+        <svg viewBox="0 0 ${RSIZE} ${RSIZE}" width="${RSIZE}" height="${RSIZE}" class="donut-svg" role="img" aria-label="Donut chart: pendapatan per brand">
+          ${rarcs}
+          <text x="${RCX}" y="${RCY - 1}" text-anchor="middle" class="donut-total" style="font-size: 17px;">${fmtFeeShort(totalBrandFee)}</text>
+          <text x="${RCX}" y="${RCY + 12}" text-anchor="middle" class="donut-sub" style="font-size: 8px;">TOTAL FEE</text>
+        </svg>`;
+
+      // LTV block
+      document.getElementById('ltv-value').textContent = fmtRp.format(totalFee);
+      const topBrand = sortedBrands[0];
+      const ltvMeta = `${payments.length} video · ${sortedBrands.length} brand aktif<br>top: <strong>${topBrand.brand}</strong> ${fmtFeeShort(topBrand.value)}`;
+      document.getElementById('ltv-meta').innerHTML = ltvMeta;
+
+      // brand breakdown list
+      const maxBrand = Math.max.apply(null, sortedBrands.map(b => b.value));
+      document.getElementById('brand-list').innerHTML = sortedBrands.map((b, i) => {
+        const pct = totalBrandFee > 0 ? Math.round(b.value / totalBrandFee * 100) : 0;
+        const w = maxBrand > 0 ? (b.value / maxBrand * 100) : 0;
+        const color = BRAND_PALETTE[i % BRAND_PALETTE.length];
+        return `
+          <div class="status-row">
+            <div class="row-top">
+              <span class="dot" style="background: ${color}"></span>
+              <span class="label">${b.brand}</span>
+              <span class="count currency">${fmtRp.format(b.value)}</span>
+              <span class="pct">${pct}%</span>
+            </div>
+            <div class="row-bar"><span style="width: ${w}%; background: ${color};"></span></div>
+          </div>`;
+      }).join('');
+
+      // ---- komisi per periode ----
+      function parseDaysAgo(text) {
+        if (!text) return Infinity;
+        const t = String(text).toLowerCase().trim();
+        if (/\bbaru\b/.test(t) || /hari ini/.test(t)) return 0;
+        if (/\bkemarin\b/.test(t)) return 1;
+        // cari pola waktu di mana pun di string (mis. "Diupload 2 jam lalu", "Disimpan 3 hari lalu")
+        let m = t.match(/(\d+)\s*jam/);     if (m) return 0;
+        m = t.match(/(\d+)\s*hari/);        if (m) return parseInt(m[1], 10);
+        m = t.match(/(\d+)\s*minggu/);      if (m) return parseInt(m[1], 10) * 7;
+        if (/\bminggu lalu\b/.test(t))                            return 7;
+        m = t.match(/(\d+)\s*bulan/);       if (m) return parseInt(m[1], 10) * 30;
+        return Infinity;
+      }
+
+      function bucketKomisi(periodDays) {
+        const inP = payments.filter(p => parseDaysAgo(p.submittedAt) < periodDays);
+        let bucketCount, bucketSize;
+        if (periodDays === 7)        { bucketCount = 7;  bucketSize = 1; }   // 7 × 1 day
+        else if (periodDays === 30)  { bucketCount = 6;  bucketSize = 5; }   // 6 × 5 days
+        else                          { bucketCount = 13; bucketSize = 7; }   // 13 × 7 days ≈ 91
+        const buckets = [];
+        for (let i = 0; i < bucketCount; i++) {
+          const lo = i * bucketSize;
+          const hi = (i + 1) * bucketSize - 1;
+          let label;
+          if (periodDays === 7) {
+            label = hi === 0 ? 'Hr ini' : '-' + hi + 'h';
+          } else {
+            label = (lo + 1) + '-' + (hi + 1) + 'h';
+          }
+          buckets.push({ label, lo, hi, paid: 0, pending: 0, count: 0 });
+        }
+        inP.forEach(p => {
+          const d = parseDaysAgo(p.submittedAt);
+          const b = buckets.find(b => d >= b.lo && d <= b.hi);
+          if (b) {
+            if (p.status === 'paid') b.paid += p.fee;
+            else                    b.pending += p.fee;
+            b.count++;
+          }
+        });
+        const total = inP.reduce((s, p) => s + p.fee, 0);
+        const paidTotal = inP.filter(p => p.status === 'paid').reduce((s, p) => s + p.fee, 0);
+        const pendingTotal = total - paidTotal;
+        return { buckets, total, count: inP.length, paidTotal, pendingTotal };
+      }
+
+      function renderKomisiChart(periodDays) {
+        const { buckets, total, paidTotal, pendingTotal } = bucketKomisi(periodDays);
+        const max = Math.max.apply(null, buckets.map(b => b.paid + b.pending));
+        const barsHtml = buckets.map(b => {
+          const sum = b.paid + b.pending;
+          const h = max > 0 ? (sum / max * 100) : 0;
+          if (sum === 0) {
+            return `<div class="bar-v" style="height: ${h}%"></div>`;
+          }
+          const paidPct    = b.paid    / sum * 100;
+          const pendingPct = b.pending / sum * 100;
+          return `<div class="bar-v" style="height: ${h}%" title="${b.label}: ${fmtRp.format(sum)} · Diterima ${fmtRp.format(b.paid)} · Menunggu ${fmtRp.format(b.pending)} (${b.count} video)">` +
+                   `<span class="paid" style="height: ${paidPct}%"></span>` +
+                   `<span class="pending" style="height: ${pendingPct}%"></span>` +
+                 `</div>`;
+        }).join('');
+        document.getElementById('komisi-bars').innerHTML = barsHtml;
+        document.getElementById('komisi-axis').innerHTML = buckets.map(b => `<span>${b.label}</span>`).join('');
+        document.getElementById('komisi-total').textContent = fmtRp.format(total);
+        document.getElementById('komisi-paid-amt').textContent = fmtRp.format(paidTotal);
+        document.getElementById('komisi-pending-amt').textContent = fmtRp.format(pendingTotal);
+      }
+
+      const periodFilterEl = document.getElementById('period-filter');
+      periodFilterEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.filter-pill');
+        if (!btn) return;
+        periodFilterEl.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const days = parseInt(btn.dataset.period, 10);
+        renderKomisiChart(days);
+      });
+      renderKomisiChart(30);
+
+      // ---- ROAS performance ----
+      const overallRoas = totalAdSpend > 0 ? (totalGrossRev / totalAdSpend) : 0;
+      document.getElementById('roas-overall').textContent = overallRoas.toFixed(2).replace('.', ',') + '×';
+      document.getElementById('roas-meta').textContent = fmtRp.format(totalGrossRev) + ' dari ' + fmtRp.format(totalAdSpend) + ' spend';
+
+      const brandData = {};
+      payments.forEach(p => {
+        if (!brandData[p.brand]) brandData[p.brand] = { adSpend: 0, grossRev: 0, fee: 0, count: 0 };
+        brandData[p.brand].adSpend   += p.adSpend;
+        brandData[p.brand].grossRev  += p.grossRevenue;
+        brandData[p.brand].fee       += p.fee;
+        brandData[p.brand].count     += 1;
+      });
+      const brandList = Object.keys(brandData).map(b => ({
+        brand: b,
+        ...brandData[b],
+        roas: brandData[b].adSpend > 0 ? (brandData[b].grossRev / brandData[b].adSpend) : 0
+      })).sort((a, b) => b.roas - a.roas);
+      const maxRoas = Math.max.apply(null, brandList.map(b => b.roas));
+      document.getElementById('roas-list').innerHTML = brandList.map(b => {
+        const w = maxRoas > 0 ? (b.roas / maxRoas * 100) : 0;
+        return `
+          <div class="roas-row">
+            <div class="row-top">
+              <span class="brand-name">${b.brand}</span>
+              <span class="roas-num">${b.roas.toFixed(2).replace('.', ',')}×</span>
+              <span class="spend">${fmtRp.format(b.adSpend)}</span>
+            </div>
+            <div class="row-bar"><span style="width: ${w}%"></span></div>
+          </div>`;
+      }).join('');
+
+    });
+  </script>
+</body>
+</html>

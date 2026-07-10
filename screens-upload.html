@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kirim link video · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" class="active" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">KIRIM LINK VIDEO</p>
+          <h1>Submit video untuk review</h1>
+          <p>Tempel link Google Drive / YouTube / Vimeo. Pastikan link bisa dibuka publik (siapa pun dengan link).</p>
+        </div>
+      </div>
+
+      <section data-od-id="section-upload">
+        <div class="grid-2">
+          <div class="card">
+            <form id="upload-form" data-od-id="upload-form">
+              <div class="field" id="field-link">
+                <label for="vid-link">Link video <span class="req">*</span></label>
+                <input type="url" class="input" id="vid-link" placeholder="https://drive.google.com/..." />
+                <span class="field-hint">Pastikan link bisa dibuka publik (siapa pun dengan link).</span>
+                <span class="field-error">Link tidak valid.</span>
+              </div>
+
+              <div class="field">
+                <label for="vid-brand">Brand</label>
+                <select class="select" id="vid-brand">
+                  <option value="">Pilih brand…</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="vid-title">Judul untuk admin <span class="req">*</span></label>
+                <input type="text" class="input" id="vid-title" placeholder="mis. Unboxing V2 — opening lebih cepat" />
+                <span class="field-error">Judul wajib diisi.</span>
+              </div>
+
+              <div class="field">
+                <label for="vid-notes">Catatan untuk admin (opsional)</label>
+                <textarea class="textarea" id="vid-notes" placeholder="Apa yang perlu admin perhatikan?"></textarea>
+              </div>
+
+              <div class="row-2">
+                <div class="field">
+                  <label for="vid-duration">Durasi</label>
+                  <input type="text" class="input" id="vid-duration" placeholder="0:30" />
+                </div>
+                <div class="field">
+                  <label for="vid-deadline">Deadline</label>
+                  <input type="date" class="input" id="vid-deadline" />
+                </div>
+              </div>
+
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 14px;">
+                <input type="checkbox" id="vid-ready" />
+                Saya siap kirim untuk review admin sekarang.
+              </label>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" id="btn-submit" data-od-id="btn-submit">Kirim untuk review</button>
+                <button type="button" class="btn btn-secondary" id="btn-save-draft">Simpan draft</button>
+              </div>
+            </form>
+          </div>
+
+          <aside class="card" data-od-id="upload-preview">
+            <p class="eyebrow" style="margin-bottom: 8px;">PRATINJAU</p>
+            <div style="aspect-ratio: 16/9; border-radius: 8px; border: 1px dashed var(--border); background: var(--fg-soft); display: grid; place-items: center; color: var(--muted); font-family: var(--font-mono); font-size: 11px; margin-bottom: 14px;">
+              [ Thumbnail otomatis dari link ]
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);"><span style="color: var(--muted);">Link</span><span id="pv-link" style="text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">—</span></div>
+              <div style="display: flex; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);"><span style="color: var(--muted);">Brand</span><span id="pv-brand">—</span></div>
+              <div style="display: flex; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);"><span style="color: var(--muted);">Judul</span><span id="pv-title">—</span></div>
+              <div style="display: flex; justify-content: space-between; gap: 8px;"><span style="color: var(--muted);">Durasi</span><span id="pv-duration" class="num">—</span></div>
+            </div>
+            <div style="margin-top: 12px;"><span class="pill">Status: Draft</span></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      // brand options
+      const vidBrandSel = document.getElementById('vid-brand');
+      vidBrandSel.innerHTML = '<option value="">Pilih brand…</option>' + A.userBrands.map(b => `<option>${b}</option>`).join('');
+
+      // pre-fill brand dari query string ?brand=xxx
+      const params = new URLSearchParams(window.location.search);
+      const preselectedBrand = params.get('brand');
+      if (preselectedBrand && A.userBrands.includes(preselectedBrand)) {
+        vidBrandSel.value = preselectedBrand;
+      }
+
+      // default deadline = 7 hari dari sekarang
+      const dl = document.getElementById('vid-deadline');
+      const t = new Date(); t.setDate(t.getDate() + 7);
+      dl.value = t.toISOString().slice(0, 10);
+
+      const linkEl = document.getElementById('vid-link');
+      const titleEl = document.getElementById('vid-title');
+      const durEl = document.getElementById('vid-duration');
+
+      function updatePreview() {
+        document.getElementById('pv-link').textContent = linkEl.value || '—';
+        document.getElementById('pv-brand').textContent = vidBrandSel.value || '—';
+        document.getElementById('pv-title').textContent = titleEl.value || '—';
+        document.getElementById('pv-duration').textContent = durEl.value || '—';
+      }
+      [linkEl, vidBrandSel, titleEl, durEl].forEach(el => el.addEventListener('input', updatePreview));
+
+      document.getElementById('upload-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const linkField = document.getElementById('field-link');
+        linkField.classList.remove('has-error');
+        let ok = true;
+        if (!/^https?:\/\/.+\..+/.test(linkEl.value.trim())) { linkField.classList.add('has-error'); ok = false; }
+        if (titleEl.value.trim().length < 3) ok = false;
+        if (!ok) return;
+        A.showToast('Link video dikirim ke admin untuk review.');
+        e.target.reset();
+        dl.value = t.toISOString().slice(0, 10);
+        updatePreview();
+      });
+      document.getElementById('btn-save-draft').addEventListener('click', function () {
+        A.showToast('Disimpan sebagai draft. Lanjut nanti dari menu Progres.');
+      });
+
+      updatePreview();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detail brief · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" class="active" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M 2 6 20 6z"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <a href="screens-brief.html" class="meta" style="color: var(--accent);">← Balik ke daftar brief</a>
+          <h1 id="page-title">Brief &amp; script</h1>
+          <p id="page-lead">Tulis script untuk brief ini. Status baru bisa di-update setelah script terisi.</p>
+        </div>
+      </div>
+
+      <div id="content-area">
+        <!-- dirender via JS berdasarkan ?id=brief-X -->
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const briefId = params.get('id');
+      const contentEl = document.getElementById('content-area');
+
+      const STATUS_OPTIONS = [
+        { value: 'draft',    label: 'Draft' },
+        { value: 'editing',  label: 'Sedang ditulis' },
+        { value: 'review',   label: 'Siap review' },
+        { value: 'revisi',   label: 'Perlu revisi' },
+        { value: 'approved', label: 'Disetujui' },
+        { value: 'rejected', label: 'Ditolak' },
+        { value: 'selesai',  label: 'Selesai' }
+      ];
+      const STATUS_LABEL = {};
+      STATUS_OPTIONS.forEach(o => STATUS_LABEL[o.value] = o.label);
+
+      const EDITABLE_STATUS = ['draft', 'editing', 'revisi'];
+      // status yang biasanya di-set oleh admin (kreator bisa-bisa aja set manual untuk simulasi)
+      const ADMIN_CONTROLLED = ['approved', 'rejected', 'selesai'];
+      const LOCKED_AFTER_ADMIN = ['revisi', 'approved', 'rejected', 'selesai'];
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+      }
+
+      function loadState(id) {
+        try {
+          const raw = localStorage.getItem('kreatorhub.brief-state.' + id);
+          if (!raw) return { status: 'draft', script: '' };
+          const data = JSON.parse(raw);
+          return Object.assign({ status: 'draft', script: '' }, data);
+        } catch (_) {
+          return { status: 'draft', script: '' };
+        }
+      }
+      function saveState(id, state) {
+        try { localStorage.setItem('kreatorhub.brief-state.' + id, JSON.stringify(state)); } catch (_) {}
+      }
+
+      if (!briefId) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">
+              Detail brief ini dibuka dari halaman <a href="screens-brief.html" style="color: var(--accent);">Brief &amp; script</a>.
+              Pilih salah satu brief lalu klik untuk mulai nulis scriptnya.
+            </div>
+          </div>`;
+        return;
+      }
+
+      const brief = A.data.briefs.find(b => b.id === briefId);
+      if (!brief) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">Brief dengan ID <code>${escapeHtml(briefId)}</code> tidak ditemukan.</div>
+          </div>`;
+        return;
+      }
+
+      let state = loadState(briefId);
+      let scriptDirty = false;
+
+      document.getElementById('page-title').textContent = brief.title;
+      document.getElementById('page-lead').textContent  = brief.brand + ' · ' + (brief.meta || '').split(' · ')[0];
+
+      function render() {
+        const hasScript = (state.script || '').trim().length > 0;
+        const statusEditable = !ADMIN_CONTROLLED.includes(state.status);
+        const scriptEditable = !LOCKED_AFTER_ADMIN.includes(state.status);
+        const isKreatorFinal = ['approved', 'rejected', 'selesai'].includes(state.status);
+
+        contentEl.innerHTML = `
+          <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-info">
+            <div class="section-title">
+              <h2 class="h2">Detail brief</h2>
+              <span class="meta brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand.toUpperCase())}</span>
+            </div>
+            <div class="field">
+              <label>Judul brief</label>
+              <div class="form-readonly">${escapeHtml(brief.title)}</div>
+            </div>
+            <div class="field">
+              <label>Requirement</label>
+              <div class="form-readonly">${escapeHtml(brief.meta)}</div>
+            </div>
+            <div class="field">
+              <label>Deadline</label>
+              <div class="form-readonly currency">${escapeHtml(brief.deadline)}</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-script">
+            <div class="section-title">
+              <h2 class="h2">Script video ${scriptEditable ? '' : '<span class="meta" style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warn);">· dikunci</span>'}</h2>
+              <span class="meta" id="script-meta">${scriptDirty ? '● ada perubahan belum disimpan' : (hasScript ? 'tersimpan' : 'belum disimpan')}</span>
+            </div>
+            <div class="field brief-script-wrap">
+              <label for="script-text">Tulis script kamu</label>
+              <textarea id="script-text" class="textarea" rows="14"
+                        placeholder="Mulai ketik script untuk video ini. Misal:&#10;&#10;Hook (3 detik): ...&#10;&#10;Body (15 detik): ...&#10;&#10;CTA (2 detik): ..."
+                        ${scriptEditable ? '' : 'disabled'}></textarea>
+              <span class="field-hint">
+                ${scriptEditable
+                  ? 'Script tersimpan otomatis saat klik tombol Simpan di bawah.'
+                  : 'Status sudah final (approved/ditolak/selesai) — script dikunci. Hubungi admin kalau perlu perubahan.'}
+              </span>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" id="btn-save-script" ${scriptEditable ? '' : 'disabled'}>Simpan script</button>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="brief-status">
+            <div class="section-title">
+              <h2 class="h2">Status brief</h2>
+              <span class="meta">${hasScript ? '' : 'Isi script dulu sebelum ubah status'}</span>
+            </div>
+
+            <div class="field">
+              <label>Status sekarang</label>
+              <div><span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span></div>
+            </div>
+
+            <div class="field">
+              <label for="status-select">Ubah status</label>
+              <select id="status-select" class="select" ${hasScript ? '' : 'disabled'}>
+                ${STATUS_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+              </select>
+              <span class="field-hint">
+                ${hasScript
+                  ? 'Pilih status baru lalu klik Simpan status di bawah.'
+                  : 'Dropdown terkunci — script masih kosong. Tulis script dulu untuk membuka opsi status.'}
+              </span>
+            </div>
+
+            <div class="brief-status-cta">
+              <span class="cta-label">Aksi cepat</span>
+              ${state.status === 'review' || state.status === 'revisi' || isKreatorFinal
+                ? `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Sudah dikirim untuk review</button>
+                   <span class="cta-hint">Brief ini menunggu admin review (atau sudah final). Status berikutnya diatur oleh admin.</span>`
+                : hasScript
+                  ? `<button type="button" class="btn btn-primary" id="btn-submit-review">Tandai siap review →</button>
+                     <span class="cta-hint">Setelah klik ini, script akan terkunci untuk diedit sampai admin beri feedback.</span>`
+                  : `<button type="button" class="btn btn-primary" id="btn-submit-review" disabled>Belum bisa: isi script dulu</button>
+                     <span class="cta-hint warn">Tulis script di atas sebelum menandai siap review.</span>`}
+            </div>
+
+            ${!scriptEditable ? `
+              <div class="brief-status-locked">
+                <span>🔒</span>
+                <div>
+                  <strong>Script dikunci</strong> — status sudah <em>${escapeHtml(STATUS_LABEL[state.status] || state.status)}</em>.
+                  Kontrol script sekarang di sisi admin.
+                </div>
+              </div>` : ''}
+
+            <div class="form-actions" style="margin-top: 14px;">
+              <button type="button" class="btn btn-secondary" id="btn-save-status" ${hasScript ? '' : 'disabled'}>Simpan status</button>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <a class="btn btn-secondary" href="screens-brief.html">← Balik ke daftar brief</a>
+          </div>
+        `;
+
+        // populate textarea
+        const ta = document.getElementById('script-text');
+        ta.value = state.script || '';
+        // preselect status
+        const sel = document.getElementById('status-select');
+        if (STATUS_OPTIONS.some(o => o.value === state.status)) {
+          sel.value = state.status;
+        } else {
+          sel.value = 'draft';
+        }
+
+        // wire events (guarded — kalau element gak ada karena disabled state, skip)
+        ta.addEventListener('input', () => {
+          scriptDirty = true;
+          const meta = document.getElementById('script-meta');
+          if (meta) meta.textContent = '● ada perubahan belum disimpan';
+          // re-evaluate status dropdown locked state when script changes
+          render();
+        });
+
+        document.getElementById('btn-save-script').addEventListener('click', () => {
+          state.script = ta.value;
+          saveState(briefId, state);
+          scriptDirty = false;
+          A.showToast('Script tersimpan di lokal.');
+          render();
+        });
+
+        document.getElementById('btn-save-status').addEventListener('click', () => {
+          const newStatus = sel.value;
+          state.status = newStatus;
+          saveState(briefId, state);
+          A.showToast('Status diperbarui → ' + (STATUS_LABEL[newStatus] || newStatus));
+          render();
+        });
+
+        const ctaBtn = document.getElementById('btn-submit-review');
+        if (ctaBtn && !ctaBtn.disabled && state.status !== 'review' && state.status !== 'revisi' && !isKreatorFinal) {
+          ctaBtn.addEventListener('click', () => {
+            state.script = ta.value; // auto-save script first
+            state.status = 'review';
+            saveState(briefId, state);
+            scriptDirty = false;
+            A.showToast('Brief ditandai siap review. Menunggu admin.');
+            render();
+          });
+        }
+      }
+
+      render();
+    });
+  </script>
+</body>
+</html>

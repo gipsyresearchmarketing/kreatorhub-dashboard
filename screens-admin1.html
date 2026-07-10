@@ -1,0 +1,2967 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dasbor admin · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --warn:    oklch(72% 0.14 70);
+      --danger:  oklch(58% 0.18 25);
+
+      --font-display: 'Poppins', system-ui, sans-serif;
+      --font-body:    'Poppins', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: clamp(24px, 3vw, 32px);
+      --fs-h2: clamp(20px, 2.4vw, 26px);
+      --fs-h3: 16px;
+      --fs-body: 14px;
+      --fs-meta: 11px;
+
+      --gap-md: 16px;
+      --gap-lg: 24px;
+      --gap-xl: 36px;
+      --gutter: 24px;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    p { text-wrap: pretty; margin: 0; }
+    h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
+
+    .topnav { position: sticky; top: 0; z-index: 100; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 12px; padding-inline: var(--gutter); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav-right { display: flex; align-items: center; gap: var(--gap-md); }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; }
+
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 50px); }
+    @media (max-width: 820px) { .shell { grid-template-columns: 1fr; } .side-nav { display: none; } }
+
+    .side-nav { border-right: 1px solid var(--border); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .side-nav .brand-mini { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .side-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); }
+    .side-nav a:hover { background: var(--fg-soft); color: var(--fg); }
+    .side-nav a.active { background: var(--accent-soft); color: var(--fg); font-weight: 500; box-shadow: inset 2px 0 0 0 var(--accent); }
+    .side-nav svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+    .side-nav a.active svg { opacity: 1; }
+    /* sub-item (Laporan detail berada di bawah Kreator) */
+    .side-nav a.sub { padding-left: 38px; font-size: 12.5px; }
+    .side-nav a.sub svg { width: 14px; height: 14px; opacity: 0.55; }
+    .side-nav a.sub.active svg { opacity: 0.85; }
+    .side-nav .role-tag { padding: 0 10px 12px; font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+    .side-nav .signout { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); }
+    .side-nav .signout a { padding: 4px 0; }
+
+    .main { padding: 28px var(--gutter) 64px; max-width: 100%; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-md); flex-wrap: wrap; margin-bottom: var(--gap-lg); }
+    .page-head h1 { font-size: var(--fs-h1); line-height: 1.1; letter-spacing: -0.015em; font-weight: 600; }
+    .page-head p { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 56ch; }
+    .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0; }
+    .h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.15; letter-spacing: -0.015em; font-weight: 600; }
+    .h3 { font-size: var(--fs-h3); font-weight: 600; }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap-md); }
+    @media (max-width: 1100px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .grid-4 { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: var(--radius); border: 1px solid transparent; font-size: 13px; font-weight: 500; font-family: inherit; transition: background 0.15s ease, border-color 0.15s ease; }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; padding-inline: 6px; font-size: 12px; }
+    .btn-ghost:hover { color: var(--fg); }
+    .btn svg { width: 14px; height: 14px; }
+
+    .stat-card { display: flex; flex-direction: column; gap: 4px; position: relative; }
+    .stat-card[data-stat] { cursor: pointer; transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease; }
+    .stat-card[data-stat]:hover { transform: translateY(-1px); border-color: var(--fg); box-shadow: 0 4px 12px color-mix(in oklch, var(--fg) 8%, transparent); }
+    .stat-card .stat-hint {
+      position: absolute; top: 10px; right: 12px;
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+      opacity: 0; transition: opacity 0.15s ease;
+    }
+    .stat-card[data-stat]:hover .stat-hint { opacity: 1; }
+
+    /* stat row with arrow connectors — queue panel funnel (kreator → review → approve → brief) */
+    .stat-row-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      gap: var(--gap-md);
+      align-items: stretch;
+    }
+    .stat-row-flow .stat-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      opacity: 0.45;
+      font-size: 22px;
+      font-weight: 300;
+      font-family: var(--font-display);
+      line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    @media (max-width: 1100px) {
+      .stat-row-flow { grid-template-columns: repeat(2, 1fr); }
+      .stat-row-flow .stat-arrow { display: none; }
+    }
+    @media (max-width: 560px) {
+      .stat-row-flow { grid-template-columns: 1fr; }
+    }
+
+    /* clickable video title (queue table) */
+    [data-video-link] { cursor: pointer; }
+    #queue-table [data-video-link] {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 0.12s ease;
+    }
+    #queue-table [data-video-link]:hover,
+    #queue-table [data-video-link]:focus-visible {
+      color: color-mix(in oklch, var(--accent) 75%, var(--fg));
+      text-decoration: underline;
+      text-decoration-color: color-mix(in oklch, var(--accent) 50%, transparent);
+      text-underline-offset: 3px;
+      outline: none;
+    }
+
+    /* stat detail modal list items */
+    .stat-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-bottom: 0; }
+    .stat-item strong { display: block; font-weight: 500; font-size: 13px; line-height: 1.3; }
+    .stat-item .row-meta { display: block; font-size: 11px; margin-top: 2px; font-family: var(--font-mono); }
+    .stat-label { font-size: 12px; color: var(--muted); }
+    .stat-num { font-family: var(--font-display); font-size: 28px; line-height: 1; letter-spacing: -0.02em; font-weight: 600; }
+    .stat-sub { font-size: 12px; color: var(--muted); }
+    .stat-sub .up { color: var(--success); }
+    .stat-sub .warn { color: color-mix(in oklch, var(--warn) 60%, var(--fg)); }
+
+    /* brand chips */
+    .brand-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .brand-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer; }
+    .brand-chip:hover { border-color: var(--fg); color: var(--fg); }
+    .brand-chip.active { background: var(--fg); color: var(--surface); border-color: var(--fg); }
+
+    /* tabs */
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: var(--gap-md); }
+    .tab { padding: 10px 14px; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-left: 0; border-right: 0; border-top: 0; font-family: inherit; }
+    .tab:hover { color: var(--fg); }
+    .tab.active { color: var(--fg); border-bottom-color: var(--fg); font-weight: 500; }
+    .tab .count { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--fg-soft); font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar .search { flex: 1; min-width: 220px; position: relative; }
+    .toolbar .search input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 13px; font-family: inherit; }
+    .toolbar .search input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .toolbar .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); }
+    .filter-select { padding: 8px 28px 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 13px; font-family: inherit; appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.6'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; }
+
+    .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ds-table th, .ds-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .ds-table th { color: var(--muted); font-weight: 500; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .ds-table tbody tr:hover { background: var(--fg-soft); }
+    .ds-table .num-col { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+    .status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
+    .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.review    { background: color-mix(in oklch, var(--warn) 18%, transparent);    color: color-mix(in oklch, var(--warn) 55%, var(--fg)); }
+    .status.approved  { background: color-mix(in oklch, var(--success) 18%, transparent); color: color-mix(in oklch, var(--success) 55%, var(--fg)); }
+    .status.revision  { background: color-mix(in oklch, var(--accent) 14%, transparent);  color: var(--accent); }
+    .status.rejected  { background: color-mix(in oklch, var(--danger) 16%, transparent);  color: color-mix(in oklch, var(--danger) 55%, var(--fg)); }
+    .status.draft     { background: var(--fg-soft); color: var(--muted); }
+    .status.paid      { background: color-mix(in oklch, var(--success) 18%, transparent); color: color-mix(in oklch, var(--success) 55%, var(--fg)); }
+    .status.pending   { background: color-mix(in oklch, var(--warn) 18%, transparent);    color: color-mix(in oklch, var(--warn) 55%, var(--fg)); }
+
+    /* fee page */
+    .fee-table .col-fee { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .fee-table .col-fee strong { font-weight: 600; }
+    .fee-table tr[data-status="pending"] td.col-fee strong { color: color-mix(in oklch, var(--warn) 60%, var(--fg)); }
+    .fee-table tr[data-status="paid"] td.col-fee strong { color: var(--success); }
+    .fee-table .row-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* group header row in fee table */
+    .ds-table tr.group-header td {
+      background: var(--fg-soft);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg);
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ds-table tr.group-header:first-child td { border-top: 0; }
+    .ds-table tr.group-header strong { font-weight: 600; }
+    .ds-table tr.group-header .group-meta { color: var(--muted); font-weight: 400; font-family: var(--font-mono); font-size: 11px; margin-left: 6px; }
+
+    /* clickable brief title */
+    .brief-title-link { display: block; color: inherit; }
+    .brief-title-link strong { color: var(--accent); text-decoration: none; transition: color 0.12s ease; }
+    .brief-title-link:hover strong { color: color-mix(in oklch, var(--accent) 75%, var(--fg)); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--accent) 50%, transparent); text-underline-offset: 3px; }
+
+    /* kreator dashboard rows (brief + video) */
+    .brief-row, .video-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 8px;
+      margin-inline: -8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brief-row:last-child, .video-row:last-child { border-bottom: 0; }
+    .brief-row strong, .video-row strong {
+      display: block;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .brief-row .row-meta, .video-row .row-meta {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: var(--font-mono);
+    }
+    /* clickable rows di Kreator panel → semua ngarah ke Laporan detail */
+    a.brief-row, a.video-row {
+      text-decoration: none;
+      color: inherit;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.12s ease, transform 0.12s ease;
+    }
+    a.brief-row:hover, a.video-row:hover {
+      background: var(--fg-soft);
+    }
+    a.brief-row:active, a.video-row:active {
+      transform: translateY(1px);
+    }
+
+    /* profile dropdown (topnav) */
+    .profile-menu { position: relative; }
+    .profile-trigger {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      color: inherit;
+    }
+    .profile-trigger:hover { background: var(--fg-soft); }
+    .profile-trigger[aria-expanded="true"] { background: var(--fg-soft); }
+    .profile-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 6px;
+      min-width: 260px;
+      box-shadow: 0 8px 24px color-mix(in oklch, var(--fg) 12%, transparent);
+      z-index: 200;
+    }
+    .profile-dropdown[hidden] { display: none; }
+    .profile-dropdown-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .profile-name { font-weight: 500; font-size: 13px; }
+    .profile-email { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 2px; }
+    .profile-section { padding: 4px 0; }
+    .profile-section + .profile-section { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
+    .profile-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 4px 12px; font-family: var(--font-mono); }
+    .profile-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      color: var(--fg);
+      border-radius: 6px;
+      text-decoration: none;
+    }
+    .profile-item:hover { background: var(--fg-soft); }
+    .profile-item svg { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
+    .profile-item-danger { color: var(--danger); }
+    .profile-item-danger svg { opacity: 1; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-md); }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+
+    .brand-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--muted); }
+    .brand-count { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 2px; letter-spacing: 0.02em; }
+    .brand-count::before { content: '· '; color: var(--muted); opacity: 0.6; }
+    .row-title { display: flex; align-items: center; gap: 10px; }
+    .row-title strong { font-weight: 500; }
+    .row-title small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .row-creator { display: flex; align-items: center; gap: 8px; }
+    .row-creator .name { font-size: 13px; line-height: 1.3; }
+    .row-creator .name small { display: block; color: var(--muted); font-size: 11px; }
+
+    .link-cell { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+    .row-actions-cell { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+    /* modal */
+    .modal-backdrop { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 35%, transparent); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+    .modal-backdrop.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 480px; padding: 24px; }
+    .modal h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 6px; font-weight: 600; }
+    .modal p.lead { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .modal textarea { width: 100%; min-height: 88px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 13px; font-family: inherit; resize: vertical; }
+    .modal textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .modal label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 8px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    .notif-channels { display: flex; gap: 8px; margin-bottom: 14px; }
+    .notif-channel { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-family: inherit; text-align: left; }
+    .notif-channel:hover { border-color: var(--fg); color: var(--fg); }
+    .notif-channel.active { border-color: var(--accent); color: var(--fg); background: var(--accent-soft); }
+    .notif-channel svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .creator-preview { background: var(--fg-soft); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: var(--muted); margin-bottom: 14px; display: flex; justify-content: space-between; gap: 8px; }
+    .creator-preview strong { color: var(--fg); font-weight: 500; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: var(--radius); font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* bar chart (laporan) */
+    .bar-chart { display: flex; flex-direction: column; gap: 12px; }
+    .bar-row { display: grid; grid-template-columns: 130px 1fr 56px; gap: 12px; align-items: center; }
+    .bar-label { font-size: 13px; color: var(--fg); }
+    .bar-track { background: var(--fg-soft); height: 8px; border-radius: 999px; overflow: hidden; }
+    .bar-fill { background: var(--accent); height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+    .bar-fill.success { background: var(--success); }
+    .bar-fill.warn { background: var(--warn); }
+    .bar-fill.danger { background: var(--danger); }
+    .bar-value { font-family: var(--font-mono); font-size: 12px; text-align: right; color: var(--muted); }
+
+    .chart-card { display: flex; flex-direction: column; gap: 14px; }
+    .chart-card h3 { font-size: 14px; font-weight: 600; }
+    .chart-card .chart-sub { font-size: 12px; color: var(--muted); margin-top: -6px; }
+
+    /* scope toggle (fee) */
+    .seg-toggle { display: inline-flex; background: var(--fg-soft); border-radius: var(--radius); padding: 3px; gap: 2px; }
+    .seg-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; color: var(--muted); background: transparent; border: 0; cursor: pointer; font-family: inherit; font-weight: 500; }
+    .seg-btn:hover { color: var(--fg); }
+    .seg-btn.active { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px color-mix(in oklch, var(--fg) 8%, transparent); }
+
+    /* fee: clickable scope (data di page bisa di klik buat filter) */
+    .fee-scope-pills {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      margin-bottom: var(--gap-md);
+    }
+    .fee-scope-pills .empty { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+    .scope-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 4px 4px 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    }
+    .scope-pill .pill-clear {
+      display: inline-grid; place-items: center;
+      width: 18px; height: 18px;
+      border: 0; border-radius: 50%;
+      background: transparent;
+      color: var(--accent); cursor: pointer;
+      font-size: 16px; line-height: 1; font-family: inherit;
+      padding: 0;
+    }
+    .scope-pill .pill-clear:hover { background: var(--accent); color: var(--surface); }
+
+    .scope-target {
+      cursor: pointer;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+      text-decoration-color: color-mix(in oklch, var(--accent) 40%, transparent);
+    }
+    .scope-target:hover {
+      text-decoration-style: solid;
+      text-decoration-color: var(--accent);
+    }
+
+    .fee-table .filter-target {
+      cursor: pointer;
+      transition: color 0.12s ease;
+    }
+    .fee-table .filter-target:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="profile-menu" id="profile-menu">
+          <button type="button" class="profile-trigger" id="profile-trigger" aria-haspopup="true" aria-expanded="false">
+            <span class="meta">Admin · mira@gipsygroup.id</span>
+            <div class="avatar">MR</div>
+          </button>
+          <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
+            <div class="profile-dropdown-header">
+              <div class="profile-name">Mira R.</div>
+              <div class="profile-email">mira@gipsygroup.id</div>
+            </div>
+
+            <div class="profile-section">
+              <div class="profile-section-label">Kreator</div>
+              <button type="button" class="profile-item" data-menu="reset-pw" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Reset password kreator
+              </button>
+              <button type="button" class="profile-item" data-menu="nonaktif" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+                Nonaktifkan kreator
+              </button>
+              <button type="button" class="profile-item" data-menu="tambah-kreator" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+                Tambah kreator baru
+              </button>
+            </div>
+
+            <div class="profile-section">
+              <div class="profile-section-label">Notifikasi</div>
+              <button type="button" class="profile-item" data-menu="notif" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+                Pengaturan notifikasi
+              </button>
+            </div>
+
+            <div class="profile-section">
+              <div class="profile-section-label">Akun</div>
+              <button type="button" class="profile-item" data-menu="profile" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+                Profil admin
+              </button>
+              <button type="button" class="profile-item profile-item-danger" data-menu="logout" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+                Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Admin</div>
+      <div class="role-tag">Mode admin</div>
+      <a href="#" class="active" data-od-id="nav-queue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        Antrian review
+      </a>
+      <a href="#" data-od-id="nav-briefs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="#" data-od-id="nav-creators">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+        Kreator
+      </a>
+      <a href="screens-reports.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Laporan detail
+      </a>
+      <a href="#" data-od-id="nav-fee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Fee kreator
+      </a>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">PANEL ADMIN</p>
+          <h1 style="margin-top: 6px;">Antrian review</h1>
+          <p>5 video menunggu keputusan Anda. Hasil review akan dikirim otomatis ke email atau WhatsApp kreator.</p>
+        </div>
+        <a href="#" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/></svg>
+          Ekspor laporan
+        </a>
+      </div>
+
+      <!-- stats -->
+      <section class="stat-row-flow" style="margin-bottom: var(--gap-lg);" data-od-id="stat-row">
+        <div class="card stat-card" data-stat="kreator-aktif" onclick="window.location.href='screens-reports.html#kreator-aktif'" role="link" tabindex="0">
+          <span class="stat-hint">klik →</span>
+          <div class="stat-label">Kreator aktif</div>
+          <div class="stat-num num">18</div>
+          <div class="stat-sub">+2 bulan ini</div>
+        </div>
+        <span class="stat-arrow" aria-hidden="true">›</span>
+        <div class="card stat-card" data-stat="menunggu-review" onclick="window.location.href='screens-reports.html#menunggu-review'" role="link" tabindex="0">
+          <span class="stat-hint">klik →</span>
+          <div class="stat-label">Menunggu review</div>
+          <div class="stat-num num">5</div>
+          <div class="stat-sub"><span class="warn">1 terlambat</span></div>
+        </div>
+        <span class="stat-arrow" aria-hidden="true">›</span>
+        <div class="card stat-card" data-stat="disetujui-minggu" onclick="window.location.href='screens-reports.html#disetujui-minggu'" role="link" tabindex="0">
+          <span class="stat-hint">klik →</span>
+          <div class="stat-label">Disetujui minggu ini</div>
+          <div class="stat-num num">14</div>
+          <div class="stat-sub"><span class="up">+8%</span> minggu lalu</div>
+        </div>
+        <span class="stat-arrow" aria-hidden="true">›</span>
+        <div class="card stat-card" data-stat="brief-aktif" onclick="window.location.href='screens-reports.html#brief-aktif'" role="link" tabindex="0">
+          <span class="stat-hint">klik →</span>
+          <div class="stat-label">Brief aktif</div>
+          <div class="stat-num num">9</div>
+          <div class="stat-sub">3 baru minggu ini</div>
+        </div>
+      </section>
+
+      <!-- panel: queue -->
+      <section class="panel active" data-panel="queue" data-od-id="panel-queue">
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            <input type="text" placeholder="Cari judul atau kreator…" id="queue-search" />
+          </div>
+          <select class="filter-select" id="filter-status">
+            <option value="">Semua status</option>
+            <option value="review">Review</option>
+            <option value="revision">Revisi</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table" id="queue-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Video</th>
+                <th>Brand</th>
+                <th>Kreator</th>
+                <th>Status</th>
+                <th class="num-col">Deadline</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-row data-status="review" data-brand="JZ" data-brief-id="b-1" data-od-id="row-1">
+                <td>
+                  <div class="row-title">
+                    <div>
+                      <strong data-video-link tabindex="0">Unboxing Kopi Sachet — V2</strong>
+                      <small>0:48 · <a href="#" class="link-cell">drive.google/…/v2</a></small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td>
+                  <div class="row-creator">
+                    <div class="avatar">SA</div>
+                    <div class="name">Sasa A.<small>sasa.id</small></div>
+                  </div>
+                </td>
+                <td><span class="status review">Review</span></td>
+                <td class="num-col">3 hari lagi</td>
+                <td>
+                  <div class="row-actions-cell">
+                    <button class="btn btn-primary" data-act="approve">Setujui</button>
+                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
+                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-row data-status="review" data-brand="CA" data-brief-id="b-2" data-od-id="row-2">
+                <td>
+                  <div class="row-title">
+                    <div>
+                      <strong data-video-link tabindex="0">Tutorial AI: Thumbnail 5 Menit</strong>
+                      <small>3:12 · <a href="#" class="link-cell">youtu.be/…/ai1</a></small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td>
+                  <div class="row-creator">
+                    <div class="avatar">DH</div>
+                    <div class="name">Dimas H.<small>dimshub</small></div>
+                  </div>
+                </td>
+                <td><span class="status review">Review</span></td>
+                <td class="num-col">5 hari lagi</td>
+                <td>
+                  <div class="row-actions-cell">
+                    <button class="btn btn-primary" data-act="approve">Setujui</button>
+                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
+                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-row data-status="revision" data-brand="JZ" data-brief-id="b-1" data-od-id="row-3">
+                <td>
+                  <div class="row-title">
+                    <div>
+                      <strong data-video-link tabindex="0">POV Pagi Barista — Revisi</strong>
+                      <small>1:05 · <a href="#" class="link-cell">drive.google/…/pagi2</a></small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td>
+                  <div class="row-creator">
+                    <div class="avatar">SA</div>
+                    <div class="name">Sasa A.<small>sasa.id</small></div>
+                  </div>
+                </td>
+                <td><span class="status revision">Revisi</span></td>
+                <td class="num-col" style="color: var(--danger);">Kemarin</td>
+                <td>
+                  <div class="row-actions-cell">
+                    <button class="btn btn-primary" data-act="approve">Setujui</button>
+                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
+                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-row data-status="review" data-brand="CV" data-brief-id="b-3" data-od-id="row-4">
+                <td>
+                  <div class="row-title">
+                    <div>
+                      <strong data-video-link tabindex="0">Teaser Creative Day — Variasi B</strong>
+                      <small>0:15 · <a href="#" class="link-cell">vimeo.com/…/cd-b</a></small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td>
+                  <div class="row-creator">
+                    <div class="avatar">RP</div>
+                    <div class="name">Rangga P.<small>ranggap.id</small></div>
+                  </div>
+                </td>
+                <td><span class="status review">Review</span></td>
+                <td class="num-col">2 hari lagi</td>
+                <td>
+                  <div class="row-actions-cell">
+                    <button class="btn btn-primary" data-act="approve">Setujui</button>
+                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
+                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-row data-status="draft" data-brand="GR" data-od-id="row-5">
+                <td>
+                  <div class="row-title">
+                    <div>
+                      <strong data-video-link tabindex="0">Eksperimen Kopi Dingin V3</strong>
+                      <small>2:00 · <a href="#" class="link-cell">drive.google/…/dingin3</a></small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
+                <td>
+                  <div class="row-creator">
+                    <div class="avatar">MN</div>
+                    <div class="name">Maya N.<small>mayacontent</small></div>
+                  </div>
+                </td>
+                <td><span class="status draft">Draft</span></td>
+                <td class="num-col">—</td>
+                <td>
+                  <div class="row-actions-cell">
+                    <span class="pill">Menunggu kirim kreator</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- panel: briefs -->
+      <section class="panel" data-panel="briefs" data-od-id="panel-briefs">
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            <input type="text" placeholder="Cari brief atau kreator…" id="brief-search" />
+          </div>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            Brief baru
+          </button>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table" id="briefs-table">
+            <thead>
+              <tr>
+                <th>Judul brief</th>
+                <th>Brand</th>
+                <th>Kreator dituju</th>
+                <th>Status</th>
+                <th class="num-col">Deadline</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-od-id="b-1" data-brief-id="b-1">
+                <td>
+                  <a href="screens-admin-brief-detail.html?id=b-1" class="brief-title-link">
+                    <strong>Video unboxing kopi sachet — 30 detik</strong>
+                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Target 18–25 · Tone kasual · Pakai musik upbeat</small>
+                  </a>
+                </td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td>Sasa A.</td>
+                <td><span class="status review">Aktif</span></td>
+                <td class="num-col">15 Jul</td>
+              </tr>
+              <tr data-od-id="b-2" data-brief-id="b-2">
+                <td>
+                  <a href="screens-admin-brief-detail.html?id=b-2" class="brief-title-link">
+                    <strong>Tutorial AI: bikin thumbnail 5 menit</strong>
+                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Voice-over Indonesia · 1080p landscape</small>
+                  </a>
+                </td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td>Dimas H.</td>
+                <td><span class="status review">Aktif</span></td>
+                <td class="num-col">17 Jul</td>
+              </tr>
+              <tr data-od-id="b-3" data-brief-id="b-3">
+                <td>
+                  <a href="screens-admin-brief-detail.html?id=b-3" class="brief-title-link">
+                    <strong>Teaser Creative Day — 15 detik</strong>
+                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">3 variasi hook · Musik bebas</small>
+                  </a>
+                </td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td>Rangga P.</td>
+                <td><span class="status review">Aktif</span></td>
+                <td class="num-col">—</td>
+              </tr>
+              <tr data-od-id="b-4" data-brief-id="b-4">
+                <td>
+                  <a href="screens-admin-brief-detail.html?id=b-4" class="brief-title-link">
+                    <strong>Riset audiens Gen Z — 3 take wawancara</strong>
+                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Sample 5 orang · Tanpa lighting studio</small>
+                  </a>
+                </td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
+                <td>—</td>
+                <td><span class="status draft">Draft</span></td>
+                <td class="num-col">22 Jul</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- panel: creators -->
+      <section class="panel" data-panel="creators" data-od-id="panel-creators">
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            <input type="text" placeholder="Cari kreator berdasarkan nama atau username…" id="creators-search" />
+          </div>
+          <select class="filter-select" id="creators-period">
+            <option value="all" selected>Lifetime</option>
+            <option value="7">7 hari terakhir</option>
+            <option value="30">30 hari terakhir</option>
+            <option value="90">90 hari terakhir</option>
+          </select>
+          <button class="btn btn-primary" id="btn-add-creator" data-od-id="btn-add-creator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            Tambah kreator
+          </button>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table" id="creators-table">
+            <thead>
+              <tr>
+                <th style="width: 22%;">Kreator</th>
+                <th>Brand</th>
+                <th class="num-col">Brief aktif</th>
+                <th class="num-col" id="creators-video-th">Video (Lifetime)</th>
+                <th class="num-col">Tingkat approval</th>
+                <th class="num-col" id="creators-income-th">Pendapatan</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="creators-tbody">
+              <tr data-creator="sasa" data-od-id="creator-row-sasa">
+                <td>
+                  <div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id · sasa@gipsy.id</small></div></div>
+                </td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col" data-m="brief">—</td>
+                <td class="num-col" data-m="video">—</td>
+                <td class="num-col" data-m="approval">—</td>
+                <td class="num-col" data-m="income">—</td>
+                <td><span class="status approved">Aktif</span></td>
+              </tr>
+              <tr data-creator="dimas" data-od-id="creator-row-dimas">
+                <td>
+                  <div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h · dimas@gipsy.id</small></div></div>
+                </td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td class="num-col" data-m="brief">—</td>
+                <td class="num-col" data-m="video">—</td>
+                <td class="num-col" data-m="approval">—</td>
+                <td class="num-col" data-m="income">—</td>
+                <td><span class="status approved">Aktif</span></td>
+              </tr>
+              <tr data-creator="rangga" data-od-id="creator-row-rangga">
+                <td>
+                  <div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p · rangga@gipsy.id</small></div></div>
+                </td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col" data-m="brief">—</td>
+                <td class="num-col" data-m="video">—</td>
+                <td class="num-col" data-m="approval">—</td>
+                <td class="num-col" data-m="income">—</td>
+                <td><span class="status approved">Aktif</span></td>
+              </tr>
+              <tr data-creator="maya" data-od-id="creator-row-maya">
+                <td>
+                  <div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n · maya@gipsy.id</small></div></div>
+                </td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span> <span class="brand-tag">JAMUZEN</span> <span class="brand-count">2 brand</span></td>
+                <td class="num-col" data-m="brief">—</td>
+                <td class="num-col" data-m="video">—</td>
+                <td class="num-col" data-m="approval">—</td>
+                <td class="num-col" data-m="income">—</td>
+                <td><span class="status approved">Aktif</span></td>
+              </tr>
+              <tr data-creator="aulia" data-od-id="creator-row-aulia">
+                <td>
+                  <div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t · aulia@gipsy.id</small></div></div>
+                </td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col" data-m="brief">—</td>
+                <td class="num-col" data-m="video">—</td>
+                <td class="num-col" data-m="approval">—</td>
+                <td class="num-col" data-m="income">—</td>
+                <td><span class="status approved">Aktif</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Metrik & data (konten dari panel Laporan yang lama, sekarang digabung) -->
+        <div data-od-id="creators-metrics" style="margin-top: var(--gap-lg);">
+          <div class="row-between" style="margin-bottom: var(--gap-md); flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 class="h3">Metrik &amp; data</h3>
+              <p class="meta">Agregat 30 hari terakhir · klik stat untuk lihat rincian di Laporan detail</p>
+            </div>
+            <a href="screens-reports.html" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/></svg>
+              Laporan detail
+            </a>
+          </div>
+
+          <div class="grid-4" style="margin-bottom: var(--gap-lg);" data-od-id="report-stats">
+            <div class="card stat-card" data-stat="disetujui" onclick="window.location.href='screens-reports.html#disetujui'" role="link" tabindex="0">
+              <span class="stat-hint">klik →</span>
+              <div class="stat-label">Disetujui</div>
+              <div class="stat-num num">19</div>
+              <div class="stat-sub"><span class="up">+8%</span> dari periode lalu</div>
+            </div>
+            <div class="card stat-card" data-stat="revisi-diminta" onclick="window.location.href='screens-reports.html#revisi-diminta'" role="link" tabindex="0">
+              <span class="stat-hint">klik →</span>
+              <div class="stat-label">Revisi diminta</div>
+              <div class="stat-num num">6</div>
+              <div class="stat-sub">4 sudah diresubmit</div>
+            </div>
+            <div class="card stat-card" data-stat="ditolak" onclick="window.location.href='screens-reports.html#ditolak'" role="link" tabindex="0">
+              <span class="stat-hint">klik →</span>
+              <div class="stat-label">Ditolak</div>
+              <div class="stat-num num">2</div>
+              <div class="stat-sub">1 butuh diskusi manual</div>
+            </div>
+            <div class="card stat-card" data-stat="pendapatan-dibayarkan" onclick="window.location.href='screens-reports.html#pendapatan-dibayarkan'" role="link" tabindex="0">
+              <span class="stat-hint">klik →</span>
+              <div class="stat-label">Pendapatan dibayarkan</div>
+              <div class="stat-num num">Rp 24.6 jt</div>
+              <div class="stat-sub">ke 6 kreator</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap: var(--gap-lg); margin-bottom: var(--gap-lg);">
+            <div class="card chart-card" data-od-id="chart-brand">
+              <h3>Video per brand</h3>
+              <div class="chart-sub">Disetujui dalam 30 hari terakhir</div>
+              <div class="bar-chart" style="margin-top: 8px;">
+                <div class="bar-row"><span class="bar-label">Jamuzen</span><div class="bar-track"><div class="bar-fill" style="width: 78%;"></div></div><span class="bar-value num">14</span></div>
+                <div class="bar-row"><span class="bar-label">CalmadeAI</span><div class="bar-track"><div class="bar-fill" style="width: 50%;"></div></div><span class="bar-value num">9</span></div>
+                <div class="bar-row"><span class="bar-label">Conventio</span><div class="bar-track"><div class="bar-fill" style="width: 33%;"></div></div><span class="bar-value num">6</span></div>
+                <div class="bar-row"><span class="bar-label">Gipsy Research</span><div class="bar-track"><div class="bar-fill" style="width: 22%;"></div></div><span class="bar-value num">4</span></div>
+              </div>
+            </div>
+
+            <div class="card chart-card" data-od-id="chart-trend">
+              <h3>Aktivitas review 7 hari</h3>
+              <div class="chart-sub">Jumlah video yang diproses tiap hari</div>
+              <div class="bar-chart" style="margin-top: 8px;">
+                <div class="bar-row"><span class="bar-label">Senin</span><div class="bar-track"><div class="bar-fill" style="width: 60%;"></div></div><span class="bar-value num">9</span></div>
+                <div class="bar-row"><span class="bar-label">Selasa</span><div class="bar-track"><div class="bar-fill" style="width: 47%;"></div></div><span class="bar-value num">7</span></div>
+                <div class="bar-row"><span class="bar-label">Rabu</span><div class="bar-track"><div class="bar-fill success" style="width: 80%;"></div></div><span class="bar-value num">12</span></div>
+                <div class="bar-row"><span class="bar-label">Kamis</span><div class="bar-track"><div class="bar-fill warn" style="width: 53%;"></div></div><span class="bar-value num">8</span></div>
+                <div class="bar-row"><span class="bar-label">Jumat</span><div class="bar-track"><div class="bar-fill" style="width: 67%;"></div></div><span class="bar-value num">10</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="report-top">
+            <div class="row-between" style="margin-bottom: 12px;">
+              <h3 class="h3">Top kreator bulan ini</h3>
+              <span class="meta">Berdasarkan video disetujui × earnings</span>
+            </div>
+            <table class="ds-table" style="margin-top: 8px;">
+              <thead>
+                <tr><th>Kreator</th><th>Brand</th><th class="num-col">Video disetujui</th><th class="num-col">Avg. waktu review</th><th class="num-col">Pendapatan</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td><td><span class="brand-tag">JAMUZEN</span></td><td class="num-col">9</td><td class="num-col">3.2 jam</td><td class="num-col">Rp 8.1 jt</td></tr>
+                <tr><td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td><td><span class="brand-tag">CONVENTIO</span></td><td class="num-col">7</td><td class="num-col">4.1 jam</td><td class="num-col">Rp 6.7 jt</td></tr>
+                <tr><td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td><td><span class="brand-tag">JAMUZEN</span></td><td class="num-col">5</td><td class="num-col">5.8 jam</td><td class="num-col">Rp 4.2 jt</td></tr>
+                <tr><td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td><td><span class="brand-tag">CALMADEA.I</span></td><td class="num-col">3</td><td class="num-col">6.2 jam</td><td class="num-col">Rp 1.8 jt</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- dashboard: brief aktif + video terbaru -->
+        <div class="grid-2" style="gap: var(--gap-lg); margin-top: var(--gap-lg);" data-od-id="creators-dashboard">
+          <div class="card chart-card">
+            <h3>Brief aktif</h3>
+            <div class="chart-sub" id="creators-brief-sub">Semua brief yang sedang berjalan</div>
+            <div class="bar-chart" style="margin-top: 8px;" id="creators-brief-list">
+              <p class="meta" style="padding: 8px 0;">Memuat…</p>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <h3>Video terbaru</h3>
+            <div class="chart-sub" id="creators-video-sub">Submit terbaru dari kreator</div>
+            <div class="bar-chart" style="margin-top: 8px;" id="creators-video-list">
+              <p class="meta" style="padding: 8px 0;">Memuat…</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- panel: fee -->
+      <section class="panel" data-panel="fee" data-od-id="panel-fee">
+        <div class="toolbar" style="margin-bottom: var(--gap-lg);">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            <input type="text" placeholder="Cari kreator, brand, atau judul video…" id="fee-search" />
+          </div>
+          <select class="filter-select" id="fee-filter-status">
+            <option value="">Semua status</option>
+            <option value="pending">Menunggu</option>
+            <option value="paid">Sudah dibayar</option>
+          </select>
+          <select class="filter-select" id="fee-filter-period">
+            <option value="all" selected>Lifetime</option>
+            <option value="7">7 hari terakhir</option>
+            <option value="30">30 hari terakhir</option>
+            <option value="90">90 hari terakhir</option>
+          </select>
+          <div class="seg-toggle" id="fee-scope-toggle" role="tablist">
+            <button type="button" class="seg-btn active" data-scope="all">Semua</button>
+            <button type="button" class="seg-btn" data-scope="brand">Per Brand</button>
+            <button type="button" class="seg-btn" data-scope="creator">Per Kreator</button>
+          </div>
+          <select class="filter-select" id="fee-scope-brand" style="display: none; min-width: 160px;">
+            <option value="">Pilih brand…</option>
+          </select>
+          <select class="filter-select" id="fee-scope-creator" style="display: none; min-width: 160px;">
+            <option value="">Pilih kreator…</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-fee-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/></svg>
+            Ekspor CSV
+          </button>
+        </div>
+
+        <!-- Current scope pill (click X to reset) -->
+        <div class="fee-scope-pills" id="fee-scope-pills" style="margin-bottom: var(--gap-md);">
+          <span class="empty">Semua brand &amp; kreator</span>
+        </div>
+
+        <div class="grid-4" style="margin-bottom: var(--gap-lg);" data-od-id="fee-stats">
+          <div class="card stat-card" data-stat="fee-total" onclick="window.location.href='screens-reports.html#fee-total'" role="link" tabindex="0">
+            <span class="stat-hint">klik →</span>
+            <div class="stat-label" id="fee-stat-total-label">Total fee</div>
+            <div class="stat-num num" id="fee-stat-total">Rp 8,7 jt</div>
+            <div class="stat-sub" id="fee-stat-total-sub">26 video · 5 kreator</div>
+          </div>
+          <div class="card stat-card" data-stat="fee-sudah-dibayar" onclick="window.location.href='screens-reports.html#fee-sudah-dibayar'" role="link" tabindex="0">
+            <span class="stat-hint">klik →</span>
+            <div class="stat-label">Sudah dibayar</div>
+            <div class="stat-num num" id="fee-stat-paid" style="color: var(--success);">Rp 4 jt</div>
+            <div class="stat-sub" id="fee-stat-paid-sub"><span class="up">11 video</span> · released</div>
+          </div>
+          <div class="card stat-card" data-stat="fee-menunggu-approval" onclick="window.location.href='screens-reports.html#fee-menunggu-approval'" role="link" tabindex="0">
+            <span class="stat-hint">klik →</span>
+            <div class="stat-label">Menunggu approval</div>
+            <div class="stat-num num" id="fee-stat-pending" style="color: color-mix(in oklch, var(--warn) 60%, var(--fg));">Rp 4,7 jt</div>
+            <div class="stat-sub" id="fee-stat-pending-sub"><span class="warn">15 video</span> · antrian batch</div>
+          </div>
+          <div class="card stat-card" data-stat="fee-rata-rata" onclick="window.location.href='screens-reports.html#fee-rata-rata'" role="link" tabindex="0">
+            <span class="stat-hint">klik →</span>
+            <div class="stat-label">Rata-rata fee / video</div>
+            <div class="stat-num num" id="fee-stat-avg">Rp 334 rb</div>
+            <div class="stat-sub" id="fee-stat-avg-sub">fee termurah Rp 185 rb</div>
+          </div>
+        </div>
+
+        <!-- detail table: synced with top scope toggle -->
+        <div class="row-between" style="margin-bottom: 10px; flex-wrap: wrap; gap: 10px;" data-od-id="fee-detail-row">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="eyebrow">RINCIAN</span>
+            <span class="meta" id="fee-table-scope">Menampilkan semua 26 entri</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: var(--gap-lg);">
+          <table class="ds-table fee-table" id="fee-table">
+            <thead>
+              <tr>
+                <th style="width: 22%;">Video</th>
+                <th>Kreator</th>
+                <th>Brand</th>
+                <th class="num-col">Fee</th>
+                <th class="num-col">Disubmit</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-1">
+                <td><div class="row-title"><div><strong>POV Pagi Barista</strong><small class="row-meta">drive.google/…/pagi</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 hari lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-2">
+                <td><div class="row-title"><div><strong>Eksperimen Boba</strong><small class="row-meta">drive.google/…/boba</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">2 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-3">
+                <td><div class="row-title"><div><strong>Mini-series eps 1</strong><small class="row-meta">drive.google/…/mini1</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">kemarin</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-4">
+                <td><div class="row-title"><div><strong>Mini-series eps 2</strong><small class="row-meta">drive.google/…/mini2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 jam lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-5">
+                <td><div class="row-title"><div><strong>Cuplikan event bulan lalu</strong><small class="row-meta">drive.google/…/cup</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">2 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+
+              <tr data-status="paid" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-6">
+                <td><div class="row-title"><div><strong>Voice-over Tutorial Batch 1</strong><small class="row-meta">youtu.be/…/batch1</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">2 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-7">
+                <td><div class="row-title"><div><strong>Tutorial AI Thumbnail — Take 1</strong><small class="row-meta">youtu.be/…/ai-t1</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 hari lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-8">
+                <td><div class="row-title"><div><strong>Tutorial AI Thumbnail — Take 2</strong><small class="row-meta">youtu.be/…/ai-t2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 jam lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-9">
+                <td><div class="row-title"><div><strong>Thumbnail AI Batch 3</strong><small class="row-meta">youtu.be/…/ai-t3</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
+                <td><span class="brand-tag">CALMADEA.I</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">kemarin</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+
+              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-10">
+                <td><div class="row-title"><div><strong>Behind The Scene Lipat Kertas</strong><small class="row-meta">vimeo.com/…/kertas</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
+                <td class="num-col">2 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-11">
+                <td><div class="row-title"><div><strong>Teaser Creative Day — Variasi A</strong><small class="row-meta">vimeo.com/…/cd-a</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
+                <td class="num-col">minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-12">
+                <td><div class="row-title"><div><strong>Lipat Kertas (revisi)</strong><small class="row-meta">vimeo.com/…/kertas-r</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
+                <td class="num-col">1 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Conventio" data-creator="rangga" data-od-id="fee-13">
+                <td><div class="row-title"><div><strong>Teaser Creative Day — Variasi B</strong><small class="row-meta">vimeo.com/…/cd-b</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
+                <td class="num-col">1 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Conventio" data-creator="rangga" data-od-id="fee-14">
+                <td><div class="row-title"><div><strong>Lipat Kertas Take 2</strong><small class="row-meta">vimeo.com/…/kertas-2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
+                <td><span class="brand-tag">CONVENTIO</span></td>
+                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
+                <td class="num-col">kemarin</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+
+              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-15">
+                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 1</strong><small class="row-meta">drive.google/…/genz1</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
+                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
+                <td class="num-col">3 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-16">
+                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 2</strong><small class="row-meta">drive.google/…/genz2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
+                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
+                <td class="num-col">2 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-17">
+                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 3</strong><small class="row-meta">drive.google/…/genz3</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
+                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
+                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
+                <td class="num-col">5 jam lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="maya" data-od-id="fee-18">
+                <td><div class="row-title"><div><strong>Eksperimen Kopi Dingin</strong><small class="row-meta">drive.google/…/dingin</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
+                <td class="num-col">1 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-19">
+                <td><div class="row-title"><div><strong>POV Pagi Barista (Aulia)</strong><small class="row-meta">drive.google/…/pagi-a</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-20">
+                <td><div class="row-title"><div><strong>Eksperimen Boba V2</strong><small class="row-meta">drive.google/…/boba2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">2 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-21">
+                <td><div class="row-title"><div><strong>Mini-series eps 1 (Aulia)</strong><small class="row-meta">drive.google/…/mini1-a</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">2 minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-22">
+                <td><div class="row-title"><div><strong>Mini-series eps 2 (Aulia)</strong><small class="row-meta">drive.google/…/mini2-a</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">minggu lalu</td>
+                <td><span class="status paid">Sudah dibayar</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-23">
+                <td><div class="row-title"><div><strong>Mini-series eps 3</strong><small class="row-meta">drive.google/…/mini3</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-24">
+                <td><div class="row-title"><div><strong>Behind the barista</strong><small class="row-meta">drive.google/…/behind</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">3 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-25">
+                <td><div class="row-title"><div><strong>Behind the barista Take 2</strong><small class="row-meta">drive.google/…/behind2</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">1 hari lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-26">
+                <td><div class="row-title"><div><strong>Eksperimen Sachet Premium</strong><small class="row-meta">drive.google/…/sachet</small></div></div></td>
+                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
+                <td><span class="brand-tag">JAMUZEN</span></td>
+                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
+                <td class="num-col">5 jam lalu</td>
+                <td><span class="status pending">Menunggu</span></td>
+                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty-state" id="fee-empty" style="display: none; padding: 24px;">Tidak ada data fee sesuai filter.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- tambah kreator modal -->
+  <div class="modal-backdrop" id="creator-modal" data-od-id="creator-modal">
+    <div class="modal" style="max-width: 520px;">
+      <h3>Tambah kreator</h3>
+      <p class="lead">Setelah disimpan, username &amp; password sementara akan dikirim ke nomor WhatsApp kreator.</p>
+
+      <div class="field">
+        <label for="new-c-name">Nama lengkap</label>
+        <input type="text" class="input" id="new-c-name" placeholder="mis. Putri Larasati" />
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="field">
+          <label for="new-c-handle">Username</label>
+          <input type="text" class="input" id="new-c-handle" placeholder="putri.l" autocapitalize="none" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="new-c-wa">WhatsApp</label>
+          <input type="tel" class="input" id="new-c-wa" placeholder="+62 812-..." />
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 8px;">
+        <span style="font-size: 12px; color: var(--muted);">Brand yang dijalankan (bisa lebih dari satu)</span>
+        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg); cursor: pointer; font-weight: 500; user-select: none;">
+          <input type="checkbox" id="new-c-brand-all" />
+          Pilih semua brand
+        </label>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;" id="new-c-brands">
+        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Jamuzen" style="margin-right: 6px;" /> Jamuzen</label>
+        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="CalmadeAI" style="margin-right: 6px;" /> CalmadeAI</label>
+        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Conventio" style="margin-right: 6px;" /> Conventio</label>
+        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Gipsy Research" style="margin-right: 6px;" /> Gipsy Research</label>
+      </div>
+
+      <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+        <input type="checkbox" id="new-c-notify" checked />
+        Kirim kredensial &amp; link aktivasi via WhatsApp
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="creator-cancel">Batal</button>
+        <button class="btn btn-primary" id="creator-save">Buat akun &amp; kirim WA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- reset password modal -->
+  <div class="modal-backdrop" id="reset-modal" data-od-id="reset-modal">
+    <div class="modal">
+      <h3>Reset kata sandi kreator</h3>
+      <p class="lead" id="reset-desc">Pilih kreator, generate password baru, lalu kirim via WhatsApp.</p>
+
+      <label for="reset-creator-select">Kreator</label>
+      <select class="filter-select" id="reset-creator-select" style="width: 100%;">
+        <option value="">— Pilih kreator —</option>
+      </select>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px; margin: 14px 0; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Kreator</span><span id="reset-target" style="font-family: var(--font-mono);">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">WhatsApp</span><span id="reset-wa" class="num" style="font-family: var(--font-mono);">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Password baru</span><span id="reset-pw" class="num" style="font-family: var(--font-mono);">—</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="reset-cancel">Batal</button>
+        <button class="btn btn-primary" id="reset-confirm">Generate &amp; kirim via WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- nonaktifkan kreator modal -->
+  <div class="modal-backdrop" id="nonaktif-modal" data-od-id="nonaktif-modal">
+    <div class="modal">
+      <h3>Nonaktifkan kreator</h3>
+      <p class="lead">Kreator yang dinonaktifkan tidak bisa login sampai diaktifkan kembali oleh admin.</p>
+
+      <label for="nonaktif-creator-select">Kreator</label>
+      <select class="filter-select" id="nonaktif-creator-select" style="width: 100%;">
+        <option value="">— Pilih kreator —</option>
+      </select>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px; margin: 14px 0; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Kreator</span><span id="nonaktif-target" style="font-family: var(--font-mono);">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Status</span><span id="nonaktif-current" style="font-size: 12px;">—</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="nonaktif-cancel">Batal</button>
+        <button class="btn btn-primary" id="nonaktif-confirm" style="background: var(--danger); border-color: var(--danger);">Nonaktifkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- fee approve modal -->
+  <div class="modal-backdrop" id="fee-modal" data-od-id="fee-modal">
+    <div class="modal">
+      <h3>Setujui pembayaran fee</h3>
+      <p class="lead">Konfirmasi transfer ke kreator. Status akan berubah menjadi <strong>Sudah dibayar</strong> dan notifikasi dikirim.</p>
+
+      <div class="creator-preview">
+        <div><strong id="fee-modal-creator">—</strong> · <span id="fee-modal-brand">—</span></div>
+        <span id="fee-modal-title" style="text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</span>
+      </div>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 14px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted); font-size: 12px;">Fee yang disetujui</span>
+          <span id="fee-modal-amount" class="num" style="font-family: var(--font-mono); font-weight: 600; font-size: 16px;">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted); font-size: 12px;">Disubmit</span>
+          <span id="fee-modal-submitted" class="num" style="font-family: var(--font-mono); font-size: 12px;">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted); font-size: 12px;">Metode transfer</span>
+          <span style="font-family: var(--font-mono); font-size: 12px;">Transfer bank · BCA</span>
+        </div>
+      </div>
+
+      <label>Metode notifikasi ke kreator</label>
+      <div class="notif-channels" id="fee-notif-channels">
+        <button type="button" class="notif-channel active" data-channel="email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          Email
+        </button>
+        <button type="button" class="notif-channel" data-channel="wa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8 8 0 11-3-6.2L21 4l-1 4-3 1"/></svg>
+          WhatsApp
+        </button>
+        <button type="button" class="notif-channel" data-channel="both">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12h16M12 4v16"/></svg>
+          Keduanya
+        </button>
+      </div>
+
+      <label style="margin-top: 14px;">Catatan (opsional)</label>
+      <textarea id="fee-modal-note" placeholder="mis. Sudah ditransfer via BCA a.n. Sasa A. pada 7 Jul."></textarea>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="fee-modal-cancel">Batal</button>
+        <button class="btn btn-primary" id="fee-modal-confirm">Tandai sudah dibayar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- review modal -->
+  <div class="modal-backdrop" id="modal" data-od-id="modal">
+    <div class="modal">
+      <h3 id="modal-title">Review video</h3>
+      <p class="lead" id="modal-desc">Beri komentar untuk kreator, lalu pilih kanal notifikasi.</p>
+
+      <div class="creator-preview">
+        <div><strong id="preview-creator">—</strong> · <span id="preview-brand">—</span></div>
+        <span id="preview-title" style="text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</span>
+      </div>
+
+      <label>Komentar untuk kreator</label>
+      <textarea id="modal-comment" placeholder="mis. Opening 5 detik terlalu pelan, tolong potong intro dan ganti musik."></textarea>
+
+      <label style="margin-top: 14px;">Kirim notifikasi via</label>
+      <div class="notif-channels" id="notif-channels">
+        <button type="button" class="notif-channel active" data-channel="email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          Email
+        </button>
+        <button type="button" class="notif-channel" data-channel="wa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8 8 0 11-3-6.2L21 4l-1 4-3 1"/></svg>
+          WhatsApp
+        </button>
+        <button type="button" class="notif-channel" data-channel="both">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12h16M12 4v16"/></svg>
+          Keduanya
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel">Batal</button>
+        <button class="btn btn-primary" id="modal-confirm">Kirim review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- logout confirmation modal -->
+  <div class="modal-backdrop" id="logout-modal" data-od-id="logout-modal">
+    <div class="modal" style="max-width: 420px;">
+      <h3>Keluar dari admin?</h3>
+      <p class="lead">Sesi kamu akan diakhiri. Kreator tidak akan menerima notifikasi apa-apa.</p>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Login sebagai</span>
+          <span class="num" style="font-family: var(--font-mono);">Mira R. · mira@gipsygroup.id</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Sesi akan diakhiri di</span>
+          <span class="num" style="font-family: var(--font-mono);">3 device</span>
+        </div>
+      </div>
+
+      <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+        <input type="checkbox" id="logout-keep-2fa" checked />
+        Ingat device ini (2FA tidak diminta di login berikutnya)
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="logout-cancel">Batal</button>
+        <button class="btn btn-danger" id="logout-confirm">Ya, keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- stat detail modal (reusable for all stat cards) -->
+  <div class="modal-backdrop" id="stat-detail-modal" data-od-id="stat-detail-modal">
+    <div class="modal" style="max-width: 640px;">
+      <h3 id="stat-detail-title">Detail</h3>
+      <p class="lead" id="stat-detail-lead">—</p>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 14px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div>
+            <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono);" id="stat-detail-value-label">Total</div>
+            <div id="stat-detail-value" style="font-size: 28px; font-weight: 600; line-height: 1; margin-top: 4px;">0</div>
+          </div>
+          <div id="stat-detail-meta" style="font-size: 12px; color: var(--muted); text-align: right; font-family: var(--font-mono); line-height: 1.5;">—</div>
+        </div>
+      </div>
+
+      <div id="stat-detail-list" style="max-height: 380px; overflow-y: auto; margin: 0 -4px; padding: 0 4px;">
+        <p class="meta" style="padding: 8px 0;">Memuat…</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="stat-detail-close">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      // search
+      const queueSearch = document.getElementById('queue-search');
+      const filterStatus = document.getElementById('filter-status');
+      function applyFilter() {
+        const q = (queueSearch.value || '').toLowerCase();
+        const st = filterStatus.value;
+        document.querySelectorAll('#queue-table tbody tr[data-row]').forEach(row => {
+          const txt = row.textContent.toLowerCase();
+          const okQ = !q || txt.includes(q);
+          const okS = !st || row.dataset.status === st;
+          row.style.display = (okQ && okS) ? '' : 'none';
+        });
+      }
+      queueSearch.addEventListener('input', applyFilter);
+      filterStatus.addEventListener('change', applyFilter);
+
+      const briefSearch = document.getElementById('brief-search');
+      briefSearch.addEventListener('input', () => {
+        const q = briefSearch.value.toLowerCase();
+        document.querySelectorAll('#briefs-table tbody tr').forEach(row => {
+          row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+        });
+      });
+
+      // modal
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalComment = document.getElementById('modal-comment');
+      const modalConfirm = document.getElementById('modal-confirm');
+      const modalCancel = document.getElementById('modal-cancel');
+      const previewCreator = document.getElementById('preview-creator');
+      const previewBrand = document.getElementById('preview-brand');
+      const previewTitle = document.getElementById('preview-title');
+      const toast = document.getElementById('toast');
+      const channelBtns = document.querySelectorAll('.notif-channel');
+
+      let currentRow = null;
+      let currentAction = null;
+      let currentChannel = 'email';
+
+      const actionCopy = {
+        approve:  { title: 'Setujui video ini?', desc: 'Tambahkan komentar (opsional), lalu kirim ke kreator lewat kanal notifikasi.', btn: 'Setujui &amp; kirim', status: 'approved', label: 'Disetujui' },
+        revision: { title: 'Minta revisi', desc: 'Jelaskan apa yang perlu diperbaiki. Kreator akan melihat komentar + status baru di dasbor mereka.', btn: 'Kirim catatan revisi', status: 'revision', label: 'Revisi' },
+        reject:   { title: 'Tolak video ini?', desc: 'Beri alasan agar kreator paham. Status ditolak permanen untuk take ini.', btn: 'Tolak &amp; kirim', status: 'rejected', label: 'Ditolak' },
+      };
+
+      // ---- auth guard: butuh session role admin ----
+      (function guardAdmin() {
+        try {
+          const raw = localStorage.getItem('kreatorhub.session');
+          if (!raw) { window.location.replace('screens-login.html'); return; }
+          const s = JSON.parse(raw);
+          if (!s || s.role !== 'admin') { window.location.replace('screens-login.html'); return; }
+        } catch (_) { window.location.replace('screens-login.html'); return; }
+      })();
+
+      // Hydrate display name/email dari session kalau ada (kalau tidak match dengan default yang ada)
+      try {
+        const _s = JSON.parse(localStorage.getItem('kreatorhub.session') || 'null');
+        if (_s && (_s.displayName || _s.email)) {
+          if (_s.displayName && _s.displayName !== 'Mira R.') {
+            const _n = document.querySelector('.profile-dropdown .profile-name');
+            if (_n) _n.textContent = _s.displayName;
+          }
+          if (_s.email && _s.email !== 'mira@gipsygroup.id') {
+            const _e = document.querySelector('.profile-dropdown .profile-email');
+            if (_e) _e.textContent = _s.email;
+          }
+        }
+      } catch (_) {}
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => toast.classList.remove('show'), 2400);
+      }
+
+      function openModal(row, act) {
+        currentRow = row;
+        currentAction = act;
+        const cfg = actionCopy[act];
+        modalTitle.innerHTML = cfg.title;
+        modalDesc.textContent = cfg.desc;
+        modalConfirm.innerHTML = cfg.btn;
+        modalConfirm.className = 'btn ' + (act === 'approve' ? 'btn-primary' : act === 'revision' ? 'btn-primary' : 'btn-secondary');
+        modalComment.value = '';
+        // fill preview from row
+        const titleEl = row.querySelector('strong');
+        previewTitle.textContent = titleEl ? titleEl.textContent : '—';
+        const brandEl = row.querySelector('.brand-tag');
+        previewBrand.textContent = brandEl ? brandEl.textContent : '—';
+        const creatorName = row.querySelector('.row-creator .name');
+        previewCreator.textContent = creatorName ? (creatorName.childNodes[0].textContent || creatorName.textContent).trim().split('\n')[0] : '—';
+        // reset channel
+        currentChannel = 'email';
+        channelBtns.forEach(b => b.classList.toggle('active', b.dataset.channel === 'email'));
+        modal.classList.add('show');
+        setTimeout(() => modalComment.focus(), 50);
+      }
+
+      function closeModal() { modal.classList.remove('show'); }
+      modalCancel.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+      channelBtns.forEach(b => b.addEventListener('click', () => {
+        channelBtns.forEach(x => x.classList.toggle('active', x === b));
+        currentChannel = b.dataset.channel;
+      }));
+
+      modalConfirm.addEventListener('click', () => {
+        if (!currentRow || !currentAction) return;
+        const cfg = actionCopy[currentAction];
+        // require comment for revision/reject
+        if ((currentAction === 'revision' || currentAction === 'reject') && modalComment.value.trim().length < 5) {
+          modalComment.focus();
+          modalComment.style.borderColor = 'var(--danger)';
+          setTimeout(() => modalComment.style.borderColor = '', 1500);
+          return;
+        }
+        // update row
+        const cell = currentRow.querySelector('.status');
+        if (cell) {
+          cell.className = 'status ' + cfg.status;
+          cell.textContent = cfg.label;
+        }
+        currentRow.dataset.status = cfg.status;
+        // queue count (tab badge sudah dihapus, jadi skip)
+        if (currentAction === 'approve' || currentAction === 'reject') {
+          const tab = document.querySelector('.tab[data-tab="queue"] .count');
+          if (tab) {
+            const n = Math.max(0, parseInt(tab.textContent, 10) - 1);
+            tab.textContent = n;
+          }
+        }
+        closeModal();
+        const channelLabel = currentChannel === 'email' ? 'email' : currentChannel === 'wa' ? 'WhatsApp' : 'email & WhatsApp';
+        showToast(cfg.label + ' — notifikasi dikirim ke kreator lewat ' + channelLabel + '.');
+      });
+
+      document.querySelectorAll('[data-act]').forEach(btn => {
+        btn.addEventListener('click', () => openModal(btn.closest('tr'), btn.dataset.act));
+      });
+
+      // ---- internal navigation ----
+      // side-nav: toggle panel.active langsung (ga ada tabs row lagi)
+      const sidePanelMap = {
+        'nav-queue': 'queue',
+        'nav-briefs': 'briefs',
+        'nav-creators': 'creators',
+        'nav-fee': 'fee'
+      };
+      document.querySelectorAll('.side-nav a').forEach(a => {
+        a.addEventListener('click', (e) => {
+          if (a.closest('.signout')) return;
+          // sub-items navigate ke sibling page (screens-reports.html dll.), bukan toggle panel
+          if (a.classList.contains('sub')) return;
+          const target = sidePanelMap[a.dataset.odId];
+          if (!target) return;
+          e.preventDefault();
+          document.querySelectorAll('.side-nav a').forEach(x => x.classList.toggle('active', x === a));
+          document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === target));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+
+      // "Ekspor laporan" button
+      const exportBtn = document.querySelector('[data-od-id="btn-export"]');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          showToast('Laporan diekspor ke CSV (simulasi).');
+        });
+      }
+
+      // "Brief baru" button di panel briefs
+      const newBriefBtn = document.querySelector('[data-panel="briefs"] .btn-primary');
+      if (newBriefBtn) {
+        newBriefBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          showToast('Form brief baru akan segera tersedia.');
+        });
+      }
+
+      // link-cell di tabel antrian
+      document.querySelectorAll('#queue-table .link-cell').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          showToast('Membuka video di tab baru (simulasi).');
+        });
+      });
+
+      // video title di tabel antrian → buka brief detail / toast fallback
+      document.querySelectorAll('#queue-table [data-video-link]').forEach(titleEl => {
+        const go = () => {
+          const tr = titleEl.closest('tr');
+          const briefId = tr?.dataset.briefId;
+          if (briefId) {
+            window.location.href = 'screens-admin-brief-detail.html?id=' + briefId;
+          } else {
+            showToast('Membuka detail video (simulasi).');
+          }
+        };
+        titleEl.addEventListener('click', (e) => { e.preventDefault(); go(); });
+        titleEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
+      });
+
+      // ---- sort by brand di tabel antrian ----
+      const brandHeader = document.querySelector('#queue-table thead th:nth-child(2)');
+      let brandSortDir = 1; // 1 = asc, -1 = desc
+      if (brandHeader) {
+        brandHeader.style.cursor = 'pointer';
+        brandHeader.addEventListener('click', () => {
+          const tbody = document.querySelector('#queue-table tbody');
+          const rows = [...tbody.querySelectorAll('tr[data-row]')];
+          rows.sort((a, b) => {
+            const ba = (a.querySelector('.brand-tag')?.textContent || '').trim();
+            const bb = (b.querySelector('.brand-tag')?.textContent || '').trim();
+            return ba.localeCompare(bb) * brandSortDir;
+          });
+          rows.forEach(r => tbody.appendChild(r));
+          brandSortDir *= -1;
+          brandHeader.querySelector('.sort-mark')?.remove();
+          const mark = document.createElement('span');
+          mark.className = 'sort-mark meta';
+          mark.style.marginLeft = '6px';
+          mark.textContent = brandSortDir === 1 ? '↑' : '↓';
+          brandHeader.appendChild(mark);
+        });
+      }
+
+      // ---- kreator: search ----
+      const creatorsSearch = document.getElementById('creators-search');
+      const creatorsPeriodSel = document.getElementById('creators-period');
+      function applyCreatorsFilter() {
+        const q = (creatorsSearch?.value || '').toLowerCase();
+        document.querySelectorAll('#creators-table tbody tr').forEach(row => {
+          const txt = row.textContent.toLowerCase();
+          row.style.display = !q || txt.includes(q) ? '' : 'none';
+        });
+      }
+      creatorsSearch?.addEventListener('input', applyCreatorsFilter);
+
+      // ---- kreator: period-aware metrics + brief/video dashboard ----
+      // extract briefs from the briefs table once
+      const BRIEFS = [];
+      document.querySelectorAll('#briefs-table tbody tr').forEach(tr => {
+        const titleEl = tr.querySelector('strong');
+        const brandEl = tr.querySelector('.brand-tag');
+        const creatorCell = tr.children[2]?.textContent?.trim() || '—';
+        const statusEl = tr.querySelector('.status');
+        const deadlineCell = tr.children[4]?.textContent?.trim() || '—';
+        BRIEFS.push({
+          id:       tr.dataset.briefId || '',
+          title:    titleEl?.textContent.trim() || '',
+          brand:    brandEl?.textContent.trim() || '',
+          creator:  creatorCell,                 // display name like "Sasa A." or "—"
+          status:   (statusEl?.textContent.trim() || '') === 'Draft' ? 'draft' : 'aktif',
+          deadline: deadlineCell
+        });
+      });
+
+      // map creator display-name (from brief table) → data-creator key (from fee table)
+      const BRIEF_CREATOR_MAP = { 'Sasa A.': 'sasa', 'Dimas H.': 'dimas', 'Rangga P.': 'rangga', 'Maya N.': 'maya', 'Aulia T.': 'aulia' };
+
+      let creatorsPeriod = creatorsPeriodSel?.value || 'all';
+
+      function periodLabelCreators(p) {
+        return p === 'all' ? 'Lifetime' : (p + ' hari terakhir');
+      }
+
+      function computeCreatorMetrics(creator, period) {
+        const vids = FEE_DATA.filter(r => r.creator === creator && inPeriod(r.daysAgo, period));
+        const videoCount = vids.length;
+        const income = vids.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
+        const reviewed = vids.filter(r => r.status === 'paid' || r.status === 'rejected');
+        const approved = vids.filter(r => r.status === 'paid');
+        const approval = reviewed.length ? Math.round((approved.length / reviewed.length) * 100) : 0;
+        // brief count (always "active" briefs from BRIEFS — period not applicable)
+        const brief = BRIEFS.filter(b => b.status === 'aktif' && (b.creator === '—' || BRIEF_CREATOR_MAP[b.creator] === creator)).length;
+        return { brief, videoCount, approval, income };
+      }
+
+      function renderCreatorsTable() {
+        document.querySelectorAll('#creators-table tbody tr[data-creator]').forEach(row => {
+          const c = row.dataset.creator;
+          const m = computeCreatorMetrics(c, creatorsPeriod);
+          row.querySelectorAll('[data-m]').forEach(cell => {
+            const k = cell.dataset.m;
+            if      (k === 'brief')    cell.textContent = m.brief || '0';
+            else if (k === 'video')    cell.textContent = m.videoCount;
+            else if (k === 'approval') cell.textContent = m.approval ? m.approval + '%' : '—';
+            else if (k === 'income')   cell.textContent = m.income ? formatRp(m.income) : 'Rp 0';
+          });
+        });
+        // header labels
+        const pl = periodLabelCreators(creatorsPeriod);
+        document.getElementById('creators-video-th').textContent = `Video (${pl})`;
+        document.getElementById('creators-income-th').textContent = `Pendapatan (${pl})`;
+      }
+
+      function renderCreatorsDashboard() {
+        const pl = periodLabelCreators(creatorsPeriod);
+
+        // Brief aktif list — all active briefs from BRIEFS
+        const briefList = document.getElementById('creators-brief-list');
+        const briefSub  = document.getElementById('creators-brief-sub');
+        const activeBriefs = BRIEFS.filter(b => b.status === 'aktif');
+        briefSub.textContent = `${activeBriefs.length} brief sedang berjalan`;
+        if (activeBriefs.length === 0) {
+          briefList.innerHTML = '<p class="meta" style="padding: 8px 0;">Tidak ada brief aktif.</p>';
+        } else {
+          briefList.innerHTML = activeBriefs.map(b => `
+            <a href="screens-reports.html#brief-aktif" class="brief-row link" data-link-reports="brief-aktif" title="Lihat rincian di Laporan detail">
+              <div>
+                <strong>${b.title}</strong>
+                <small class="row-meta">${b.brand} · ${b.creator} · deadline ${b.deadline}</small>
+              </div>
+            </a>
+          `).join('');
+        }
+
+        // Video terbaru list — videos sorted by most recent, filtered by period
+        const videoList = document.getElementById('creators-video-list');
+        const videoSub  = document.getElementById('creators-video-sub');
+        const videos = FEE_DATA
+          .filter(r => inPeriod(r.daysAgo, creatorsPeriod))
+          .sort((a, b) => a.daysAgo - b.daysAgo)
+          .slice(0, 8);
+        videoSub.textContent = `${videos.length} video submit ${creatorsPeriod === 'all' ? 'sepanjang waktu' : 'dalam ' + pl}`;
+        if (videos.length === 0) {
+          videoList.innerHTML = '<p class="meta" style="padding: 8px 0;">Tidak ada video dalam periode ini.</p>';
+        } else {
+          videoList.innerHTML = videos.map(r => `
+            <a href="screens-reports.html#menunggu-review" class="video-row link" data-link-reports="menunggu-review" title="Lihat rincian di Laporan detail">
+              <div>
+                <strong>${r.title}</strong>
+                <small class="row-meta">${r.creatorNm} · ${r.brand} · ${r.submittedText}</small>
+              </div>
+              <span class="status ${r.status}">${r.status === 'paid' ? 'Sudah dibayar' : 'Menunggu'}</span>
+            </a>
+          `).join('');
+        }
+      }
+
+      function updateCreatorsView() {
+        renderCreatorsTable();
+        renderCreatorsDashboard();
+      }
+
+      creatorsPeriodSel?.addEventListener('change', () => {
+        creatorsPeriod = creatorsPeriodSel.value;
+        updateCreatorsView();
+      });
+
+      // initial render of kreator table + dashboard
+      // (defer one tick so FEE_DATA + fee renderers are fully initialized first — TDZ trap otherwise)
+      setTimeout(() => updateCreatorsView(), 0);
+
+      // deep-link dari URL hash → buka panel + aktifkan sidebar yang sesuai
+      // misal admin1.html#fee → buka Fee panel, #kreator → buka Kreator panel
+      (function deepLinkFromHash() {
+        const hash = (window.location.hash || '').replace('#', '');
+        if (!hash) return;
+        const targetPanel = sidePanelMap['nav-' + hash];
+        const targetLink  = document.querySelector(`.side-nav a[data-od-id="nav-${hash}"]`);
+        if (targetPanel && targetLink) {
+          document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === targetPanel));
+          document.querySelectorAll('.side-nav a').forEach(x => x.classList.toggle('active', x === targetLink));
+        }
+      })();
+
+      // ---- tambah kreator modal ----
+      const creatorModal = document.getElementById('creator-modal');
+      const btnAddCreator = document.getElementById('btn-add-creator');
+      const creatorCancel = document.getElementById('creator-cancel');
+      const creatorSave = document.getElementById('creator-save');
+      btnAddCreator?.addEventListener('click', () => {
+        creatorModal.classList.add('show');
+        document.getElementById('new-c-name')?.focus();
+      });
+      creatorCancel?.addEventListener('click', () => creatorModal.classList.remove('show'));
+      creatorModal?.addEventListener('click', (e) => {
+        if (e.target === creatorModal) creatorModal.classList.remove('show');
+      });
+
+      // ---- master "Pilih semua brand" toggle + per-checkbox sync ----
+      const brandAll  = document.getElementById('new-c-brand-all');
+      const brandInputs = document.querySelectorAll('#new-c-brands input[type="checkbox"]');
+      function syncBrandAll() {
+        if (!brandAll) return;
+        const total   = brandInputs.length;
+        const checked = document.querySelectorAll('#new-c-brands input[type="checkbox"]:checked').length;
+        brandAll.checked       = (checked === total);
+        brandAll.indeterminate = (checked > 0 && checked < total);
+      }
+      brandAll?.addEventListener('change', () => {
+        brandInputs.forEach(i => { i.checked = brandAll.checked; });
+        syncBrandAll();
+      });
+      brandInputs.forEach(i => i.addEventListener('change', syncBrandAll));
+
+      creatorSave?.addEventListener('click', () => {
+        const name = document.getElementById('new-c-name')?.value.trim();
+        const handle = document.getElementById('new-c-handle')?.value.trim().toLowerCase();
+        const wa = document.getElementById('new-c-wa')?.value.trim();
+        const brands = [...document.querySelectorAll('#new-c-brands input:checked')].map(i => i.value);
+        if (!name || !handle || brands.length === 0) {
+          showToast('Lengkapi nama, username, dan minimal satu brand.');
+          return;
+        }
+        const tempPw = 'tmp' + Math.random().toString(36).slice(-6);
+        const initials = name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
+        const tbody = document.querySelector('#creators-table tbody');
+        const tr = document.createElement('tr');
+        tr.dataset.odId = 'creator-row-' + handle;
+        const brandChips     = brands.map(b => `<span class="brand-tag">${b.toUpperCase()}</span>`).join(' ');
+        const brandCountNote = brands.length > 1
+          ? `<span class="brand-count">${brands.length} brand</span>`
+          : '';
+        tr.innerHTML = `
+          <td><div class="row-creator"><div class="avatar">${initials}</div><div class="name">${name}<small>${handle} · ${wa || '-'}</small></div></div></td>
+          <td>${brandChips} ${brandCountNote}</td>
+          <td class="num-col">0</td>
+          <td class="num-col">0</td>
+          <td class="num-col">—</td>
+          <td class="num-col">Rp 0</td>
+          <td><span class="status approved">Aktif</span></td>
+        `;
+        tbody.prepend(tr);
+        // update count
+        const countEl = document.querySelector('.tab[data-tab="creators"] .count');
+        if (countEl) countEl.textContent = parseInt(countEl.textContent || '0', 10) + 1;
+        creatorModal.classList.remove('show');
+        // reset form
+        document.getElementById('new-c-name').value = '';
+        document.getElementById('new-c-handle').value = '';
+        document.getElementById('new-c-wa').value = '';
+        document.querySelectorAll('#new-c-brands input').forEach(i => i.checked = false);
+        if (brandAll) { brandAll.checked = false; brandAll.indeterminate = false; }
+        const channel = document.getElementById('new-c-notify')?.checked ? 'WhatsApp' : '—';
+        showToast(`Akun ${handle} dibuat. Kredensial sementara (${tempPw}) dikirim ke ${wa} via ${channel}.`);
+      });
+
+      // ---- reset password modal ----
+      const resetModal = document.getElementById('reset-modal');
+      const resetTarget = document.getElementById('reset-target');
+      const resetPwEl   = document.getElementById('reset-pw');
+      const resetWaEl   = document.getElementById('reset-wa');
+      const resetConfirm = document.getElementById('reset-confirm');
+      const resetCancel  = document.getElementById('reset-cancel');
+      const resetCreatorSel = document.getElementById('reset-creator-select');
+
+      // build kreator list for reset + nonaktif modals
+      function buildCreatorOptions() {
+        const opts = [];
+        document.querySelectorAll('#creators-table tbody tr[data-creator]').forEach(tr => {
+          const nameEl = tr.querySelector('.row-creator .name');
+          const display = (nameEl?.childNodes[0]?.textContent || '').trim().split('\n')[0].trim();
+          const handle = (nameEl?.querySelector('small')?.textContent || '').split(' · ')[0].trim();
+          const wa = (nameEl?.querySelector('small')?.textContent || '').split(' · ')[1]?.trim() || '—';
+          if (!display || !handle) return;
+          opts.push({ key: handle, display, wa });
+        });
+        return opts;
+      }
+      const CREATOR_OPTIONS = buildCreatorOptions();
+      function populateCreatorSelects() {
+        [resetCreatorSel, document.getElementById('nonaktif-creator-select')].forEach(sel => {
+          if (!sel) return;
+          // keep first placeholder option
+          while (sel.options.length > 1) sel.remove(1);
+          CREATOR_OPTIONS.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.key;
+            o.textContent = `${c.display} (${c.key})`;
+            o.dataset.wa = c.wa;
+            sel.appendChild(o);
+          });
+        });
+      }
+      populateCreatorSelects();
+
+      function openResetModal() {
+        resetCreatorSel.value = '';
+        resetTarget.textContent = '—';
+        resetWaEl.textContent = '—';
+        resetPwEl.textContent = '—';
+        resetModal.classList.add('show');
+      }
+      function closeResetModal() { resetModal.classList.remove('show'); }
+
+      resetCreatorSel?.addEventListener('change', () => {
+        const opt = resetCreatorSel.options[resetCreatorSel.selectedIndex];
+        const key = resetCreatorSel.value;
+        const c   = CREATOR_OPTIONS.find(o => o.key === key);
+        resetTarget.textContent = c ? c.display : '—';
+        resetWaEl.textContent   = c ? c.wa : '—';
+        // auto-generate a password on selection
+        if (key) resetPwEl.textContent = 'GH' + Math.random().toString(36).slice(-8);
+        else     resetPwEl.textContent = '—';
+      });
+      resetCancel?.addEventListener('click', closeResetModal);
+      resetModal?.addEventListener('click', (e) => { if (e.target === resetModal) closeResetModal(); });
+      resetConfirm?.addEventListener('click', () => {
+        const key = resetCreatorSel.value;
+        if (!key) {
+          resetCreatorSel.focus();
+          showToast('Pilih kreator dulu.');
+          return;
+        }
+        closeResetModal();
+        showToast(`Password baru untuk ${resetTarget.textContent} sudah dikirim via WhatsApp.`);
+      });
+
+      // ---- nonaktifkan kreator modal ----
+      const nonaktifModal    = document.getElementById('nonaktif-modal');
+      const nonaktifSel      = document.getElementById('nonaktif-creator-select');
+      const nonaktifTarget   = document.getElementById('nonaktif-target');
+      const nonaktifCurrent  = document.getElementById('nonaktif-current');
+      const nonaktifConfirm  = document.getElementById('nonaktif-confirm');
+      const nonaktifCancel   = document.getElementById('nonaktif-cancel');
+
+      function openNonaktifModal() {
+        nonaktifSel.value = '';
+        nonaktifTarget.textContent = '—';
+        nonaktifCurrent.textContent = '—';
+        nonaktifModal.classList.add('show');
+      }
+      function closeNonaktifModal() { nonaktifModal.classList.remove('show'); }
+
+      nonaktifSel?.addEventListener('change', () => {
+        const c = CREATOR_OPTIONS.find(o => o.key === nonaktifSel.value);
+        nonaktifTarget.textContent = c ? c.display : '—';
+        // look up status from current kreator row
+        const row = document.querySelector(`#creators-table tr[data-creator="${nonaktifSel.value}"]`);
+        const statusText = row?.querySelector('.status')?.textContent.trim() || '—';
+        nonaktifCurrent.textContent = statusText;
+      });
+      nonaktifCancel?.addEventListener('click', closeNonaktifModal);
+      nonaktifModal?.addEventListener('click', (e) => { if (e.target === nonaktifModal) closeNonaktifModal(); });
+      nonaktifConfirm?.addEventListener('click', () => {
+        const key = nonaktifSel.value;
+        if (!key) {
+          nonaktifSel.focus();
+          showToast('Pilih kreator dulu.');
+          return;
+        }
+        const row = document.querySelector(`#creators-table tr[data-creator="${key}"]`);
+        if (row) {
+          const statusCell = row.querySelector('.status');
+          if (statusCell) {
+            statusCell.className = 'status rejected';
+            statusCell.textContent = 'Nonaktif';
+          }
+        }
+        closeNonaktifModal();
+        showToast(`${nonaktifTarget.textContent} di-nonaktifkan. Login ditolak sampai diaktifkan kembali.`);
+      });
+
+      // ---- profile dropdown (topnav) ----
+      const profileTrigger = document.getElementById('profile-trigger');
+      const profileDropdown = document.getElementById('profile-dropdown');
+
+      function toggleProfile(force) {
+        const willOpen = force ?? profileDropdown.hidden;
+        profileDropdown.hidden = !willOpen;
+        profileTrigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
+      // click handler on the trigger
+      function onProfileClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleProfile();
+      }
+      profileTrigger?.addEventListener('click', onProfileClick);
+      // also bind on the parent .profile-menu in case click bubbles
+      document.getElementById('profile-menu')?.addEventListener('click', onProfileClick);
+      // close on outside click
+      document.addEventListener('click', (e) => {
+        if (!profileDropdown.hidden && !profileDropdown.contains(e.target) && e.target !== profileTrigger && !profileTrigger.contains(e.target)) {
+          toggleProfile(false);
+        }
+      });
+      // close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !profileDropdown.hidden) toggleProfile(false);
+      });
+
+      // menu item handlers
+      document.querySelectorAll('#profile-dropdown [data-menu]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const action = btn.dataset.menu;
+          toggleProfile(false);
+          switch (action) {
+            case 'reset-pw':
+            case 'nonaktif':
+            case 'tambah-kreator':
+              // kelola kreator lives on the settings page now
+              window.location.href = 'screens-admin-settings.html#kelola-kreator';
+              break;
+            case 'notif':          window.location.href = 'screens-admin-settings.html#notifikasi'; break;
+            case 'profile':        window.location.href = 'screens-admin-settings.html#profil-admin'; break;
+            case 'logout':         document.getElementById('logout-modal')?.classList.add('show'); break;
+          }
+        });
+      });
+
+      // ---- logout confirmation modal ----
+      const logoutModal = document.getElementById('logout-modal');
+      document.getElementById('logout-cancel')?.addEventListener('click', () => logoutModal.classList.remove('show'));
+      logoutModal?.addEventListener('click', (e) => { if (e.target === logoutModal) logoutModal.classList.remove('show'); });
+      document.getElementById('logout-confirm')?.addEventListener('click', () => {
+        const keep2fa = document.getElementById('logout-keep-2fa')?.checked;
+        logoutModal.classList.remove('show');
+        try { localStorage.removeItem('kreatorhub.session'); } catch (_) {}
+        showToast(keep2fa ? 'Sesi diakhiri. Device ini tetap diingat.' : 'Sesi diakhiri. Device ini dilupakan.');
+        setTimeout(() => { window.location.href = 'screens-login.html'; }, 600);
+      });
+
+      // ---- stat detail modal: klik stat card → liat rincian ----
+      const statDetailModal = document.getElementById('stat-detail-modal');
+      const statDetailTitle  = document.getElementById('stat-detail-title');
+      const statDetailLead   = document.getElementById('stat-detail-lead');
+      const statDetailValueL = document.getElementById('stat-detail-value-label');
+      const statDetailValue  = document.getElementById('stat-detail-value');
+      const statDetailMeta   = document.getElementById('stat-detail-meta');
+      const statDetailList   = document.getElementById('stat-detail-list');
+
+      document.getElementById('stat-detail-close')?.addEventListener('click', () => statDetailModal.classList.remove('show'));
+      statDetailModal?.addEventListener('click', (e) => { if (e.target === statDetailModal) statDetailModal.classList.remove('show'); });
+
+      // escape closes any open modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          statDetailModal?.classList.remove('show');
+        }
+      });
+
+      // helper: render a list of items
+      function renderStatItems(items) {
+        if (!items.length) return '<p class="meta" style="padding: 8px 0;">Tidak ada data.</p>';
+        return items.map(it => {
+          if (it._html) return it._html;  // allow pre-rendered HTML rows
+          const meta = (it.meta || []).map(m => `<span style="color: var(--muted);">${m.label}</span> ${m.value}`).join(' · ');
+          return `<div class="stat-item">
+            <div>
+              <strong>${it.title}</strong>
+              ${meta ? `<small class="row-meta">${meta}</small>` : ''}
+            </div>
+            ${it.badge ? `<span class="status ${it.badge.cls}">${it.badge.label}</span>` : (it.value ? `<span class="num" style="font-family: var(--font-mono); font-size: 13px;">${it.value}</span>` : '')}
+          </div>`;
+        }).join('');
+      }
+
+      // STAT_DETAILS: config untuk masing-masing stat
+      const STAT_DETAILS = {
+        'kreator-aktif': {
+          title: 'Kreator aktif',
+          lead: 'Semua kreator dengan status aktif di Gipsy Group.',
+          valueLabel: 'Jumlah kreator',
+          getValue: () => document.querySelectorAll('#creators-table tbody tr[data-creator]').length,
+          getMeta: () => {
+            const rows = document.querySelectorAll('#creators-table tbody tr[data-creator]');
+            const total = rows.length;
+            const byStatus = {};
+            rows.forEach(tr => {
+              const s = tr.querySelector('.status')?.textContent.trim() || '—';
+              byStatus[s] = (byStatus[s] || 0) + 1;
+            });
+            return Object.entries(byStatus).map(([k, v]) => `${v} ${k}`).join(' · ');
+          },
+          getItems: () => {
+            const items = [];
+            document.querySelectorAll('#creators-table tbody tr[data-creator]').forEach(tr => {
+              const name = tr.querySelector('.row-creator .name')?.childNodes[0]?.textContent?.trim() || '—';
+              const brand = tr.querySelectorAll('.brand-tag');
+              const brands = Array.from(brand).map(b => b.textContent.trim()).join(', ') || '—';
+              const status = tr.querySelector('.status')?.textContent.trim() || '—';
+              const video = tr.querySelector('[data-m="video"]')?.textContent.trim() || '0';
+              items.push({ title: name, meta: [{ label: 'Brand:', value: brands }, { label: 'Video:', value: video }], badge: { cls: status === 'Aktif' ? 'approved' : 'rejected', label: status } });
+            });
+            return items;
+          }
+        },
+        'menunggu-review': {
+          title: 'Menunggu review',
+          lead: 'Semua video di antrian yang belum ada keputusan final.',
+          valueLabel: 'Total antrian',
+          getValue: () => document.querySelectorAll('#queue-table tbody tr[data-row]').length,
+          getMeta: () => {
+            const rows = document.querySelectorAll('#queue-table tbody tr[data-row]');
+            const overdue = Array.from(rows).filter(r => /Kemarin|terlambat/i.test(r.children[4]?.textContent || '')).length;
+            return `${overdue} terlambat · ${rows.length - overdue} on-time`;
+          },
+          getItems: () => {
+            const items = [];
+            document.querySelectorAll('#queue-table tbody tr[data-row]').forEach(tr => {
+              const title = tr.querySelector('strong')?.textContent.trim() || '—';
+              const brand = tr.querySelector('.brand-tag')?.textContent.trim() || '—';
+              const creator = tr.querySelector('.row-creator .name')?.childNodes[0]?.textContent.trim() || '—';
+              const deadline = tr.children[4]?.textContent.trim() || '—';
+              const status = tr.dataset.status || 'review';
+              const statusMap = { review: { cls: 'review', label: 'Review' }, revision: { cls: 'revision', label: 'Revisi' }, draft: { cls: 'draft', label: 'Draft' } };
+              const isOverdue = /Kemarin|terlambat/i.test(deadline);
+              const stat = statusMap[status] || statusMap.review;
+              items.push({ title, meta: [{ label: '', value: `${brand} · ${creator}` }, { label: 'Deadline:', value: deadline }], badge: { cls: isOverdue ? 'rejected' : stat.cls, label: isOverdue ? 'Terlambat' : stat.label } });
+            });
+            return items;
+          }
+        },
+        'disetujui-minggu': {
+          title: 'Disetujui minggu ini',
+          lead: 'Video yang disetujui dalam 7 hari terakhir.',
+          valueLabel: 'Total disetujui',
+          getValue: () => FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7).length,
+          getMeta: () => {
+            const recs = FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7);
+            const income = recs.reduce((s, r) => s + r.fee, 0);
+            return `${recs.length} video · ${formatRp(income)}`;
+          },
+          getItems: () => {
+            const items = [];
+            FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7).forEach(r => {
+              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }, { label: 'Disubmit:', value: r.submittedText }], value: formatRp(r.fee) });
+            });
+            return items;
+          }
+        },
+        'brief-aktif': {
+          title: 'Brief aktif',
+          lead: 'Brief yang sedang berjalan dan ditujukan ke kreator.',
+          valueLabel: 'Brief berjalan',
+          getValue: () => BRIEFS.filter(b => b.status === 'aktif').length,
+          getMeta: () => {
+            const recs = BRIEFS.filter(b => b.status === 'aktif');
+            const brands = new Set(recs.map(b => b.brand));
+            return `${brands.size} brand · ${recs.length} brief`;
+          },
+          getItems: () => {
+            const items = [];
+            BRIEFS.filter(b => b.status === 'aktif').forEach(b => {
+              items.push({ title: b.title, meta: [{ label: 'Brand:', value: b.brand }, { label: 'Kreator:', value: b.creator }, { label: 'Deadline:', value: b.deadline }], badge: { cls: 'review', label: 'Aktif' } });
+            });
+            return items;
+          }
+        },
+        'disetujui': {
+          title: 'Disetujui (periode laporan)',
+          lead: 'Video yang disetujui admin dalam periode laporan.',
+          valueLabel: 'Total disetujui',
+          getValue: () => document.querySelectorAll('#queue-table tbody tr[data-row][data-status="review"]').length + FEE_DATA.filter(r => r.status === 'paid').length,
+          getMeta: () => {
+            const reviewQ = document.querySelectorAll('#queue-table tbody tr[data-row][data-status="review"]').length;
+            const paid = FEE_DATA.filter(r => r.status === 'paid').length;
+            return `${reviewQ} di antrian · ${paid} sudah dibayar`;
+          },
+          getItems: () => {
+            const items = [];
+            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
+              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }, { label: 'Disetujui:', value: r.submittedText }], badge: { cls: 'approved', label: 'Disetujui' }, value: formatRp(r.fee) });
+            });
+            return items;
+          }
+        },
+        'revisi-diminta': {
+          title: 'Revisi diminta',
+          lead: 'Video yang dikembalikan ke kreator untuk revisi.',
+          valueLabel: 'Total revisi',
+          getValue: () => document.querySelectorAll('#queue-table tbody tr[data-row][data-status="revision"]').length,
+          getMeta: () => {
+            const rows = document.querySelectorAll('#queue-table tbody tr[data-row][data-status="revision"]');
+            const resub = Array.from(rows).filter(r => /diresubmit|resubmit/i.test(r.children[4]?.textContent || '')).length;
+            return `${resub} sudah diresubmit · ${rows.length - resub} masih dalam revisi`;
+          },
+          getItems: () => {
+            const items = [];
+            document.querySelectorAll('#queue-table tbody tr[data-row][data-status="revision"]').forEach(tr => {
+              const title = tr.querySelector('strong')?.textContent.trim() || '—';
+              const brand = tr.querySelector('.brand-tag')?.textContent.trim() || '—';
+              const creator = tr.querySelector('.row-creator .name')?.childNodes[0]?.textContent.trim() || '—';
+              items.push({ title, meta: [{ label: '', value: `${brand} · ${creator}` }], badge: { cls: 'revision', label: 'Revisi' } });
+            });
+            return items;
+          }
+        },
+        'ditolak': {
+          title: 'Ditolak',
+          lead: 'Video yang ditolak permanen oleh admin.',
+          valueLabel: 'Total ditolak',
+          getValue: () => 2, // hardcoded since queue table only has 5 review rows
+          getMeta: () => '1 butuh diskusi manual · 1 final',
+          getItems: () => [
+            { title: 'Mini Vlog Liburan — Take 1', meta: [{ label: 'Brand:', value: 'Jamuzen' }, { label: 'Kreator:', value: 'Putri L.' }], badge: { cls: 'rejected', label: 'Ditolak' }, _html: '<div class="stat-item"><div><strong>Mini Vlog Liburan — Take 1</strong><small class="row-meta"><span style="color: var(--muted);">Brand:</span> JAMUZEN · <span style="color: var(--muted);">Kreator:</span> Putri L.</small></div><span class="status rejected">Ditolak</span></div>' },
+            { title: 'Behind The Scene Lipat Kertas (v2)', meta: [{ label: 'Brand:', value: 'Conventio' }, { label: 'Kreator:', value: 'Bayu D.' }], badge: { cls: 'rejected', label: 'Ditolak' }, _html: '<div class="stat-item"><div><strong>Behind The Scene Lipat Kertas (v2)</strong><small class="row-meta"><span style="color: var(--muted);">Brand:</span> CONVENTIO · <span style="color: var(--muted);">Kreator:</span> Bayu D.</small></div><span class="status rejected">Ditolak</span></div>' }
+          ]
+        },
+        'pendapatan-dibayarkan': {
+          title: 'Pendapatan dibayarkan',
+          lead: 'Total fee yang sudah dibayarkan ke kreator.',
+          valueLabel: 'Total dibayarkan',
+          getValue: () => {
+            const paid = FEE_DATA.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
+            return formatRp(paid);
+          },
+          getMeta: () => {
+            const byCreator = {};
+            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
+              if (!byCreator[r.creator]) byCreator[r.creator] = { name: r.creatorNm, total: 0, n: 0 };
+              byCreator[r.creator].total += r.fee;
+              byCreator[r.creator].n += 1;
+            });
+            return `${Object.keys(byCreator).length} kreator · ${FEE_DATA.filter(r => r.status === 'paid').length} video lunas`;
+          },
+          getItems: () => {
+            const items = [];
+            const byCreator = {};
+            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
+              if (!byCreator[r.creator]) byCreator[r.creator] = { name: r.creatorNm, total: 0, n: 0 };
+              byCreator[r.creator].total += r.fee;
+              byCreator[r.creator].n += 1;
+            });
+            Object.values(byCreator).sort((a, b) => b.total - a.total).forEach(c => {
+              items.push({ title: c.name, meta: [{ label: `${c.n} video lunas` }], value: formatRp(c.total) });
+            });
+            return items;
+          }
+        },
+        'fee-total': {
+          title: 'Total fee',
+          lead: 'Akumulasi fee semua video (paid + pending) dalam scope aktif.',
+          valueLabel: 'Total fee',
+          getValue: () => {
+            const total = FEE_DATA.reduce((s, r) => s + r.fee, 0);
+            return formatRp(total);
+          },
+          getMeta: () => `${FEE_DATA.length} video · ${new Set(FEE_DATA.map(r => r.brand)).size} brand · ${new Set(FEE_DATA.map(r => r.creator)).size} kreator`,
+          getItems: () => {
+            const items = [];
+            FEE_DATA.forEach(r => {
+              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }], badge: { cls: r.status === 'paid' ? 'approved' : 'pending', label: r.status === 'paid' ? 'Lunas' : 'Menunggu' }, value: formatRp(r.fee) });
+            });
+            return items;
+          }
+        },
+        'fee-sudah-dibayar': {
+          title: 'Sudah dibayar',
+          lead: 'Video yang fee-nya sudah ditransfer ke kreator.',
+          valueLabel: 'Total dibayar',
+          getValue: () => {
+            const paid = FEE_DATA.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
+            return formatRp(paid);
+          },
+          getMeta: () => {
+            const paid = FEE_DATA.filter(r => r.status === 'paid');
+            const creators = new Set(paid.map(r => r.creator)).size;
+            return `${paid.length} video · ${creators} kreator`;
+          },
+          getItems: () => {
+            const items = [];
+            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
+              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }, { label: 'Disubmit:', value: r.submittedText }], value: formatRp(r.fee) });
+            });
+            return items;
+          }
+        },
+        'fee-menunggu-approval': {
+          title: 'Menunggu approval',
+          lead: 'Video yang fee-nya masih menunggu approval admin.',
+          valueLabel: 'Total menunggu',
+          getValue: () => {
+            const pend = FEE_DATA.filter(r => r.status === 'pending').reduce((s, r) => s + r.fee, 0);
+            return formatRp(pend);
+          },
+          getMeta: () => {
+            const pend = FEE_DATA.filter(r => r.status === 'pending');
+            const creators = new Set(pend.map(r => r.creator)).size;
+            return `${pend.length} video · ${creators} kreator · antrian batch`;
+          },
+          getItems: () => {
+            const items = [];
+            FEE_DATA.filter(r => r.status === 'pending').forEach(r => {
+              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }, { label: 'Disubmit:', value: r.submittedText }], value: formatRp(r.fee) });
+            });
+            return items;
+          }
+        },
+        'fee-rata-rata': {
+          title: 'Rata-rata fee per video',
+          lead: 'Distribusi fee per video dari data fee saat ini.',
+          valueLabel: 'Rata-rata',
+          getValue: () => {
+            const total = FEE_DATA.reduce((s, r) => s + r.fee, 0);
+            return FEE_DATA.length ? formatRp(total / FEE_DATA.length) : 'Rp 0';
+          },
+          getMeta: () => {
+            const fees = FEE_DATA.map(r => r.fee);
+            const min = fees.length ? Math.min(...fees) : 0;
+            const max = fees.length ? Math.max(...fees) : 0;
+            return `termurah ${formatRp(min)} · termahal ${formatRp(max)}`;
+          },
+          getItems: () => {
+            // group by fee bucket
+            const buckets = { '<Rp 200rb': 0, 'Rp 200–350rb': 0, 'Rp 350–500rb': 0, '>Rp 500rb': 0 };
+            FEE_DATA.forEach(r => {
+              if (r.fee < 200000) buckets['<Rp 200rb']++;
+              else if (r.fee < 350000) buckets['Rp 200–350rb']++;
+              else if (r.fee < 500000) buckets['Rp 350–500rb']++;
+              else buckets['>Rp 500rb']++;
+            });
+            return Object.entries(buckets).map(([k, v]) => ({ title: k, meta: [{ label: `${v} video` }] }));
+          }
+        }
+      };
+
+      function openStatDetail(key) {
+        const cfg = STAT_DETAILS[key];
+        if (!cfg) return;
+        statDetailTitle.textContent = cfg.title;
+        statDetailLead.textContent = cfg.lead;
+        statDetailValueL.textContent = cfg.valueLabel || 'Total';
+        statDetailValue.textContent = cfg.getValue();
+        statDetailMeta.textContent = cfg.getMeta ? cfg.getMeta() : '—';
+        statDetailList.innerHTML = renderStatItems(cfg.getItems());
+        statDetailModal.classList.add('show');
+      }
+
+      // click handler for all stat cards with data-stat → navigate to dedicated reports page
+      // Using both mousedown (fast response) and click (fallback)
+      document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
+        const go = () => {
+          const target = 'screens-reports.html#' + card.dataset.stat;
+          window.location.href = target;
+        };
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          go();
+        });
+        card.addEventListener('mousedown', (e) => {
+          if (e.button === 0) {  // only main button
+            e.preventDefault();
+            go();
+          }
+        });
+        // make it visually clear it's a link
+        card.style.cursor = 'pointer';
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', 'Lihat rincian ' + (card.querySelector('.stat-label')?.textContent || card.dataset.stat));
+      });
+      // also support keyboard (Enter / Space)
+      document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            window.location.href = 'screens-reports.html#' + card.dataset.stat;
+          }
+        });
+      });
+
+      // ---- laporan: eksport + period change (simulated) ----
+      document.getElementById('btn-export-csv')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const period = document.getElementById('report-period')?.value || 'periode ini';
+        showToast(`Mengekspor laporan ${period} ke CSV (simulasi).`);
+      });
+      document.getElementById('report-period')?.addEventListener('change', (e) => {
+        showToast(`Menampilkan laporan: ${e.target.value}.`);
+      });
+
+      // ---- fee kreator: filter + approve modal ----
+      const feeSearch = document.getElementById('fee-search');
+      const feeFilterStatus = document.getElementById('fee-filter-status');
+      const feeFilterPeriod = document.getElementById('fee-filter-period');
+      const feeEmpty = document.getElementById('fee-empty');
+      const feeTableBody = document.querySelector('#fee-table tbody');
+      const feeTableScope = document.getElementById('fee-table-scope');
+
+      function renderFeeRow(data) {
+        const tr = data.el.cloneNode(true);
+        tr.dataset.status = data.status;
+        if (data.status === 'paid') {
+          const statusCell = tr.querySelector('.status');
+          if (statusCell) { statusCell.className = 'status paid'; statusCell.textContent = 'Sudah dibayar'; }
+          const actionsCell = tr.querySelector('.row-actions-cell');
+          if (actionsCell) { actionsCell.innerHTML = '<button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button>'; }
+        }
+        // make brand & kreator names clickable to filter scope (data-data di page bisa di klik)
+        const brandCell = tr.querySelector('.brand-tag');
+        if (brandCell) {
+          brandCell.classList.add('filter-target');
+          brandCell.dataset.filterBrand = data.brand;
+          brandCell.title = 'Klik untuk filter ke brand ' + data.brand;
+        }
+        const creatorCell = tr.querySelector('.row-creator .name');
+        if (creatorCell) {
+          creatorCell.classList.add('filter-target');
+          creatorCell.dataset.filterCreator = data.creator;
+          creatorCell.title = 'Klik untuk filter ke kreator ' + (data.creatorNm || data.creator);
+        }
+        return tr;
+      }
+
+      function renderFeeTable() {
+        const q = (feeSearch?.value || '').toLowerCase();
+        const statusFilter = feeFilterStatus?.value;
+        // filter: search + status + top scope toggle (brand/creator)
+        const filtered = FEE_DATA.filter(r => {
+          const hay = (r.title + ' ' + r.creatorNm + ' ' + r.brand + ' ' + r.submittedText).toLowerCase();
+          const okQ  = !q || hay.includes(q);
+          const okS  = !statusFilter || r.status === statusFilter;
+          const okSc = feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal);
+          return okQ && okS && okSc;
+        });
+        feeTableBody.innerHTML = '';
+        filtered.forEach(r => feeTableBody.appendChild(renderFeeRow(r)));
+        // scope indicator
+        if (feeTableScope) {
+          let label;
+          if (feeScope === 'brand')        label = `Brand: ${feeScopeVal}`;
+          else if (feeScope === 'creator') label = `Kreator: ${feeScopeVal}`;
+          else                              label = 'Semua brand & kreator';
+          const totalInScope = FEE_DATA.filter(r =>
+            feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal)
+          ).length;
+          feeTableScope.textContent = filtered.length === totalInScope
+            ? `Menampilkan ${filtered.length} entri · ${label}`
+            : `Menampilkan ${filtered.length} dari ${totalInScope} entri · ${label}`;
+        }
+        if (feeEmpty) feeEmpty.style.display = filtered.length === 0 ? '' : 'none';
+      }
+
+      feeSearch?.addEventListener('input', renderFeeTable);
+      feeFilterStatus?.addEventListener('change', renderFeeTable);
+
+      // ---- fee: scope toggle (Semua / Per Brand / Per Kreator) + reactive period ----
+      // parse the existing fee table into a data array once
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+      }
+      function parseDaysAgo(text) {
+        if (!text) return 999;
+        const t = text.toLowerCase().trim();
+        if (t.includes('jam')) return 0;                 // hours ago → still today
+        if (t === 'kemarin') return 1;
+        let m;
+        if ((m = t.match(/(\d+)\s*minggu/))) return parseInt(m[1], 10) * 7;
+        if (t.includes('minggu lalu')) return 7;
+        if ((m = t.match(/(\d+)\s*hari/))) return parseInt(m[1], 10);
+        return 999;
+      }
+      function inPeriod(days, period) {
+        if (period === 'all') return true;
+        return days <= parseInt(period, 10);
+      }
+      function formatRp(n) {
+        if (n >= 1e9)  return 'Rp ' + (n/1e9).toFixed(1).replace('.', ',') + ' M';
+        if (n >= 1e6)  return 'Rp ' + (n/1e6).toFixed(1).replace('.', ',') + ' jt';
+        if (n >= 1e3)  return 'Rp ' + Math.round(n/1e3) + ' rb';
+        return 'Rp ' + n.toLocaleString('id-ID');
+      }
+
+      const FEE_DATA = [];
+      document.querySelectorAll('#fee-table tbody tr').forEach(tr => {
+        const feeTxt = tr.querySelector('.col-fee strong')?.textContent || '';
+        const fee = parseInt(feeTxt.replace(/\D/g, ''), 10) || 0;
+        const submittedText = (tr.children[4]?.textContent || '').trim();
+        const nameEl = tr.querySelector('.row-creator .name');
+        const fullName = nameEl ? nameEl.textContent.replace(/\s+/g, ' ').trim() : tr.dataset.creator;
+        // first text node is the display name, the <small> has the username
+        const displayName = (nameEl?.childNodes[0]?.textContent || fullName).trim().split('\n')[0].trim();
+        const title = tr.querySelector('strong')?.textContent || '';
+        FEE_DATA.push({
+          el:         tr,
+          creator:    tr.dataset.creator,
+          creatorNm:  displayName,
+          brand:      tr.dataset.brand,
+          status:     tr.dataset.status,
+          fee,
+          daysAgo:    parseDaysAgo(submittedText),
+          submittedText,
+          title
+        });
+      });
+
+      // populate scope selects
+      const scopeBrandSel   = document.getElementById('fee-scope-brand');
+      const scopeCreatorSel = document.getElementById('fee-scope-creator');
+      const uniqueBrands    = [...new Set(FEE_DATA.map(r => r.brand))].sort();
+      const uniqueCreators  = [...new Map(FEE_DATA.map(r => [r.creator, r.creatorNm])).entries()];
+      uniqueBrands.forEach(b => {
+        const o = document.createElement('option'); o.value = b; o.textContent = b;
+        scopeBrandSel.appendChild(o);
+      });
+      uniqueCreators.forEach(([k, v]) => {
+        const o = document.createElement('option'); o.value = k; o.textContent = v;
+        scopeCreatorSel.appendChild(o);
+      });
+
+      let feeScope = 'all';
+      let feeScopeVal = '';
+      let feePeriod = feeFilterPeriod?.value || 'all';
+
+      function periodLabel(p) {
+        return p === 'all' ? 'Lifetime' : (p + ' hari terakhir');
+      }
+
+      function getFiltered(scope, val, period) {
+        return FEE_DATA.filter(r =>
+          inPeriod(r.daysAgo, period) &&
+          (scope === 'all' ||
+           (scope === 'brand'   && r.brand   === val) ||
+           (scope === 'creator' && r.creator === val))
+        );
+      }
+
+      function computeStats(records) {
+        const total  = records.reduce((s, r) => s + r.fee, 0);
+        const paid   = records.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
+        const pend   = records.filter(r => r.status === 'pending').reduce((s, r) => s + r.fee, 0);
+        const paidN  = records.filter(r => r.status === 'paid').length;
+        const pendN  = records.filter(r => r.status === 'pending').length;
+        const avg    = records.length ? total / records.length : 0;
+        const min    = records.length ? Math.min(...records.map(r => r.fee)) : 0;
+        const max    = records.length ? Math.max(...records.map(r => r.fee)) : 0;
+        const crs    = new Set(records.map(r => r.creator)).size;
+        const brs    = new Set(records.map(r => r.brand)).size;
+        return { total, paid, pend, avg, min, max, count: records.length, paidN, pendN, crs, brs };
+      }
+
+      function renderStats(scope, val, period) {
+        const recs = getFiltered(scope, val, period);
+        const s = computeStats(recs);
+        const scopeTxt = scope === 'all' ? 'global' : val;
+        document.getElementById('fee-stat-total').textContent  = formatRp(s.total);
+        document.getElementById('fee-stat-paid').textContent   = formatRp(s.paid);
+        document.getElementById('fee-stat-pending').textContent = formatRp(s.pend);
+        document.getElementById('fee-stat-avg').textContent    = formatRp(s.avg);
+        const totalLbl = document.getElementById('fee-stat-total-label');
+        if (scope === 'all') {
+          totalLbl.textContent = 'Total fee';
+        } else {
+          totalLbl.innerHTML = 'Total fee · <span class="scope-target" data-toggle-scope="all" title="Klik untuk reset scope">' + escapeHtml(scopeTxt) + '</span>';
+        }
+        document.getElementById('fee-stat-total-sub').innerHTML =
+          `${s.count} video · <span class="up">${s.paidN} paid</span> · <span class="warn">${s.pendN} pending</span> · ${periodLabel(period)}` +
+          (scope === 'all' ? ` · ${s.crs} kreator · ${s.brs} brand` : '');
+        document.getElementById('fee-stat-paid-sub').innerHTML =
+          s.paidN
+            ? `<span class="up">${s.paidN} video</span> · released`
+            : `<span class="meta">belum ada</span>`;
+        document.getElementById('fee-stat-pending-sub').innerHTML =
+          s.pendN
+            ? `<span class="warn">${s.pendN} video</span> · antrian batch`
+            : `<span class="meta">tidak ada antrian</span>`;
+        document.getElementById('fee-stat-avg-sub').textContent =
+          s.count ? `fee termurah ${formatRp(s.min)} · termahal ${formatRp(s.max)}` : '—';
+      }
+
+      function renderFeeTable() {
+        const q = (feeSearch?.value || '').toLowerCase();
+        const statusFilter = feeFilterStatus?.value;
+        // filter: search + status + top scope toggle (brand/creator)
+        const filtered = FEE_DATA.filter(r => {
+          const hay = (r.title + ' ' + r.creatorNm + ' ' + r.brand + ' ' + r.submittedText).toLowerCase();
+          const okQ  = !q || hay.includes(q);
+          const okS  = !statusFilter || r.status === statusFilter;
+          const okSc = feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal);
+          return okQ && okS && okSc;
+        });
+        feeTableBody.innerHTML = '';
+        filtered.forEach(r => feeTableBody.appendChild(renderFeeRow(r)));
+        // scope indicator
+        if (feeTableScope) {
+          let label;
+          if (feeScope === 'brand')        label = `Brand: ${feeScopeVal}`;
+          else if (feeScope === 'creator') label = `Kreator: ${feeScopeVal}`;
+          else                              label = 'Semua brand & kreator';
+          const totalInScope = FEE_DATA.filter(r =>
+            feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal)
+          ).length;
+          feeTableScope.textContent = filtered.length === totalInScope
+            ? `Menampilkan ${filtered.length} entri · ${label}`
+            : `Menampilkan ${filtered.length} dari ${totalInScope} entri · ${label}`;
+        }
+        if (feeEmpty) feeEmpty.style.display = filtered.length === 0 ? '' : 'none';
+      }
+
+      feeSearch?.addEventListener('input', renderFeeTable);
+      feeFilterStatus?.addEventListener('change', renderFeeTable);
+
+      // toggle buttons
+      document.querySelectorAll('#fee-scope-toggle .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#fee-scope-toggle .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+          feeScope = btn.dataset.scope;
+          scopeBrandSel.style.display   = feeScope === 'brand'   ? '' : 'none';
+          scopeCreatorSel.style.display = feeScope === 'creator' ? '' : 'none';
+          if (feeScope === 'brand') {
+            feeScopeVal = scopeBrandSel.options[1]?.value || '';
+            scopeBrandSel.value = feeScopeVal;
+          } else if (feeScope === 'creator') {
+            feeScopeVal = scopeCreatorSel.options[1]?.value || '';
+            scopeCreatorSel.value = feeScopeVal;
+          } else {
+            feeScopeVal = '';
+          }
+          updateFeeView();
+        });
+      });
+      scopeBrandSel?.addEventListener('change', (e) => {
+        feeScopeVal = e.target.value;
+        updateFeeView();
+      });
+      scopeCreatorSel?.addEventListener('change', (e) => {
+        feeScopeVal = e.target.value;
+        updateFeeView();
+      });
+
+      // period change triggers both stats and chart refresh
+      feeFilterPeriod?.addEventListener('change', () => {
+        feePeriod = feeFilterPeriod.value;
+        updateFeeView();
+        showToast(feePeriod === 'all' ? 'Menampilkan semua periode.' : `Menampilkan ${feePeriod} hari terakhir.`);
+      });
+
+      // visual scope pill (click X buat reset scope)
+      function renderScopePills() {
+        const container = document.getElementById('fee-scope-pills');
+        if (!container) return;
+        if (feeScope === 'all') {
+          container.innerHTML = '<span class="empty">Semua brand &amp; kreator</span>';
+          return;
+        }
+        const label = feeScope === 'brand' ? 'Brand' : 'Kreator';
+        container.innerHTML = `<span class="scope-pill">${label}: ${escapeHtml(feeScopeVal)} <button type="button" class="pill-clear" data-clear-scope="all" aria-label="Reset scope">&times;</button></span>`;
+      }
+
+      function updateFeeView() {
+        renderStats(feeScope, feeScopeVal, feePeriod);
+        renderFeeTable();
+        renderScopePills();
+      }
+
+      // initial render — override the static HTML values with computed ones
+      updateFeeView();
+
+      // ---- clickable scope targets (data-data di page bisa di klik buat filter) ----
+      // helper: set scope dan sync UI segmented toggle + brand/kreator select
+      function applyFeeScope(scope, val) {
+        feeScope = scope; feeScopeVal = val;
+        document.querySelectorAll('#fee-scope-toggle .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.scope === scope));
+        scopeBrandSel.style.display   = scope === 'brand'   ? '' : 'none';
+        scopeCreatorSel.style.display = scope === 'creator' ? '' : 'none';
+        if (scope === 'brand')   scopeBrandSel.value   = val;
+        if (scope === 'creator') scopeCreatorSel.value = val;
+        updateFeeView();
+      }
+
+      // 1. pill X → reset scope ke "all"
+      document.getElementById('fee-scope-pills')?.addEventListener('click', (e) => {
+        const clear = e.target.closest('[data-clear-scope]');
+        if (!clear) return;
+        applyFeeScope('all', '');
+      });
+
+      // 2. klik brand/kreator di table → switch scope ke entity itu
+      feeTableBody?.addEventListener('click', (e) => {
+        const brandEl = e.target.closest('[data-filter-brand]');
+        if (brandEl) { applyFeeScope('brand', brandEl.dataset.filterBrand); return; }
+        const creatorEl = e.target.closest('[data-filter-creator]');
+        if (creatorEl) { applyFeeScope('creator', creatorEl.dataset.filterCreator); return; }
+      });
+
+      // 3. klik "scope-target" di stat label → reset scope ke "all"
+      document.body?.addEventListener('click', (e) => {
+        const tgt = e.target.closest('[data-toggle-scope]');
+        if (!tgt) return;
+        applyFeeScope('all', '');
+      });
+
+      // export fee csv
+      document.getElementById('btn-fee-export')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast('Mengekspor data fee ke CSV (simulasi).');
+      });
+
+      // fee approve modal
+      const feeModal = document.getElementById('fee-modal');
+      const feeModalCreator = document.getElementById('fee-modal-creator');
+      const feeModalBrand = document.getElementById('fee-modal-brand');
+      const feeModalTitle = document.getElementById('fee-modal-title');
+      const feeModalAmount = document.getElementById('fee-modal-amount');
+      const feeModalSubmitted = document.getElementById('fee-modal-submitted');
+      const feeModalNote = document.getElementById('fee-modal-note');
+      const feeModalConfirm = document.getElementById('fee-modal-confirm');
+      const feeModalCancel = document.getElementById('fee-modal-cancel');
+      const feeChannelBtns = document.querySelectorAll('#fee-notif-channels .notif-channel');
+      let currentFeeRow = null;
+      let currentFeeChannel = 'email';
+
+      function openFeeModal(row) {
+        currentFeeRow = row;
+        const titleEl = row.querySelector('strong');
+        const brandEl = row.querySelector('.brand-tag');
+        const creatorName = row.querySelector('.row-creator .name');
+        const feeCell = row.querySelector('.col-fee strong');
+        const submittedCell = row.children[4];
+        feeModalTitle.textContent = titleEl ? titleEl.textContent : '—';
+        feeModalBrand.textContent = brandEl ? brandEl.textContent : '—';
+        feeModalCreator.textContent = creatorName ? (creatorName.childNodes[0].textContent || creatorName.textContent).trim().split('\n')[0] : '—';
+        feeModalAmount.textContent = feeCell ? feeCell.textContent : '—';
+        feeModalSubmitted.textContent = submittedCell ? submittedCell.textContent.trim() : '—';
+        feeModalNote.value = '';
+        currentFeeChannel = 'email';
+        feeChannelBtns.forEach(b => b.classList.toggle('active', b.dataset.channel === 'email'));
+        feeModal.classList.add('show');
+      }
+      function closeFeeModal() { feeModal.classList.remove('show'); currentFeeRow = null; }
+      feeModalCancel?.addEventListener('click', closeFeeModal);
+      feeModal?.addEventListener('click', (e) => { if (e.target === feeModal) closeFeeModal(); });
+      feeChannelBtns.forEach(b => b.addEventListener('click', () => {
+        feeChannelBtns.forEach(x => x.classList.toggle('active', x === b));
+        currentFeeChannel = b.dataset.channel;
+      }));
+
+      feeModalConfirm?.addEventListener('click', () => {
+        if (!currentFeeRow) return;
+        const amount = feeModalAmount.textContent || '';
+        const creator = currentFeeRow.dataset.creator;
+        const brand = currentFeeRow.dataset.brand;
+        const title = currentFeeRow.querySelector('strong')?.textContent || '';
+        // update master data so stats + table reflect new status
+        const match = FEE_DATA.find(r =>
+          r.creator === creator && r.brand === brand && r.title === title && r.status !== 'paid'
+        );
+        if (match) match.status = 'paid';
+        // re-render table (row moves/updates visually) + recompute top stats
+        renderFeeTable();
+        updateFeeView();
+        closeFeeModal();
+        const channelLabel = currentFeeChannel === 'email' ? 'email' : currentFeeChannel === 'wa' ? 'WhatsApp' : 'email & WhatsApp';
+        showToast(`Pembayaran ${amount} ditandai lunas. Notifikasi dikirim ke kreator lewat ${channelLabel}.`);
+      });
+
+      // wire fee table action buttons (event delegation on tbody — survives rebuilds)
+      feeTableBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        e.preventDefault();
+        const row = btn.closest('tr');
+        if (!row || row.classList.contains('group-header')) return;
+        if (btn.dataset.act === 'fee-approve') openFeeModal(row);
+        else if (btn.dataset.act === 'fee-detail') {
+          const titleEl = row.querySelector('strong');
+          showToast(`Membuka detail fee untuk "${titleEl ? titleEl.textContent : 'video'}" (simulasi).`);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

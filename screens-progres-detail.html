@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detail progres · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" class="active" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <a href="screens-progres.html" class="meta" style="color: var(--accent);">← Balik ke Progres</a>
+          <h1 id="page-title">Detail video</h1>
+          <p id="page-lead">Lihat brief, script, status, dan feedback admin untuk video ini.</p>
+        </div>
+      </div>
+
+      <div id="content-area">
+        <!-- dirender via JS berdasarkan ?id=pX / ?id=hX -->
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const contentEl = document.getElementById('content-area');
+
+      const STATUS_LABEL = {
+        draft:    'Draft',
+        editing:  'Sedang diedit',
+        review:   'Menunggu review',
+        approved: 'Disetujui',
+        selesaid: 'Selesai',
+        rejected: 'Ditolak',
+        revision: 'Perlu revisi'
+      };
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+      }
+
+      function loadScript(id) {
+        try { return localStorage.getItem('kreatorhub.script-drafts.' + id) || ''; } catch (_) { return ''; }
+      }
+
+      function briefCard(brief, item) {
+        if (!brief) {
+          return `
+            <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="detail-brief">
+              <div class="section-title">
+                <h2 class="h2">Detail brief</h2>
+                <span class="meta brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(item.brand.toUpperCase())}</span>
+              </div>
+              <div class="empty-state" style="margin:0;">
+                Brief asli untuk video ini tidak ditemukan di daftar brief. Cek info di bawah sebagai gantinya.
+              </div>
+              <div style="margin-top: 12px; font-size: 13px;">
+                <strong>Judul video:</strong> ${escapeHtml(item.title)}
+              </div>
+            </div>`;
+        }
+        return `
+          <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="detail-brief">
+            <div class="section-title">
+              <h2 class="h2">Detail brief</h2>
+              <span class="meta brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand.toUpperCase())}</span>
+            </div>
+            <div class="field">
+              <label>Judul brief</label>
+              <div class="form-readonly">${escapeHtml(brief.title)}</div>
+            </div>
+            <div class="field">
+              <label>Requirement</label>
+              <div class="form-readonly">${escapeHtml(brief.meta)}</div>
+            </div>
+            <div class="field">
+              <label>Deadline</label>
+              <div class="form-readonly currency">${escapeHtml(brief.deadline)}</div>
+            </div>
+          </div>`;
+      }
+
+      function statusCard(item) {
+        const label = STATUS_LABEL[item.status] || item.status;
+        const metaTime = item.meta || item.when || '';
+        return `
+          <div class="card detail-status-card" style="margin-bottom: var(--gap-lg);" data-od-id="detail-status">
+            <div class="section-title">
+              <h2 class="h2">Status sekarang</h2>
+              <a href="screens-progres.html" class="meta" style="color: var(--accent);">Ubah di Progres →</a>
+            </div>
+            <div class="detail-status-pill">
+              <span class="status ${item.status}">${escapeHtml(label)}</span>
+            </div>
+            <div class="detail-status-meta">
+              <span>Update terakhir · <strong>${escapeHtml(metaTime)}</strong></span>
+              <span>Brand · <strong>${escapeHtml(item.brand)}</strong></span>
+              <span>ID · <strong>${escapeHtml(item.id)}</strong></span>
+            </div>
+          </div>`;
+      }
+
+      function scriptCard(item) {
+        const saved = loadScript(item.id);
+        const isEditable = (item.status === 'draft' || item.status === 'editing');
+        const titleSuffix = isEditable ? ' (bisa diedit di halaman Script)' : ' (read-only)';
+        return `
+          <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="detail-script">
+            <div class="section-title">
+              <h2 class="h2">Script video${titleSuffix}</h2>
+              ${isEditable
+                ? `<a href="screens-script.html?id=${encodeURIComponent(item.id)}" class="meta" style="color: var(--accent);">Edit lengkap →</a>`
+                : `<span class="meta">read-only</span>`}
+            </div>
+            <div class="detail-script">
+              ${saved.trim()
+                ? `<pre>${escapeHtml(saved)}</pre>`
+                : `<div class="empty-state" style="margin:0;">Belum ada script tersimpan untuk video ini. ${isEditable ? 'Buka halaman Script editor untuk mulai nulis.' : ''}</div>`}
+            </div>
+          </div>`;
+      }
+
+      function feedbackRejectionCard(history) {
+        return `
+          <div class="card detail-feedback ditolak" style="margin-bottom: var(--gap-lg);" data-od-id="detail-feedback-rejection">
+            <h3>❌ Ditolak oleh admin</h3>
+            <div class="meta-author">
+              <span>👤 <strong>${escapeHtml(history.admin || 'Admin')}</strong></span>
+              <span>📅 ${escapeHtml(history.when || '')}</span>
+            </div>
+            <div class="feedback-body">${escapeHtml(history.feedback || 'Tidak ada alasan spesifik yang diberikan.')}</div>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--muted);">
+              Status ini di history sebagai <em>ditolak</em>. Hubungi admin bila perlu diskusi lebih lanjut, atau bikin versi baru.
+            </p>
+          </div>`;
+      }
+
+      function feedbackRevisionCard(history) {
+        return `
+          <div class="card detail-feedback revisi" style="margin-bottom: var(--gap-lg);" data-od-id="detail-feedback-revision">
+            <h3>🔄 Perlu revisi</h3>
+            <div class="meta-author">
+              <span>👤 <strong>${escapeHtml(history.admin || 'Admin')}</strong></span>
+              <span>📅 ${escapeHtml(history.when || '')}</span>
+            </div>
+            <div class="feedback-body">${escapeHtml(history.feedback || 'Admin minta revisi tapi tidak menuliskan detail spesifik.')}</div>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--muted);">Hal yang perlu direvisi:</p>
+            <ul class="checklist">
+              <li>Baca feedback di atas dengan teliti</li>
+              <li>Edit script atau buat versi baru di Script editor</li>
+              <li>Kirim ulang link video lewat halaman Upload</li>
+            </ul>
+          </div>`;
+      }
+
+      function feedbackSelesaiCard(item) {
+        const label = item.status === 'selesaid' ? 'Selesai' : 'Disetujui';
+        return `
+          <div class="card detail-feedback selesaid" style="margin-bottom: var(--gap-lg);" data-od-id="detail-feedback-done">
+            <h3>✓ ${label}</h3>
+            <div class="meta-author">
+              <span>📅 Update · <strong>${escapeHtml(item.meta || item.when || '—')}</strong></span>
+            </div>
+            <p style="margin: 8px 0; font-size: 13px; line-height: 1.6;">
+              Video ini udah ${label.toLowerCase()}. Status final, kreator tinggal menunggu pembayaran masuk kalau belum cair.
+              Detail fee ada di halaman
+              <a href="screens-bayaran.html" style="color: var(--accent);">Bayaran iklan</a>.
+            </p>
+          </div>`;
+      }
+
+      if (!id) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">
+              Detail ini dibuka dari halaman Progres. Balik ke
+              <a href="screens-progres.html" style="color: var(--accent);">daftar progres</a>
+              dan klik <strong>Detail →</strong> di salah satu video.
+            </div>
+          </div>`;
+        return;
+      }
+
+      // cari item: progress dulu, kalau gak ada coba history
+      let item = A.data.progress.find(p => p.id === id);
+      let fromHistory = false;
+      if (!item) {
+        item = A.SHARED_HISTORY.find(h => h.id === id);
+        if (item) fromHistory = true;
+      }
+      // if still not found, check history by reference (overrides won't change history key)
+      if (!item) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">Item tidak ditemukan dengan ID <code>${escapeHtml(id)}</code>.</div>
+          </div>`;
+        return;
+      }
+
+      // cari brief cocok berdasarkan brand + minimal satu kata judul overlap
+      const briefs = A.data.briefs.filter(b => b.brand === item.brand);
+      let matchedBrief = null;
+      for (const b of briefs) {
+        const aWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        const bWords = b.title.toLowerCase().split(/\s+/);
+        const overlap = aWords.some(w => bWords.some(x => x.includes(w) || w.includes(x)));
+        if (overlap) { matchedBrief = b; break; }
+      }
+
+      document.getElementById('page-title').textContent = item.title;
+      document.getElementById('page-lead').textContent  = item.brand + ' · ' + (item.meta || item.when || '—');
+
+      // cari feedback history yang relevan:
+      // - kalau item dari history sendiri → pakai item.feedback langsung
+      // - kalau item dari progress → cari history dgn brand & kata judul cocok, status revision/rejected
+      let relevantHistory = null;
+      if (fromHistory) {
+        relevantHistory = item;
+      } else {
+        const itemWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        const candidates = A.SHARED_HISTORY.filter(h => {
+          if (h.brand !== item.brand) return false;
+          const hWords = h.title.toLowerCase().split(/\s+/);
+          return itemWords.some(w => hWords.includes(w));
+        });
+        relevantHistory = candidates.find(h => h.status === 'rejected' || h.status === 'revision')
+                       || candidates.find(h => h.status === 'approved');
+      }
+
+      // render sections
+      const sections = [];
+      sections.push(briefCard(matchedBrief, item));
+      sections.push(statusCard(item));
+      sections.push(scriptCard(item));
+
+      // feedback card tergantung status
+      if (item.status === 'rejected' || (relevantHistory && relevantHistory.status === 'rejected' && !fromHistory)) {
+        sections.push(feedbackRejectionCard(relevantHistory));
+      } else if (item.status === 'revision' || (relevantHistory && relevantHistory.status === 'revision' && !fromHistory)) {
+        sections.push(feedbackRevisionCard(relevantHistory));
+      } else if (item.status === 'selesaid' || item.status === 'approved' || (relevantHistory && relevantHistory.status === 'approved' && !fromHistory && !fromHistory)) {
+        // Untuk selesaid / approved dari progress atau via history: tampilkan info finalisasi
+        sections.push(feedbackSelesaiCard(item));
+      }
+      // Note: untuk status lain (draft/editing/review) tidak ada feedback khusus
+
+      // actions row
+      const backToProgres = `<a class="btn btn-secondary" href="screens-progres.html">← Balik ke Progres</a>`;
+      const editScript = (item.status === 'draft' || item.status === 'editing')
+        ? `<a class="btn btn-primary" href="screens-script.html?id=${encodeURIComponent(item.id)}">Edit script</a>`
+        : '';
+      const sections_actions = `
+        <div class="detail-actions">
+          ${editScript}
+          ${backToProgres}
+        </div>`;
+
+      contentEl.innerHTML = sections.join('') + sections_actions;
+    });
+  </script>
+</body>
+</html>

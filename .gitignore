@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# env files (Supabase keys, etc — JANGAN KE-COMMIT)
+.env
+.env.local
+.env.*.local
+*.env
+
+# secrets / credentials
+supabase-config.js
+supabase-config.local.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# claude code local settings (per-machine, jangan di-commit)
+.claude/settings.local.json
+
+# logs
+*.log
+npm-debug.log*
+
+# build artifacts
+dist/
+build/

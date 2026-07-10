@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brief &amp; script · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" class="active" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">BRIEF &amp; SCRIPT</p>
+          <h1>Brief dari admin</h1>
+          <p>Klik salah satu brief untuk langsung ke form upload dengan brand sudah terisi.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brand-filter">
+        <p class="eyebrow">FILTER BRAND</p>
+        <div class="brand-chips" id="brand-chips">
+          <button type="button" class="brand-chip active" data-brand="all"><span class="dot"></span>Semua</button>
+          <button type="button" class="brand-chip" data-brand="Gipsy Research"><span class="dot"></span>Gipsy Research</button>
+          <button type="button" class="brand-chip" data-brand="Jamuzen"><span class="dot"></span>Jamuzen</button>
+          <button type="button" class="brand-chip" data-brand="Conventio"><span class="dot"></span>Conventio</button>
+          <button type="button" class="brand-chip" data-brand="CalmadeAI"><span class="dot"></span>CalmadeAI</button>
+        </div>
+      </div>
+
+      <section data-od-id="section-brief">
+        <div class="section-title">
+          <h2 class="h2">Daftar brief aktif</h2>
+          <span class="meta" id="brief-count">—</span>
+        </div>
+        <div class="brief-list" id="brief-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      // sembunyikan brand chip yang gak diizinkan
+      document.querySelectorAll('#brand-chips .brand-chip').forEach(chip => {
+        const b = chip.dataset.brand;
+        if (b === 'all') return;
+        if (!A.userBrands.includes(b)) chip.style.display = 'none';
+      });
+
+      const briefListEl = document.getElementById('brief-list');
+      const BRIEF_STATUS_LABEL = {
+        draft: 'Draft', editing: 'Sedang ditulis', review: 'Siap review',
+        revisi: 'Perlu revisi', approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
+      };
+      function getBriefStateSummary(id) {
+        try {
+          const raw = localStorage.getItem('kreatorhub.brief-state.' + id);
+          if (!raw) return { hasScript: false, status: null };
+          const d = JSON.parse(raw);
+          return {
+            hasScript: !!(d.script && d.script.trim().length > 0),
+            status: d.status || 'draft'
+          };
+        } catch (_) { return { hasScript: false, status: null }; }
+      }
+      function renderBriefs(filterBrand) {
+        briefListEl.innerHTML = '';
+        let briefs = A.data.briefs;
+        if (filterBrand && filterBrand !== 'all') briefs = briefs.filter(b => b.brand === filterBrand);
+        document.getElementById('brief-count').textContent = briefs.length + ' brief · ' + (filterBrand && filterBrand !== 'all' ? filterBrand : 'semua brand');
+        if (!briefs.length) {
+          briefListEl.innerHTML = '<div class="empty-state">Belum ada brief aktif untuk Anda.</div>';
+          return;
+        }
+        briefs.forEach(b => {
+          const card = document.createElement('div');
+          card.className = 'brief-card';
+          card.dataset.brand = b.brand;
+          card.dataset.odId = b.id;
+          const summary = getBriefStateSummary(b.id);
+          const summaryHtml = summary.hasScript
+            ? `<span class="status ${summary.status}">${BRIEF_STATUS_LABEL[summary.status] || summary.status}</span>`
+            : `<span class="brief-summary-pill">Belum dimulai</span>`;
+          card.innerHTML = `
+            <span class="brand-tag">${b.brand.toUpperCase()}</span>
+            <div class="brief-info">
+              <strong>${b.title}</strong>
+              <span class="meta">${b.meta}</span>
+              ${summaryHtml}
+            </div>
+            <div class="deadline">${b.deadline}</div>
+          `;
+          card.addEventListener('click', () => {
+            window.location.href = 'screens-brief-detail.html?id=' + encodeURIComponent(b.id);
+          });
+          briefListEl.appendChild(card);
+        });
+      }
+
+      let currentBrandFilter = 'all';
+      document.querySelectorAll('#brand-chips .brand-chip').forEach(c => {
+        c.addEventListener('click', () => {
+          currentBrandFilter = c.dataset.brand;
+          document.querySelectorAll('#brand-chips .brand-chip').forEach(x => x.classList.toggle('active', x === c));
+          renderBriefs(currentBrandFilter);
+        });
+      });
+
+      renderBriefs('all');
+    });
+  </script>
+</body>
+</html>

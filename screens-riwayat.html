@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Riwayat · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" class="active" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">RIWAYAT</p>
+          <h1>Riwayat video &amp; feedback admin</h1>
+          <p>Semua video yang sudah pernah kamu submit, lengkap dengan feedback dari admin.</p>
+        </div>
+      </div>
+
+      <div class="filter-row" id="status-filter" data-od-id="status-filter">
+        <button type="button" class="filter-pill active" data-status-filter="all">Semua</button>
+        <button type="button" class="filter-pill" data-status-filter="approved">Disetujui</button>
+        <button type="button" class="filter-pill" data-status-filter="review">Review</button>
+        <button type="button" class="filter-pill" data-status-filter="revision">Revisi</button>
+        <button type="button" class="filter-pill" data-status-filter="rejected">Ditolak</button>
+      </div>
+
+      <section data-od-id="section-riwayat">
+        <div class="section-title">
+          <h2 class="h2">Riwayat video</h2>
+          <span class="meta" id="history-count">—</span>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table" id="history-table">
+            <thead>
+              <tr>
+                <th>Judul</th>
+                <th>Brand</th>
+                <th>Status</th>
+                <th>Link</th>
+                <th>Feedback admin</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      const historyTbody = document.getElementById('history-tbody');
+      function renderHistory(statusFilter) {
+        historyTbody.innerHTML = '';
+        let items = A.data.history.filter(h => A.userBrands.includes(h.brand));
+        if (statusFilter && statusFilter !== 'all') items = items.filter(h => h.status === statusFilter);
+        document.getElementById('history-count').textContent = items.length + ' video';
+        if (!items.length) {
+          historyTbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Belum ada video untuk filter ini.</div></td></tr>';
+          return;
+        }
+        items.forEach(h => {
+          const label = ({approved: 'Disetujui', review: 'Review', revision: 'Revisi', rejected: 'Ditolak', draft: 'Draft'})[h.status] || h.status;
+          const adminBlk = h.feedback
+            ? `<strong>${h.admin}</strong>"${h.feedback}"`
+            : '—';
+          const tr = document.createElement('tr');
+          tr.dataset.status = h.status;
+          tr.dataset.brand = h.brand;
+          tr.dataset.odId = h.id;
+          tr.innerHTML = `
+            <td><strong>${h.title}</strong><br><small style="color: var(--muted); font-size: 11px;">${h.when}</small></td>
+            <td>${h.brand}</td>
+            <td><span class="status ${h.status}">${label}</span></td>
+            <td><a href="#" class="link-cell" data-link>${h.link}</a></td>
+            <td class="feedback-cell">${adminBlk}</td>
+          `;
+          tr.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;
+            A.showToast('Membuka detail ' + h.title + ' (simulasi).');
+          });
+          tr.querySelector('.link-cell').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            A.showToast('Membuka video di tab baru (simulasi).');
+          });
+          historyTbody.appendChild(tr);
+        });
+      }
+
+      document.querySelectorAll('#status-filter .filter-pill').forEach(f => {
+        f.addEventListener('click', () => {
+          document.querySelectorAll('#status-filter .filter-pill').forEach(x => x.classList.toggle('active', x === f));
+          renderHistory(f.dataset.statusFilter);
+        });
+      });
+
+      renderHistory('all');
+    });
+  </script>
+</body>
+</html>

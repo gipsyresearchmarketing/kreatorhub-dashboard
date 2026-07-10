@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Status bayaran iklan · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Buka profil kamu">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" class="active" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">BAYARAN IKLAN</p>
+          <h1>Status fee per video</h1>
+          <p>Setiap video yang sudah disetujui admin akan diberikan fee, ditransfer ke rekening kamu.</p>
+        </div>
+      </div>
+
+      <!-- BANK INFO -->
+      <div class="bank-card" data-od-id="bank-card">
+        <div class="bank-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10h18M5 10v9h14v-9M12 4l9 6H3l9-6zM9 14h6"/></svg>
+        </div>
+        <div class="bank-info" id="bank-info">
+          <span class="bank-label">Tujuan transfer</span>
+          <span class="bank-empty">Belum ada rekening — tambahkan di halaman <a href="screens-akun.html" style="color: var(--accent);">Akun</a> supaya fee bisa ditransfer.</span>
+        </div>
+        <a href="screens-akun.html" class="btn btn-secondary bank-edit" id="bank-edit" style="display: none;">Edit rekening</a>
+      </div>
+
+      <!-- STAT TILES -->
+      <div class="stat-grid" data-od-id="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Total fee</span>
+          <span class="stat-value currency" id="stat-total">—</span>
+          <span class="stat-meta">akumulasi semua video</span>
+        </div>
+        <div class="stat-tile success">
+          <span class="stat-label">Sudah dibayar</span>
+          <span class="stat-value currency" id="stat-paid">—</span>
+          <span class="stat-meta" id="stat-paid-count">0 video</span>
+        </div>
+        <div class="stat-tile warn">
+          <span class="stat-label">Menunggu</span>
+          <span class="stat-value currency" id="stat-pending">—</span>
+          <span class="stat-meta" id="stat-pending-count">0 video</span>
+        </div>
+      </div>
+
+      <!-- FILTER -->
+      <div class="filter-row" id="status-filter" data-od-id="status-filter" style="margin-bottom: var(--gap-md);">
+        <button type="button" class="filter-pill active" data-filter="all">Semua</button>
+        <button type="button" class="filter-pill" data-filter="paid">Sudah dibayar</button>
+        <button type="button" class="filter-pill" data-filter="pending">Menunggu</button>
+      </div>
+
+      <!-- TABLE -->
+      <section data-od-id="section-bayaran">
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table" id="payment-table">
+            <thead>
+              <tr>
+                <th>Video</th>
+                <th>Brand</th>
+                <th>Fee</th>
+                <th>Status</th>
+                <th>Dikirim</th>
+                <th>Dibayar</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody id="payment-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      function formatRp(n) {
+        if (typeof n !== 'number') return '—';
+        return 'Rp ' + n.toLocaleString('id-ID');
+      }
+
+      // ---- bank info card ----
+      const bankName = A.session.bankName || '';
+      const bankAccount = A.session.bankAccount || '';
+      const bankInfo = document.getElementById('bank-info');
+      const bankEdit = document.getElementById('bank-edit');
+      if (bankAccount) {
+        bankInfo.innerHTML = `
+          <span class="bank-label">Tujuan transfer</span>
+          <span class="bank-name">${bankName || '(nama bank belum diisi)'}</span>
+          <span class="bank-account">${bankAccount}</span>
+        `;
+        bankEdit.style.display = '';
+      }
+
+      // ---- stat tiles ----
+      const payments = A.data.payments || [];
+      const totalFee   = payments.reduce((s, p) => s + p.fee, 0);
+      const paidItems  = payments.filter(p => p.status === 'paid');
+      const pendItems  = payments.filter(p => p.status === 'pending');
+      const paidTotal  = paidItems.reduce((s, p) => s + p.fee, 0);
+      const pendTotal  = pendItems.reduce((s, p) => s + p.fee, 0);
+      document.getElementById('stat-total').textContent   = formatRp(totalFee);
+      document.getElementById('stat-paid').textContent    = formatRp(paidTotal);
+      document.getElementById('stat-pending').textContent = formatRp(pendTotal);
+      document.getElementById('stat-paid-count').textContent    = paidItems.length + ' video';
+      document.getElementById('stat-pending-count').textContent = pendItems.length + ' video';
+
+      // ---- table ----
+      const tbody = document.getElementById('payment-tbody');
+      function renderRows(filter) {
+        let items = payments;
+        if (filter && filter !== 'all') items = items.filter(p => p.status === filter);
+        if (!items.length) {
+          tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Belum ada data untuk filter ini.</div></td></tr>';
+          return;
+        }
+        const statusLabel = { paid: 'Sudah dibayar', pending: 'Menunggu' };
+        tbody.innerHTML = items.map(p => `
+          <tr data-od-id="${p.id}">
+            <td><strong>${p.videoTitle}</strong></td>
+            <td>${p.brand}</td>
+            <td class="fee-cell">${formatRp(p.fee)}</td>
+            <td><span class="payment-status ${p.status}">${statusLabel[p.status] || p.status}</span></td>
+            <td>${p.submittedAt}</td>
+            <td>${p.paidAt || '<span style="color: var(--muted);">—</span>'}</td>
+            <td class="note-cell">${p.note || ''}</td>
+          </tr>
+        `).join('');
+      }
+
+      document.querySelectorAll('#status-filter .filter-pill').forEach(f => {
+        f.addEventListener('click', function () {
+          document.querySelectorAll('#status-filter .filter-pill').forEach(x => x.classList.toggle('active', x === f));
+          renderRows(f.dataset.filter);
+        });
+      });
+
+      renderRows('all');
+    });
+  </script>
+</body>
+</html>

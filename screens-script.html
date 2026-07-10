@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Script · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Akun yang sedang login">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" class="active" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <a href="screens-creator.html" class="meta" style="color: var(--accent);">← Kembali ke Ringkasan</a>
+          <h1 id="page-title">Script &amp; brief</h1>
+          <p id="page-lead">Tulis script untuk brief ini, lalu update statusnya.</p>
+        </div>
+      </div>
+
+      <div id="content-area">
+        <!-- dirender via JS berdasarkan ?id=pX -->
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const contentEl = document.getElementById('content-area');
+
+      const STATUS_OPTIONS = [
+        { value: 'draft',    label: 'Draft' },
+        { value: 'editing',  label: 'Sedang diedit' },
+        { value: 'review',   label: 'Menunggu review' }
+      ];
+      const STATUS_LABEL = { draft: 'Draft', editing: 'Sedang diedit', review: 'Menunggu review', approved: 'Disetujui', rejected: 'Ditolak' };
+
+      if (!id) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">
+              Brief ini dibuka dari aktivitas terbaru di dashboard. Balik ke
+              <a href="screens-creator.html" style="color: var(--accent);">Ringkasan</a>
+              dan klik salah satu draft / editing di bagian "Aktivitas terbaru".
+            </div>
+          </div>`;
+        return;
+      }
+
+      const item = A.data.progress.find(p => p.id === id);
+      if (!item) {
+        contentEl.innerHTML = `
+          <div class="card">
+            <div class="empty-state">Brief tidak ditemukan. ID: <code>${id}</code></div>
+          </div>`;
+        return;
+      }
+
+      // find brief paling relevan: brand + kemiripan judul
+      const briefs = A.data.briefs.filter(b => b.brand === item.brand);
+      let matchedBrief = null;
+      for (const b of briefs) {
+        const aWords = item.title.toLowerCase().split(/\s+/);
+        const bWords = b.title.toLowerCase().split(/\s+/);
+        const overlap = aWords.filter(w => w.length > 3 && bWords.some(x => x.includes(w) || w.includes(x)));
+        if (overlap.length > 0) { matchedBrief = b; break; }
+      }
+
+      // load saved script draft (kalau ada)
+      const SCRIPT_KEY = 'kreatorhub.script-drafts.' + id;
+      const savedScript = (() => { try { return localStorage.getItem(SCRIPT_KEY) || ''; } catch (_) { return ''; } })();
+
+      document.getElementById('page-title').textContent = item.title;
+      document.getElementById('page-lead').textContent  = item.brand + ' · ' + item.meta;
+
+      const statusOptionsHtml = STATUS_OPTIONS
+        .map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+
+      const briefBlock = matchedBrief ? `
+        <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-info">
+          <div class="section-title">
+            <h2 class="h2">Detail brief</h2>
+            <span class="meta brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${matchedBrief.brand.toUpperCase()}</span>
+          </div>
+          <div class="field">
+            <label>Judul brief</label>
+            <div class="form-readonly">${matchedBrief.title}</div>
+          </div>
+          <div class="field">
+            <label>Requirement</label>
+            <div class="form-readonly">${matchedBrief.meta}</div>
+          </div>
+          <div class="field">
+            <label>Deadline</label>
+            <div class="form-readonly currency">${matchedBrief.deadline}</div>
+          </div>
+        </div>` : `
+        <div class="card" style="margin-bottom: var(--gap-lg);">
+          <div class="empty-state" style="margin:0;">
+            Detail brief untuk video ini tidak ditemukan di daftar brief. Tulis script berdasarkan info di atas, lalu update statusnya.
+          </div>
+        </div>`;
+
+      contentEl.innerHTML = `
+        ${briefBlock}
+        <div class="card" data-od-id="script-editor">
+          <div class="section-title">
+            <h2 class="h2">Script editor</h2>
+            <span class="status ${item.status}">${STATUS_LABEL[item.status] || item.status}</span>
+          </div>
+
+          <div class="field">
+            <label for="script-text">Tulis script kamu</label>
+            <textarea id="script-text" class="textarea" rows="14"
+                      placeholder="Mulai ketik script untuk video ini. Misal:&#10;&#10;Hook: ...&#10;Body: ...&#10;CTA: ...">${savedScript.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c])}</textarea>
+            <span class="field-hint" id="script-meta-hint">Draft tersimpan otomatis di browser lokal.</span>
+          </div>
+
+          <div class="field">
+            <label for="status-select">Update status brief</label>
+            <select id="status-select" class="select">
+              ${statusOptionsHtml}
+            </select>
+            <span class="field-hint">Pilih status barunya lalu klik Simpan untuk permanenkan.</span>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" id="btn-save-status">Simpan status</button>
+            <button type="button" class="btn btn-secondary" id="btn-save-script">Simpan script</button>
+            <button type="button" class="btn btn-ghost" id="btn-back">← Balik ke ringkasan</button>
+          </div>
+
+          <div class="form-success" id="save-success" style="margin-top: 14px;">
+            Tersimpan. Balik ke dashboard untuk lihat status yang baru.
+          </div>
+        </div>
+      `;
+
+      // preselect current status
+      const selectEl = document.getElementById('status-select');
+      if (STATUS_OPTIONS.some(o => o.value === item.status)) {
+        selectEl.value = item.status;
+      } else {
+        // fallback kalau current status udah masuk history (approved/rejected)
+        selectEl.value = 'draft';
+      }
+
+      // wire save buttons
+      document.getElementById('btn-save-status').addEventListener('click', function () {
+        const newStatus = selectEl.value;
+        A.setStatusOverride(id, newStatus);
+        const successEl = document.getElementById('save-success');
+        successEl.textContent = 'Status diperbarui → ' + STATUS_LABEL[newStatus];
+        successEl.classList.add('show');
+        A.showToast('Status diperbarui: ' + STATUS_LABEL[newStatus]);
+        // auto-dismiss + optional redirect
+        setTimeout(() => successEl.classList.remove('show'), 4000);
+      });
+
+      document.getElementById('btn-save-script').addEventListener('click', function () {
+        const text = document.getElementById('script-text').value;
+        try { localStorage.setItem(SCRIPT_KEY, text); } catch (_) {}
+        A.showToast('Script draft tersimpan di browser.');
+        const successEl = document.getElementById('save-success');
+        successEl.textContent = 'Script tersimpan di lokal.';
+        successEl.classList.add('show');
+        setTimeout(() => successEl.classList.remove('show'), 4000);
+      });
+
+      document.getElementById('btn-back').addEventListener('click', function () {
+        window.location.href = 'screens-creator.html';
+      });
+    });
+  </script>
+</body>
+</html>

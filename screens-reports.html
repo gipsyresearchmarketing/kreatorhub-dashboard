@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Laporan detail · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --warn:    oklch(72% 0.14 70);
+      --danger:  oklch(58% 0.18 25);
+
+      --font-display: 'Poppins', system-ui, sans-serif;
+      --font-body:    'Poppins', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: clamp(24px, 3vw, 32px);
+      --fs-h2: clamp(20px, 2.4vw, 26px);
+      --fs-h3: 16px;
+      --fs-body: 14px;
+      --fs-meta: 11px;
+
+      --gap-md: 16px;
+      --gap-lg: 24px;
+      --gap-xl: 36px;
+      --gutter: 24px;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    p { text-wrap: pretty; margin: 0; }
+    h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
+
+    .topnav { position: sticky; top: 0; z-index: 100; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 12px; padding-inline: var(--gutter); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav-right { display: flex; align-items: center; gap: var(--gap-md); }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; }
+
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 50px); }
+    @media (max-width: 820px) { .shell { grid-template-columns: 1fr; } .side-nav { display: none; } }
+
+    .side-nav { border-right: 1px solid var(--border); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .side-nav .brand-mini { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .side-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); }
+    .side-nav a:hover { background: var(--fg-soft); color: var(--fg); }
+    .side-nav a.active { background: var(--accent-soft); color: var(--fg); font-weight: 500; box-shadow: inset 2px 0 0 0 var(--accent); }
+    .side-nav svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+    .side-nav a.active svg { opacity: 1; }
+    .side-nav .role-tag { padding: 0 10px 12px; font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+    .main { padding: 28px var(--gutter) 64px; max-width: 100%; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-md); flex-wrap: wrap; margin-bottom: var(--gap-lg); }
+    .page-head h1 { font-size: var(--fs-h1); line-height: 1.1; letter-spacing: -0.015em; font-weight: 600; }
+    .page-head p { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 56ch; }
+    .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0; }
+    .h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.15; letter-spacing: -0.015em; font-weight: 600; }
+    .h3 { font-size: var(--fs-h3); font-weight: 600; }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: var(--radius); border: 1px solid transparent; font-size: 13px; font-weight: 500; font-family: inherit; transition: background 0.15s ease, border-color 0.15s ease; }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; padding-inline: 6px; font-size: 12px; }
+    .btn-ghost:hover { color: var(--fg); }
+    .btn svg { width: 14px; height: 14px; }
+
+    .brand-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--muted); }
+    .row-creator { display: flex; align-items: center; gap: 8px; }
+    .row-creator .name { font-size: 13px; line-height: 1.3; }
+    .row-creator .name small { display: block; color: var(--muted); font-size: 11px; }
+
+    .status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
+    .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.review    { background: color-mix(in oklch, var(--warn) 18%, transparent);    color: color-mix(in oklch, var(--warn) 55%, var(--fg)); }
+    .status.approved  { background: color-mix(in oklch, var(--success) 18%, transparent); color: color-mix(in oklch, var(--success) 55%, var(--fg)); }
+    .status.revision  { background: color-mix(in oklch, var(--accent) 14%, transparent);  color: var(--accent); }
+    .status.rejected  { background: color-mix(in oklch, var(--danger) 16%, transparent);  color: color-mix(in oklch, var(--danger) 55%, var(--fg)); }
+    .status.draft     { background: var(--fg-soft); color: var(--muted); }
+    .status.paid      { background: color-mix(in oklch, var(--success) 18%, transparent); color: color-mix(in oklch, var(--success) 55%, var(--fg)); }
+    .status.pending   { background: color-mix(in oklch, var(--warn) 18%, transparent);    color: color-mix(in oklch, var(--warn) 55%, var(--fg)); }
+
+    /* profile dropdown (topnav) */
+    .profile-menu { position: relative; }
+    .profile-trigger {
+      display: flex; align-items: center; gap: 10px;
+      background: transparent; border: 0; cursor: pointer;
+      padding: 4px 8px; border-radius: var(--radius);
+      font-family: inherit; color: inherit;
+    }
+    .profile-trigger:hover, .profile-trigger[aria-expanded="true"] { background: var(--fg-soft); }
+    .profile-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 6px;
+      min-width: 260px; z-index: 200;
+      box-shadow: 0 8px 24px color-mix(in oklch, var(--fg) 12%, transparent);
+    }
+    .profile-dropdown[hidden] { display: none; }
+    .profile-dropdown-header { padding: 10px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+    .profile-name { font-weight: 500; font-size: 13px; }
+    .profile-email { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 2px; }
+    .profile-section { padding: 4px 0; }
+    .profile-section + .profile-section { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
+    .profile-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 4px 12px; font-family: var(--font-mono); }
+    .profile-item {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 8px 12px;
+      background: transparent; border: 0; cursor: pointer;
+      font: inherit; font-size: 13px; text-align: left;
+      color: var(--fg); border-radius: 6px; text-decoration: none;
+    }
+    .profile-item:hover { background: var(--fg-soft); }
+    .profile-item svg { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
+    .profile-item-danger { color: var(--danger); }
+    .profile-item-danger svg { opacity: 1; }
+
+    /* reports page sections */
+    .reports-grid { display: grid; gap: var(--gap-lg); }
+    .report-section { scroll-margin-top: 80px; }
+    .report-section .section-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 4px;
+    }
+    .report-section .section-head h2 { font-size: 22px; }
+    .report-section .section-lead { color: var(--muted); font-size: 13px; margin-top: 0; margin-bottom: 14px; }
+    .report-section .metric-strip {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      background: var(--fg-soft); border-radius: var(--radius); padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .report-section .metric-strip .left .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono); }
+    .report-section .metric-strip .left .value { font-size: 32px; font-weight: 600; line-height: 1; margin-top: 4px; }
+    .report-section .metric-strip .right { font-size: 12px; color: var(--muted); font-family: var(--font-mono); text-align: right; line-height: 1.6; }
+    .report-section .item-list { display: flex; flex-direction: column; }
+    .report-section .item-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .report-section .item-row:last-child { border-bottom: 0; }
+    .report-section .item-row strong { display: block; font-weight: 500; font-size: 13px; line-height: 1.3; }
+    .report-section .item-row .row-meta { display: block; font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 3px; }
+    .report-section .item-row .item-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: var(--radius); font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* modal */
+    .modal-backdrop { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 35%, transparent); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+    .modal-backdrop.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 480px; padding: 24px; }
+    .modal h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 6px; font-weight: 600; }
+    .modal p.lead { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .modal label { font-size: 12px; color: var(--muted); display: block; margin: 4px 0 8px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .btn-danger { background: var(--danger); color: var(--surface); border-color: var(--danger); }
+    .btn-danger:hover { background: color-mix(in oklch, var(--danger) 88%, black); }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a href="screens-admin1.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="profile-menu" id="profile-menu">
+          <button type="button" class="profile-trigger" id="profile-trigger" aria-haspopup="true" aria-expanded="false">
+            <span class="meta">Admin · mira@gipsygroup.id</span>
+            <div class="avatar">MR</div>
+          </button>
+          <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
+            <div class="profile-dropdown-header">
+              <div class="profile-name">Mira R.</div>
+              <div class="profile-email">mira@gipsygroup.id</div>
+            </div>
+            <div class="profile-section">
+              <div class="profile-section-label">Kreator</div>
+              <button type="button" class="profile-item" data-menu="reset-pw" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Reset password kreator
+              </button>
+              <button type="button" class="profile-item" data-menu="nonaktif" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+                Nonaktifkan kreator
+              </button>
+              <button type="button" class="profile-item" data-menu="tambah-kreator" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+                Tambah kreator baru
+              </button>
+            </div>
+            <div class="profile-section">
+              <div class="profile-section-label">Notifikasi</div>
+              <button type="button" class="profile-item" data-menu="notif" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+                Pengaturan notifikasi
+              </button>
+            </div>
+            <div class="profile-section">
+              <div class="profile-section-label">Akun</div>
+              <button type="button" class="profile-item" data-menu="profile" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+                Profil admin
+              </button>
+              <button type="button" class="profile-item profile-item-danger" data-menu="logout" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+                Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav">
+      <div class="brand-mini">Admin</div>
+      <div class="role-tag">Mode admin</div>
+      <a href="screens-admin1.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        Antrian review
+      </a>
+      <a href="screens-admin1.html#briefs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-admin1.html#creators">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+        Kreator
+      </a>
+      <a href="screens-reports.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Laporan detail
+      </a>
+      <a href="screens-admin1.html#fee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Fee kreator
+      </a>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">LAPORAN DETAIL</p>
+          <h1 style="margin-top: 6px;">Rincian metrik &amp; data</h1>
+          <p>Klik stat card di panel manapun (Antrian review, Laporan, Fee) untuk langsung ke halaman lengkap di sini. Setiap section punya metrik utama + breakdown item.</p>
+        </div>
+        <a href="screens-admin1.html" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Kembali ke dasbor
+        </a>
+      </div>
+
+      <div class="reports-grid">
+
+        <!-- 1. KREATOR AKTIF -->
+        <section class="report-section" id="kreator-aktif">
+          <div class="section-head">
+            <h2 class="h2">Kreator aktif</h2>
+            <span class="meta">dari dasbor Antrian review</span>
+          </div>
+          <p class="section-lead">Semua kreator dengan status aktif di Gipsy Group, lengkap dengan brand yang dijalankan &amp; jumlah video mereka.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Jumlah kreator</div>
+              <div class="value" id="kreator-aktif-value">5</div>
+            </div>
+            <div class="right" id="kreator-aktif-meta">5 aktif</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="kreator-aktif-list"></div>
+          </div>
+        </section>
+
+        <!-- 2. MENUNGGU REVIEW -->
+        <section class="report-section" id="menunggu-review">
+          <div class="section-head">
+            <h2 class="h2">Menunggu review</h2>
+            <span class="meta">dari dasbor Antrian review</span>
+          </div>
+          <p class="section-lead">Semua video di antrian yang belum ada keputusan final dari admin. Termasuk status review, revisi, dan draft.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total antrian</div>
+              <div class="value" id="menunggu-review-value">5</div>
+            </div>
+            <div class="right" id="menunggu-review-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="menunggu-review-list"></div>
+          </div>
+        </section>
+
+        <!-- 3. DISETUJUI MINGGU INI -->
+        <section class="report-section" id="disetujui-minggu">
+          <div class="section-head">
+            <h2 class="h2">Disetujui minggu ini</h2>
+            <span class="meta">dari dasbor Antrian review</span>
+          </div>
+          <p class="section-lead">Video yang disetujui admin dalam 7 hari terakhir, lengkap dengan fee yang dibayarkan per video.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total disetujui</div>
+              <div class="value" id="disetujui-minggu-value">—</div>
+            </div>
+            <div class="right" id="disetujui-minggu-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="disetujui-minggu-list"></div>
+          </div>
+        </section>
+
+        <!-- 4. BRIEF AKTIF -->
+        <section class="report-section" id="brief-aktif">
+          <div class="section-head">
+            <h2 class="h2">Brief aktif</h2>
+            <span class="meta">dari dasbor Antrian review</span>
+          </div>
+          <p class="section-lead">Brief yang sedang berjalan dan ditujukan ke kreator. Lengkap dengan target brand, kreator yang dituju, dan deadline.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Brief berjalan</div>
+              <div class="value" id="brief-aktif-value">3</div>
+            </div>
+            <div class="right" id="brief-aktif-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="brief-aktif-list"></div>
+          </div>
+        </section>
+
+        <!-- 5. DISETUJUI -->
+        <section class="report-section" id="disetujui">
+          <div class="section-head">
+            <h2 class="h2">Disetujui (periode laporan)</h2>
+            <span class="meta">dari panel Laporan</span>
+          </div>
+          <p class="section-lead">Video yang disetujui admin dalam periode laporan. Gabungan antrian review yang sudah disetujui + fee yang sudah lunas.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total disetujui</div>
+              <div class="value" id="disetujui-value">—</div>
+            </div>
+            <div class="right" id="disetujui-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="disetujui-list"></div>
+          </div>
+        </section>
+
+        <!-- 6. REVISI DIMINTA -->
+        <section class="report-section" id="revisi-diminta">
+          <div class="section-head">
+            <h2 class="h2">Revisi diminta</h2>
+            <span class="meta">dari panel Laporan</span>
+          </div>
+          <p class="section-lead">Video yang dikembalikan ke kreator untuk revisi. Termasuk breakdown berapa yang sudah diresubmit vs masih dalam revisi.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total revisi</div>
+              <div class="value" id="revisi-diminta-value">1</div>
+            </div>
+            <div class="right" id="revisi-diminta-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="revisi-diminta-list"></div>
+          </div>
+        </section>
+
+        <!-- 7. DITOLAK -->
+        <section class="report-section" id="ditolak">
+          <div class="section-head">
+            <h2 class="h2">Ditolak</h2>
+            <span class="meta">dari panel Laporan</span>
+          </div>
+          <p class="section-lead">Video yang ditolak permanen oleh admin. Tidak masuk ke perhitungan approval rate.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total ditolak</div>
+              <div class="value" id="ditolak-value">2</div>
+            </div>
+            <div class="right" id="ditolak-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="ditolak-list"></div>
+          </div>
+        </section>
+
+        <!-- 8. PENDAPATAN DIBAYARKAN -->
+        <section class="report-section" id="pendapatan-dibayarkan">
+          <div class="section-head">
+            <h2 class="h2">Pendapatan dibayarkan</h2>
+            <span class="meta">dari panel Laporan</span>
+          </div>
+          <p class="section-lead">Total fee yang sudah ditransfer ke kreator, dengan breakdown per kreator (siapa aja yang udah dibayar dan berapa).</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total dibayarkan</div>
+              <div class="value" id="pendapatan-dibayarkan-value">—</div>
+            </div>
+            <div class="right" id="pendapatan-dibayarkan-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="pendapatan-dibayarkan-list"></div>
+          </div>
+        </section>
+
+        <!-- 9. FEE TOTAL -->
+        <section class="report-section" id="fee-total">
+          <div class="section-head">
+            <h2 class="h2">Total fee</h2>
+            <span class="meta">dari panel Fee kreator</span>
+          </div>
+          <p class="section-lead">Akumulasi fee semua video (paid + pending) yang masuk ke sistem. Lengkap per video dengan status badge.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total fee</div>
+              <div class="value" id="fee-total-value">—</div>
+            </div>
+            <div class="right" id="fee-total-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="fee-total-list"></div>
+          </div>
+        </section>
+
+        <!-- 10. SUDAH DIBAYAR -->
+        <section class="report-section" id="fee-sudah-dibayar">
+          <div class="section-head">
+            <h2 class="h2">Sudah dibayar</h2>
+            <span class="meta">dari panel Fee kreator</span>
+          </div>
+          <p class="section-lead">Video yang fee-nya sudah ditransfer ke kreator. Per video dengan submit date dan nominal fee.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total dibayar</div>
+              <div class="value" id="fee-sudah-dibayar-value">—</div>
+            </div>
+            <div class="right" id="fee-sudah-dibayar-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="fee-sudah-dibayar-list"></div>
+          </div>
+        </section>
+
+        <!-- 11. MENUNGGU APPROVAL -->
+        <section class="report-section" id="fee-menunggu-approval">
+          <div class="section-head">
+            <h2 class="h2">Menunggu approval</h2>
+            <span class="meta">dari panel Fee kreator</span>
+          </div>
+          <p class="section-lead">Video yang fee-nya masih menunggu approval admin. Antrian batch, biasanya dibayar mingguan.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Total menunggu</div>
+              <div class="value" id="fee-menunggu-approval-value">—</div>
+            </div>
+            <div class="right" id="fee-menunggu-approval-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="fee-menunggu-approval-list"></div>
+          </div>
+        </section>
+
+        <!-- 12. RATA-RATA FEE -->
+        <section class="report-section" id="fee-rata-rata">
+          <div class="section-head">
+            <h2 class="h2">Rata-rata fee per video</h2>
+            <span class="meta">dari panel Fee kreator</span>
+          </div>
+          <p class="section-lead">Distribusi fee per video dari data fee saat ini, dikelompokkan dalam bucket harga. Berguna untuk insight pricing kreator.</p>
+          <div class="metric-strip">
+            <div class="left">
+              <div class="label">Rata-rata</div>
+              <div class="value" id="fee-rata-rata-value">—</div>
+            </div>
+            <div class="right" id="fee-rata-rata-meta">—</div>
+          </div>
+          <div class="card">
+            <div class="item-list" id="fee-rata-rata-list"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- logout confirmation modal -->
+  <div class="modal-backdrop" id="logout-modal">
+    <div class="modal" style="max-width: 420px;">
+      <h3>Keluar dari admin?</h3>
+      <p class="lead">Sesi kamu akan diakhiri. Kreator tidak akan menerima notifikasi apa-apa.</p>
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span style="color: var(--muted);">Login sebagai</span>
+          <span class="num" style="font-family: var(--font-mono);">Mira R. · mira@gipsygroup.id</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="logout-cancel">Batal</button>
+        <button class="btn btn-danger" id="logout-confirm">Ya, keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      // ---- auth guard: butuh session role admin ----
+      (function guardAdmin() {
+        try {
+          const raw = localStorage.getItem('kreatorhub.session');
+          if (!raw) { window.location.replace('screens-login.html'); return; }
+          const s = JSON.parse(raw);
+          if (!s || s.role !== 'admin') { window.location.replace('screens-login.html'); return; }
+        } catch (_) { window.location.replace('screens-login.html'); return; }
+      })();
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove('show'), 2400);
+      }
+
+      // ---- profile dropdown ----
+      const profileTrigger = document.getElementById('profile-trigger');
+      const profileDropdown = document.getElementById('profile-dropdown');
+      function toggleProfile(force) {
+        const willOpen = force ?? profileDropdown.hidden;
+        profileDropdown.hidden = !willOpen;
+        profileTrigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
+      function onProfileClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleProfile();
+      }
+      profileTrigger?.addEventListener('click', onProfileClick);
+      document.getElementById('profile-menu')?.addEventListener('click', onProfileClick);
+      document.addEventListener('click', (e) => {
+        if (!profileDropdown.hidden && !profileDropdown.contains(e.target) && e.target !== profileTrigger && !profileTrigger.contains(e.target)) {
+          toggleProfile(false);
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (!profileDropdown.hidden) toggleProfile(false);
+          document.getElementById('logout-modal')?.classList.remove('show');
+        }
+      });
+      document.querySelectorAll('#profile-dropdown [data-menu]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const action = btn.dataset.menu;
+          toggleProfile(false);
+          switch (action) {
+            case 'reset-pw':
+            case 'nonaktif':
+            case 'tambah-kreator':
+              window.location.href = 'screens-admin-settings.html#kelola-kreator';
+              break;
+            case 'notif':
+              window.location.href = 'screens-admin-settings.html#notifikasi';
+              break;
+            case 'profile':
+              window.location.href = 'screens-admin-settings.html#profil-admin';
+              break;
+            case 'logout':
+              document.getElementById('logout-modal')?.classList.add('show');
+              break;
+          }
+        });
+      });
+
+      // logout modal
+      const logoutModal = document.getElementById('logout-modal');
+      document.getElementById('logout-cancel')?.addEventListener('click', () => logoutModal.classList.remove('show'));
+      logoutModal?.addEventListener('click', (e) => { if (e.target === logoutModal) logoutModal.classList.remove('show'); });
+      document.getElementById('logout-confirm')?.addEventListener('click', () => {
+        const keep2fa = document.getElementById('logout-keep-2fa')?.checked; // undefined kalau ga ada
+        logoutModal.classList.remove('show');
+        try { localStorage.removeItem('kreatorhub.session'); } catch (_) {}
+        showToast(keep2fa ? 'Sesi diakhiri. Device ini tetap diingat.' : 'Sesi diakhiri.');
+        setTimeout(() => { window.location.href = 'screens-login.html'; }, 600);
+      });
+
+      // ---- data: same source as admin1 ----
+      const CREATORS = [
+        { key: 'sasa',   name: 'Sasa A.',   brands: ['JAMUZEN'],         video: 5, status: 'Aktif' },
+        { key: 'dimas',  name: 'Dimas H.',  brands: ['CALMADEA.I'],      video: 3, status: 'Aktif' },
+        { key: 'rangga', name: 'Rangga P.', brands: ['CONVENTIO'],       video: 7, status: 'Aktif' },
+        { key: 'maya',   name: 'Maya N.',   brands: ['GIPSY RESEARCH', 'JAMUZEN'], video: 2, status: 'Aktif' },
+        { key: 'aulia',  name: 'Aulia T.',  brands: ['JAMUZEN'],         video: 9, status: 'Aktif' }
+      ];
+
+      const QUEUE = [
+        { status: 'review',   brand: 'JAMUZEN',   creator: 'Sasa A.',   title: 'Unboxing Kopi Sachet — V2',                deadline: '3 hari lagi' },
+        { status: 'review',   brand: 'CALMADEA.I',creator: 'Dimas H.',  title: 'Tutorial AI: Thumbnail 5 Menit',         deadline: '5 hari lagi' },
+        { status: 'revision', brand: 'JAMUZEN',   creator: 'Sasa A.',   title: 'POV Pagi Barista — Revisi',             deadline: 'Kemarin' },
+        { status: 'review',   brand: 'CONVENTIO', creator: 'Rangga P.', title: 'Teaser Creative Day — Variasi B',       deadline: '2 hari lagi' },
+        { status: 'draft',    brand: 'GIPSY RESEARCH', creator: 'Maya N.', title: 'Eksperimen Kopi Dingin V3',         deadline: '—' }
+      ];
+
+      const BRIEFS = [
+        { title: 'Video unboxing kopi sachet — 30 detik',   brand: 'JAMUZEN',        creator: 'Sasa A.',  deadline: '15 Jul', status: 'aktif' },
+        { title: 'Tutorial AI: bikin thumbnail 5 menit',     brand: 'CALMADEA.I',     creator: 'Dimas H.', deadline: '17 Jul', status: 'aktif' },
+        { title: 'Teaser Creative Day — 15 detik',           brand: 'CONVENTIO',      creator: 'Rangga P.',deadline: '—',      status: 'aktif' },
+        { title: 'Riset audiens Gen Z — 3 take wawancara',    brand: 'GIPSY RESEARCH', creator: '—',       deadline: '22 Jul', status: 'draft' }
+      ];
+
+      // parse days ago for fee data
+      function parseDays(text) {
+        if (!text) return 999;
+        const t = text.toLowerCase().trim();
+        if (t.includes('jam')) return 0;
+        if (t === 'kemarin') return 1;
+        let m;
+        if ((m = t.match(/(\d+)\s*minggu/))) return parseInt(m[1], 10) * 7;
+        if (t.includes('minggu lalu')) return 7;
+        if ((m = t.match(/(\d+)\s*hari/))) return parseInt(m[1], 10);
+        return 999;
+      }
+      function fmtRp(n) {
+        if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(1).replace('.', ',') + ' jt';
+        if (n >= 1e3) return 'Rp ' + Math.round(n/1e3) + ' rb';
+        return 'Rp ' + n.toLocaleString('id-ID');
+      }
+
+      const FEE = [
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 5,  submitted: '5 hari lalu' },
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 14, submitted: '2 minggu lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 1,  submitted: 'kemarin' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 0,  submitted: '5 jam lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 2,  submitted: '2 hari lalu' },
+        { status: 'paid',     brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
+        { status: 'paid',     brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 5,  submitted: '5 hari lalu' },
+        { status: 'pending',  brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 0,  submitted: '5 jam lalu' },
+        { status: 'pending',  brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 1,  submitted: 'kemarin' },
+        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 14, submitted: '2 minggu lalu' },
+        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 7,  submitted: 'minggu lalu' },
+        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 7,  submitted: '1 minggu lalu' },
+        { status: 'pending',  brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 1,  submitted: '1 hari lalu' },
+        { status: 'pending',  brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 1,  submitted: 'kemarin' },
+        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 3,  submitted: '3 hari lalu' },
+        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 2,  submitted: '2 hari lalu' },
+        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 0,  submitted: '5 jam lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 1,  submitted: '1 hari lalu' },
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 7,  submitted: 'minggu lalu' },
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
+        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 7,  submitted: 'minggu lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 5,  submitted: '5 hari lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 3,  submitted: '3 hari lalu' },
+        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 1,  submitted: '1 hari lalu' }
+      ];
+
+      // ---- rendering helpers ----
+      function statusBadge(status) {
+        const map = {
+          review:   { cls: 'review',   label: 'Review' },
+          revision: { cls: 'revision', label: 'Revisi' },
+          draft:    { cls: 'draft',    label: 'Draft' },
+          paid:     { cls: 'paid',     label: 'Lunas' },
+          pending:  { cls: 'pending',  label: 'Menunggu' },
+          approved: { cls: 'approved', label: 'Disetujui' },
+          rejected: { cls: 'rejected', label: 'Ditolak' },
+          aktif:    { cls: 'review',   label: 'Aktif' }
+        };
+        const s = map[status] || { cls: 'draft', label: status };
+        return `<span class="status ${s.cls}">${s.label}</span>`;
+      }
+      function rowItem(opts) {
+        return `<div class="item-row">
+          <div>
+            <strong>${opts.title}</strong>
+            ${opts.meta ? `<span class="row-meta">${opts.meta}</span>` : ''}
+          </div>
+          ${opts.right ? `<div>${opts.right}</div>` : ''}
+        </div>`;
+      }
+
+      // ---- section renderers ----
+      function renderKreatorAktif() {
+        document.getElementById('kreator-aktif-value').textContent = CREATORS.length;
+        const byStatus = {};
+        CREATORS.forEach(c => byStatus[c.status] = (byStatus[c.status] || 0) + 1);
+        document.getElementById('kreator-aktif-meta').textContent = Object.entries(byStatus).map(([k, v]) => `${v} ${k}`).join(' · ');
+        document.getElementById('kreator-aktif-list').innerHTML = CREATORS.map(c => rowItem({
+          title: c.name,
+          meta: `<span style="color: var(--muted);">Brand:</span> ${c.brands.join(', ')} · <span style="color: var(--muted);">Video:</span> ${c.video}`,
+          right: statusBadge(c.status.toLowerCase())
+        })).join('');
+      }
+
+      function renderMenungguReview() {
+        const items = QUEUE;
+        document.getElementById('menunggu-review-value').textContent = items.length;
+        const overdue = items.filter(r => /kemarin|terlambat/i.test(r.deadline)).length;
+        document.getElementById('menunggu-review-meta').textContent = `${overdue} terlambat · ${items.length - overdue} on-time`;
+        const statusMap = { review: { cls: 'review', label: 'Review' }, revision: { cls: 'revision', label: 'Revisi' }, draft: { cls: 'draft', label: 'Draft' } };
+        document.getElementById('menunggu-review-list').innerHTML = items.map(r => {
+          const s = statusMap[r.status] || statusMap.review;
+          const isOverdue = /kemarin|terlambat/i.test(r.deadline);
+          return rowItem({
+            title: r.title,
+            meta: `<span style="color: var(--muted);">Brand:</span> ${r.brand} · <span style="color: var(--muted);">Kreator:</span> ${r.creator} · <span style="color: var(--muted);">Deadline:</span> ${r.deadline}`,
+            right: `<span class="status ${isOverdue ? 'rejected' : s.cls}">${isOverdue ? 'Terlambat' : s.label}</span>`
+          });
+        }).join('');
+      }
+
+      function renderDisetujuiMinggu() {
+        const items = FEE.filter(f => f.status === 'paid' && f.days <= 7);
+        const total = items.reduce((s, f) => s + f.fee, 0);
+        document.getElementById('disetujui-minggu-value').textContent = items.length;
+        document.getElementById('disetujui-minggu-meta').textContent = `${items.length} video · ${fmtRp(total)}`;
+        document.getElementById('disetujui-minggu-list').innerHTML = items.length ? items.map(f => rowItem({
+          title: f.title || f.name,
+          meta: `<span style="color: var(--muted);">Kreator:</span> ${f.name} · <span style="color: var(--muted);">Brand:</span> ${f.brand} · <span style="color: var(--muted);">Disubmit:</span> ${f.submitted}`,
+          right: `<span class="item-value">${fmtRp(f.fee)}</span>`
+        })).join('') : '<p class="meta" style="padding: 8px 0;">Tidak ada video disetujui dalam 7 hari terakhir.</p>';
+      }
+
+      function renderBriefAktif() {
+        const items = BRIEFS.filter(b => b.status === 'aktif');
+        document.getElementById('brief-aktif-value').textContent = items.length;
+        const brands = new Set(items.map(b => b.brand));
+        document.getElementById('brief-aktif-meta').textContent = `${brands.size} brand · ${items.length} brief`;
+        document.getElementById('brief-aktif-list').innerHTML = items.map(b => rowItem({
+          title: b.title,
+          meta: `<span style="color: var(--muted);">Brand:</span> ${b.brand} · <span style="color: var(--muted);">Kreator:</span> ${b.creator || '—'} · <span style="color: var(--muted);">Deadline:</span> ${b.deadline}`,
+          right: `<span class="status review">Aktif</span>`
+        })).join('');
+      }
+
+      function renderDisetujui() {
+        const queueReview = QUEUE.filter(q => q.status === 'review');
+        const paid = FEE.filter(f => f.status === 'paid');
+        const items = [...queueReview.map(q => ({ ...q, _kind: 'review' })), ...paid.map(p => ({ ...p, _kind: 'paid' }))];
+        document.getElementById('disetujui-value').textContent = items.length;
+        document.getElementById('disetujui-meta').textContent = `${queueReview.length} di antrian · ${paid.length} sudah dibayar`;
+        document.getElementById('disetujui-list').innerHTML = items.map(it => {
+          if (it._kind === 'review') {
+            return rowItem({
+              title: it.title,
+              meta: `<span style="color: var(--muted);">Brand:</span> ${it.brand} · <span style="color: var(--muted);">Kreator:</span> ${it.creator}`,
+              right: statusBadge('approved')
+            });
+          }
+          return rowItem({
+            title: it.name + ' — ' + it.brand,
+            meta: `<span style="color: var(--muted);">Disubmit:</span> ${it.submitted}`,
+            right: `<span class="item-value">${fmtRp(it.fee)}</span>`
+          });
+        }).join('');
+      }
+
+      function renderRevisiDiminta() {
+        const items = QUEUE.filter(q => q.status === 'revision');
+        document.getElementById('revisi-diminta-value').textContent = items.length;
+        const resub = items.filter(r => /diresubmit|resubmit/i.test(r.deadline)).length;
+        document.getElementById('revisi-diminta-meta').textContent = `${resub} sudah diresubmit · ${items.length - resub} masih dalam revisi`;
+        document.getElementById('revisi-diminta-list').innerHTML = items.length ? items.map(r => rowItem({
+          title: r.title,
+          meta: `<span style="color: var(--muted);">Brand:</span> ${r.brand} · <span style="color: var(--muted);">Kreator:</span> ${r.creator}`,
+          right: statusBadge('revision')
+        })).join('') : '<p class="meta" style="padding: 8px 0;">Tidak ada video dalam revisi.</p>';
+      }
+
+      function renderDitolak() {
+        const items = [
+          { title: 'Mini Vlog Liburan — Take 1',          brand: 'JAMUZEN',  creator: 'Putri L.', reason: 'Luar scope brief' },
+          { title: 'Behind The Scene Lipat Kertas (v2)',  brand: 'CONVENTIO',creator: 'Bayu D.',  reason: 'Kualitas di bawah standar' }
+        ];
+        document.getElementById('ditolak-value').textContent = items.length;
+        document.getElementById('ditolak-meta').textContent = '1 butuh diskusi manual · 1 final';
+        document.getElementById('ditolak-list').innerHTML = items.map(it => rowItem({
+          title: it.title,
+          meta: `<span style="color: var(--muted);">Brand:</span> ${it.brand} · <span style="color: var(--muted);">Kreator:</span> ${it.creator} · <span style="color: var(--muted);">Alasan:</span> ${it.reason}`,
+          right: statusBadge('rejected')
+        })).join('');
+      }
+
+      function renderPendapatanDibayarkan() {
+        const paid = FEE.filter(f => f.status === 'paid');
+        const total = paid.reduce((s, f) => s + f.fee, 0);
+        const byCreator = {};
+        paid.forEach(f => {
+          if (!byCreator[f.creator]) byCreator[f.creator] = { name: f.name, total: 0, n: 0 };
+          byCreator[f.creator].total += f.fee;
+          byCreator[f.creator].n += 1;
+        });
+        document.getElementById('pendapatan-dibayarkan-value').textContent = fmtRp(total);
+        document.getElementById('pendapatan-dibayarkan-meta').textContent = `${Object.keys(byCreator).length} kreator · ${paid.length} video lunas`;
+        const sorted = Object.values(byCreator).sort((a, b) => b.total - a.total);
+        document.getElementById('pendapatan-dibayarkan-list').innerHTML = sorted.map(c => rowItem({
+          title: c.name,
+          meta: `${c.n} video lunas`,
+          right: `<span class="item-value">${fmtRp(c.total)}</span>`
+        })).join('');
+      }
+
+      function renderFeeTotal() {
+        const total = FEE.reduce((s, f) => s + f.fee, 0);
+        document.getElementById('fee-total-value').textContent = fmtRp(total);
+        document.getElementById('fee-total-meta').textContent = `${FEE.length} video · ${new Set(FEE.map(f => f.brand)).size} brand · ${new Set(FEE.map(f => f.creator)).size} kreator`;
+        document.getElementById('fee-total-list').innerHTML = FEE.map(f => rowItem({
+          title: `${f.name} — ${f.brand}`,
+          meta: `<span style="color: var(--muted);">Disubmit:</span> ${f.submitted}`,
+          right: `${statusBadge(f.status === 'paid' ? 'paid' : 'pending')} <span class="item-value" style="margin-left: 8px;">${fmtRp(f.fee)}</span>`
+        })).join('');
+      }
+
+      function renderFeeSudahDibayar() {
+        const items = FEE.filter(f => f.status === 'paid');
+        const total = items.reduce((s, f) => s + f.fee, 0);
+        document.getElementById('fee-sudah-dibayar-value').textContent = fmtRp(total);
+        const creators = new Set(items.map(f => f.creator)).size;
+        document.getElementById('fee-sudah-dibayar-meta').textContent = `${items.length} video · ${creators} kreator`;
+        document.getElementById('fee-sudah-dibayar-list').innerHTML = items.map(f => rowItem({
+          title: `${f.name} — ${f.brand}`,
+          meta: `<span style="color: var(--muted);">Disubmit:</span> ${f.submitted}`,
+          right: `<span class="item-value">${fmtRp(f.fee)}</span>`
+        })).join('');
+      }
+
+      function renderFeeMenungguApproval() {
+        const items = FEE.filter(f => f.status === 'pending');
+        const total = items.reduce((s, f) => s + f.fee, 0);
+        document.getElementById('fee-menunggu-approval-value').textContent = fmtRp(total);
+        const creators = new Set(items.map(f => f.creator)).size;
+        document.getElementById('fee-menunggu-approval-meta').textContent = `${items.length} video · ${creators} kreator · antrian batch`;
+        document.getElementById('fee-menunggu-approval-list').innerHTML = items.map(f => rowItem({
+          title: `${f.name} — ${f.brand}`,
+          meta: `<span style="color: var(--muted);">Disubmit:</span> ${f.submitted}`,
+          right: `<span class="item-value">${fmtRp(f.fee)}</span>`
+        })).join('');
+      }
+
+      function renderFeeRataRata() {
+        const fees = FEE.map(f => f.fee);
+        const total = fees.reduce((s, f) => s + f, 0);
+        const avg = fees.length ? total / fees.length : 0;
+        const min = fees.length ? Math.min(...fees) : 0;
+        const max = fees.length ? Math.max(...fees) : 0;
+        document.getElementById('fee-rata-rata-value').textContent = fmtRp(avg);
+        document.getElementById('fee-rata-rata-meta').textContent = `termurah ${fmtRp(min)} · termahal ${fmtRp(max)}`;
+        const buckets = { '<Rp 200rb': 0, 'Rp 200–350rb': 0, 'Rp 350–500rb': 0, '>Rp 500rb': 0 };
+        FEE.forEach(f => {
+          if (f.fee < 200000) buckets['<Rp 200rb']++;
+          else if (f.fee < 350000) buckets['Rp 200–350rb']++;
+          else if (f.fee < 500000) buckets['Rp 350–500rb']++;
+          else buckets['>Rp 500rb']++;
+        });
+        document.getElementById('fee-rata-rata-list').innerHTML = Object.entries(buckets).map(([k, v]) => rowItem({
+          title: k,
+          meta: `${v} video`,
+          right: ''
+        })).join('');
+      }
+
+      // render all
+      renderKreatorAktif();
+      renderMenungguReview();
+      renderDisetujuiMinggu();
+      renderBriefAktif();
+      renderDisetujui();
+      renderRevisiDiminta();
+      renderDitolak();
+      renderPendapatanDibayarkan();
+      renderFeeTotal();
+      renderFeeSudahDibayar();
+      renderFeeMenungguApproval();
+      renderFeeRataRata();
+
+      // scroll to hash on load
+      if (window.location.hash) {
+        const target = document.querySelector(window.location.hash);
+        if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profil · Dasbor kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="creator-common.css">
+  <style>
+    .akun-stack { display: flex; flex-direction: column; gap: var(--gap-lg); max-width: 720px; }
+    .akun-block { display: flex; flex-direction: column; gap: 14px; }
+    .akun-block h2 { font-size: 16px; font-weight: 600; }
+    .akun-block .block-sub { font-size: 12px; color: var(--muted); margin-top: -4px; }
+
+    /* foto + identitas */
+    .foto-row { display: flex; align-items: center; gap: 18px; }
+    .foto-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center;
+      font-family: var(--font-display); font-size: 28px; font-weight: 600;
+      flex-shrink: 0; overflow: hidden; border: 1px solid var(--border);
+    }
+    .foto-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .foto-info { display: flex; flex-direction: column; gap: 4px; }
+    .foto-info .foto-name { font-size: 18px; font-weight: 600; }
+    .foto-info .foto-handle { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .foto-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .foto-actions .btn { padding: 7px 12px; font-size: 12px; }
+
+    /* kontak */
+    .field-status { font-size: 11px; margin-top: 4px; color: var(--muted); }
+    .field-status.filled { color: var(--success); }
+    .field-status.filled::before { content: '✓ '; }
+
+    /* password */
+    .pw-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .pw-row-3 { grid-template-columns: 1fr; } }
+
+    /* save bar */
+    .save-bar { position: sticky; bottom: 16px; display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 6px 20px color-mix(in oklch, var(--fg) 8%, transparent); }
+    .save-bar .btn { width: auto; padding: 12px 24px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <div class="user-info" id="user-info" title="Buka profil kamu">
+          <span class="avatar" id="session-avatar">SA</span>
+          <div class="user-meta">
+            <span class="user-name" id="session-name">Sasa A.</span>
+            <a class="user-sub" id="session-meta" href="screens-akun.html">Cek profil →</a>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav" data-od-id="side-nav">
+      <div class="brand-mini">Kreator</div>
+      <a href="screens-creator.html" data-od-id="nav-ringkasan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Ringkasan
+      </a>
+      <a href="screens-brief.html" data-od-id="nav-brief">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-upload.html" data-od-id="nav-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
+        Kirim link video
+      </a>
+      <a href="screens-progres.html" data-od-id="nav-progres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Progres
+      </a>
+      <a href="screens-riwayat.html" data-od-id="nav-riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Riwayat
+      </a>
+      <a href="screens-bayaran.html" data-od-id="nav-bayaran">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Bayaran iklan
+      </a>
+
+      <div class="signout">
+        <a href="screens-login.html" id="signout-link">↩ Keluar</a>
+      </div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="page-head" data-od-id="page-head">
+        <div>
+          <p class="eyebrow">PROFIL &amp; PENGATURAN</p>
+          <h1>Akun kamu</h1>
+          <p>Lengkapi WhatsApp &amp; email supaya tidak ketinggalan info dari admin. Nama dan username sudah diset saat admin bikin akun.</p>
+        </div>
+      </div>
+
+      <form class="akun-stack" id="akun-form" onsubmit="return false;">
+
+        <!-- FOTO + IDENTITAS -->
+        <div class="card akun-block" data-od-id="block-foto">
+          <h2>Foto &amp; identitas</h2>
+          <p class="block-sub">Foto profil muncul di topbar dan komentar. Nama &amp; username hanya bisa diubah admin.</p>
+
+          <div class="foto-row">
+            <div class="foto-avatar" id="foto-avatar">
+              <span id="foto-initials">SA</span>
+            </div>
+            <div class="foto-info">
+              <span class="foto-name" id="foto-name">Sasa A.</span>
+              <span class="foto-handle"><span style="color: var(--muted);">@</span><span id="foto-username">sasa.id</span> · kreator</span>
+              <input type="file" id="foto-input" accept="image/*" style="display: none;" />
+              <div class="foto-actions">
+                <button type="button" class="btn btn-secondary" id="btn-upload-foto">Upload foto</button>
+                <button type="button" class="btn btn-ghost" id="btn-remove-foto" style="display: none;">Hapus foto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KONTAK (Nama + WA + Email) -->
+        <div class="card akun-block" data-od-id="block-kontak">
+          <h2>Kontak</h2>
+          <p class="block-sub">Disimpan dengan tombol <strong>Simpan perubahan</strong> di bawah.</p>
+          <div class="field">
+            <label for="acc-displayname">Nama tampil</label>
+            <input type="text" class="input" id="acc-displayname" placeholder="mis. Sasa Aulia" />
+            <div class="field-status" id="status-nama">Nama yang dilihat admin dan kreator lain</div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="acc-wa">Nomor WhatsApp <span class="req">*</span></label>
+              <input type="tel" class="input" id="acc-wa" placeholder="+62 812-3456-7890" />
+              <div class="field-status" id="status-wa">Wajib diisi untuk notifikasi review</div>
+            </div>
+            <div class="field">
+              <label for="acc-email">Email <span class="req">*</span></label>
+              <input type="email" class="input" id="acc-email" placeholder="nama@email.com" />
+              <div class="field-status" id="status-email">Wajib diisi untuk newsletter &amp; notifikasi tambahan</div>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="acc-bank-name">Nama bank</label>
+              <input type="text" class="input" id="acc-bank-name" placeholder="mis. BCA, Mandiri, BNI" />
+              <div class="field-status">Tujuan transfer fee per video</div>
+            </div>
+            <div class="field">
+              <label for="acc-bank-account">Nomor rekening <span class="req">*</span></label>
+              <input type="text" class="input" id="acc-bank-account" placeholder="mis. 1234567890" inputmode="numeric" />
+              <div class="field-status" id="status-bank">Wajib diisi untuk transfer fee iklan</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="card akun-block" data-od-id="block-password">
+          <h2>Ubah password</h2>
+          <p class="block-sub">Min. 8 karakter. Disimpan terpisah dengan tombol di bawah — tidak ikut <em>Simpan perubahan</em>.</p>
+          <div class="form-error" id="err-pw"></div>
+          <div class="form-success" id="ok-pw"></div>
+          <div class="pw-row-3">
+            <div class="field">
+              <label for="pw-current">Password saat ini</label>
+              <input type="password" class="input" id="pw-current" autocomplete="current-password" />
+            </div>
+            <div class="field">
+              <label for="pw-new">Password baru</label>
+              <input type="password" class="input" id="pw-new" autocomplete="new-password" />
+            </div>
+            <div class="field">
+              <label for="pw-confirm">Konfirmasi</label>
+              <input type="password" class="input" id="pw-confirm" autocomplete="new-password" />
+            </div>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary" id="btn-save-pw">Ubah password</button>
+          </div>
+        </div>
+
+        <!-- SAVE BAR -->
+        <div class="save-bar" data-od-id="save-bar">
+          <span class="meta" style="margin-right: auto;" id="save-status">Belum ada perubahan.</span>
+          <button type="button" class="btn btn-primary" id="btn-save-all">Simpan perubahan</button>
+        </div>
+
+      </form>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="creator-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const A = window.CreatorApp;
+      if (!A) return;
+
+      // ---- identitas & foto ----
+      document.getElementById('foto-name').textContent = A.session.displayName || '—';
+      document.getElementById('foto-username').textContent = A.session.username || '—';
+      const fotoInitials = (A.session.displayName || A.session.username || '?')
+        .split(' ').map(s => s[0]).join('').substring(0, 2).toUpperCase() || '?';
+      document.getElementById('foto-initials').textContent = fotoInitials;
+
+      function renderFoto() {
+        const avatar = document.getElementById('foto-avatar');
+        if (A.session.photo) {
+          avatar.innerHTML = '<img src="' + A.session.photo + '" alt="Foto profil">';
+          document.getElementById('btn-remove-foto').style.display = '';
+        } else {
+          avatar.innerHTML = '<span id="foto-initials">' + fotoInitials + '</span>';
+          document.getElementById('btn-remove-foto').style.display = 'none';
+        }
+      }
+      renderFoto();
+
+      // upload foto
+      document.getElementById('btn-upload-foto').addEventListener('click', function () {
+        document.getElementById('foto-input').click();
+      });
+      document.getElementById('foto-input').addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { A.showToast('Ukuran foto maksimal 2 MB.', 'error'); return; }
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          A.session.photo = ev.target.result;
+          try { localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session)); } catch (err) { A.showToast('Gagal simpan foto: ' + err.message, 'error'); return; }
+          renderFoto();
+          A.renderTopbar();
+          A.showToast('Foto profil diperbarui.');
+          markDirty();
+        };
+        reader.readAsDataURL(file);
+      });
+      document.getElementById('btn-remove-foto').addEventListener('click', function () {
+        delete A.session.photo;
+        try { localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session)); } catch (_) {}
+        renderFoto();
+        A.renderTopbar();
+        A.showToast('Foto profil dihapus.');
+        markDirty();
+      });
+
+      // ---- kontak (Nama + WA + Email + Bank) ----
+      const namaEl = document.getElementById('acc-displayname');
+      const waEl = document.getElementById('acc-wa');
+      const emailEl = document.getElementById('acc-email');
+      const bankNameEl = document.getElementById('acc-bank-name');
+      const bankAccountEl = document.getElementById('acc-bank-account');
+      namaEl.value = A.session.displayName || '';
+      waEl.value = A.session.wa || '';
+      emailEl.value = A.session.email || '';
+      bankNameEl.value = A.session.bankName || '';
+      bankAccountEl.value = A.session.bankAccount || '';
+
+      function updateContactStatus() {
+        const namaOk = namaEl.value.trim().length >= 2;
+        const waOk = waEl.value.trim().length > 0;
+        const emOk = emailEl.value.trim().length > 0;
+        const bankOk = bankAccountEl.value.trim().length >= 4;
+        const s0 = document.getElementById('status-nama');
+        s0.textContent = namaOk ? 'Tersimpan' : 'Nama yang dilihat admin dan kreator lain';
+        s0.classList.toggle('filled', namaOk);
+        const s1 = document.getElementById('status-wa');
+        s1.textContent = waOk ? 'Tersimpan' : 'Wajib diisi untuk notifikasi review';
+        s1.classList.toggle('filled', waOk);
+        const s2 = document.getElementById('status-email');
+        s2.textContent = emOk ? 'Tersimpan' : 'Wajib diisi untuk newsletter & notifikasi tambahan';
+        s2.classList.toggle('filled', emOk);
+        const s3 = document.getElementById('status-bank');
+        s3.textContent = bankOk ? 'Tersimpan' : 'Wajib diisi untuk transfer fee iklan';
+        s3.classList.toggle('filled', bankOk);
+      }
+      updateContactStatus();
+      namaEl.addEventListener('input', markDirty);
+      waEl.addEventListener('input', markDirty);
+      emailEl.addEventListener('input', markDirty);
+      bankNameEl.addEventListener('input', markDirty);
+      bankAccountEl.addEventListener('input', markDirty);
+
+      function markDirty() {
+        document.getElementById('save-status').textContent = 'Ada perubahan yang belum disimpan.';
+      }
+
+      // ---- save all (Nama + WA + Email + Bank) ----
+      document.getElementById('btn-save-all').addEventListener('click', function () {
+        const nama = namaEl.value.trim();
+        const wa = waEl.value.trim();
+        const em = emailEl.value.trim();
+        const bankName = bankNameEl.value.trim();
+        const bankAccount = bankAccountEl.value.trim();
+
+        if (nama.length < 2) { A.showToast('Nama tampil minimal 2 karakter.', 'error'); namaEl.focus(); return; }
+        if (!wa) { A.showToast('Nomor WhatsApp wajib diisi.', 'error'); waEl.focus(); return; }
+        if (!/^[+\d][\d\s\-()]{5,}$/.test(wa)) { A.showToast('Format nomor WhatsApp tidak valid.', 'error'); waEl.focus(); return; }
+        if (!em) { A.showToast('Email wajib diisi.', 'error'); emailEl.focus(); return; }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { A.showToast('Format email tidak valid.', 'error'); emailEl.focus(); return; }
+        if (!bankAccount) { A.showToast('Nomor rekening wajib diisi.', 'error'); bankAccountEl.focus(); return; }
+        if (bankAccount.length < 4) { A.showToast('Nomor rekening terlalu pendek.', 'error'); bankAccountEl.focus(); return; }
+        if (!/^[\d\s\-]+$/.test(bankAccount)) { A.showToast('Nomor rekening hanya boleh angka, spasi, atau strip.', 'error'); bankAccountEl.focus(); return; }
+
+        A.session.displayName = nama;
+        A.session.wa = wa;
+        A.session.email = em;
+        A.session.bankName = bankName;
+        A.session.bankAccount = bankAccount;
+        try {
+          localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session));
+          A.showToast('Perubahan disimpan.');
+          document.getElementById('save-status').textContent = 'Tersimpan · ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          // update topbar + identitas block
+          document.getElementById('session-name').textContent = nama;
+          document.getElementById('foto-name').textContent = nama;
+          // regenerate avatar initials kalau foto belum di-upload
+          if (!A.session.photo) {
+            const newInitials = nama.split(' ').map(s => s[0]).join('').substring(0, 2).toUpperCase() || '?';
+            document.getElementById('foto-initials').textContent = newInitials;
+            document.getElementById('session-avatar').textContent = newInitials;
+          }
+          updateContactStatus();
+        } catch (e) {
+          A.showToast('Gagal simpan: ' + e.message, 'error');
+        }
+      });
+
+      // ---- password (terpisah) ----
+      document.getElementById('btn-save-pw').addEventListener('click', function () {
+        const cur   = document.getElementById('pw-current').value;
+        const newPw = document.getElementById('pw-new').value;
+        const conf  = document.getElementById('pw-confirm').value;
+        const err = document.getElementById('err-pw');
+        const ok  = document.getElementById('ok-pw');
+        err.classList.remove('show'); ok.classList.remove('show');
+        if (!cur || !newPw || !conf) { err.textContent = 'Semua field harus diisi.'; err.classList.add('show'); return; }
+        if (newPw.length < 8)        { err.textContent = 'Password baru minimal 8 karakter.'; err.classList.add('show'); return; }
+        if (newPw !== conf)          { err.textContent = 'Konfirmasi password tidak cocok.'; err.classList.add('show'); return; }
+        ok.textContent = 'Password diubah. (Simulasi — di production, akan diminta login ulang.)';
+        ok.classList.add('show');
+        document.getElementById('pw-current').value = '';
+        document.getElementById('pw-new').value = '';
+        document.getElementById('pw-confirm').value = '';
+      });
+
+      // ---- reset password block dihapus — Ubah password sudah cukup ----
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gipsy Group · Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --danger:  oklch(58% 0.18 25);
+
+      --font-display: 'Poppins', system-ui, sans-serif;
+      --font-body:    'Poppins', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+    p { text-wrap: pretty; margin: 0; }
+    h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
+
+    /* ===== LOGIN VIEW (default) ===== */
+    body.login-view {
+      background:
+        radial-gradient(ellipse 1200px 600px at 50% -10%, color-mix(in oklch, var(--accent) 7%, transparent), transparent 60%),
+        var(--bg);
+    }
+    .topnav { background: color-mix(in oklch, var(--bg) 80%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .topnav-inner { max-width: 1080px; margin-inline: auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav .back { font-size: 13px; color: var(--muted); }
+    .topnav .back:hover { color: var(--fg); }
+
+    .wrap { flex: 1; display: grid; place-items: center; padding: 36px 24px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow:
+        0 1px 2px color-mix(in oklch, var(--fg) 4%, transparent),
+        0 8px 24px color-mix(in oklch, var(--fg) 6%, transparent);
+    }
+    .card .brand-lockup { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .card .brand-lockup .logo-mark { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+    .card .brand-lockup .logo-text { font-weight: 600; font-size: 15px; line-height: 1.1; }
+    .card .brand-lockup .logo-text small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 0.02em; margin-top: 2px; }
+    .card h1 { font-size: 24px; letter-spacing: -0.015em; font-weight: 600; margin-bottom: 6px; }
+    .card .lead { color: var(--muted); font-size: 14px; margin-bottom: 22px; line-height: 1.55; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--fg); font: inherit; font-size: 14px; font-family: inherit; }
+    .input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .field.has-error .input { border-color: var(--danger); }
+    .password-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .password-label-row label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .password-label-row .forgot { font-size: 12px; color: var(--accent); }
+    .password-wrap { position: relative; }
+    .password-wrap .input { padding-right: 42px; }
+    .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: 0; padding: 6px; color: var(--muted); cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .password-toggle:hover { color: var(--fg); background: var(--fg-soft); }
+    .password-toggle svg { width: 18px; height: 18px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 18px; border-radius: var(--radius); border: 1px solid transparent; font-size: 14px; font-weight: 500; font-family: inherit; transition: background 0.15s ease; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover:not(:disabled) { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .spinner { width: 14px; height: 14px; border: 2px solid color-mix(in oklch, var(--surface) 30%, transparent); border-top-color: var(--surface); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .pagefoot { padding-block: 28px; color: var(--muted); font-size: 12px; text-align: center; }
+    .helper { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+    .helper a { color: var(--accent); }
+    .helper a:hover { text-decoration: underline; }
+
+    /* toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 200; background: var(--fg); color: var(--surface); max-width: 360px; text-align: center; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--danger); }
+    .toast.success { background: var(--success); }
+
+    /* ===== DASHBOARD VIEW (after login) ===== */
+    body.dashboard-view { background: var(--bg); }
+    .dashboard-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .dashboard-bar .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+    .dashboard-bar .who strong { color: var(--fg); font-weight: 500; }
+    .dashboard-bar .who .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; }
+    .dashboard-bar .actions { display: flex; align-items: center; gap: 8px; }
+    .dashboard-bar .actions .role-pill { font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+    .dashboard-bar .actions .btn { width: auto; padding: 6px 12px; font-size: 12px; }
+    .dashboard-bar .actions .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+    .dashboard-bar .actions .btn-ghost:hover { color: var(--fg); border-color: var(--fg); }
+    .dashboard-bar .actions .btn-primary { padding: 6px 14px; }
+
+    .dashboard-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+    .dashboard-welcome { max-width: 540px; text-align: center; }
+    .dashboard-welcome .mark { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 24px; margin: 0 auto 18px; }
+    .dashboard-welcome h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+    .dashboard-welcome p { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
+    .dashboard-welcome .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; font-size: 15px; font-weight: 500; color: var(--surface); background: var(--accent); border: 0; border-radius: var(--radius); text-decoration: none; }
+    .dashboard-welcome .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .dashboard-welcome .alt-link { display: block; margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .dashboard-welcome .alt-link a { color: var(--accent); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="login-view">
+
+  <!-- ===== LOGIN VIEW ===== -->
+  <div id="login-screen">
+    <header class="topnav">
+      <div class="topnav-inner">
+        <div class="brand-logo">
+          <span class="logo-mark">G</span>
+          <span class="logo-text">Gipsy Group</span>
+        </div>
+        <a href="../index.html" class="back">← Kembali</a>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="card" data-od-id="login-card">
+        <div class="brand-lockup">
+          <div class="logo-mark">G</div>
+          <div class="logo-text">Gipsy Group<small>Internal workspace</small></div>
+        </div>
+        <p class="eyebrow" style="margin-top: -12px; margin-bottom: 8px;">MASUK</p>
+        <h1 style="margin-bottom: 6px;">Hai! Senang ketemu lagi 😊</h1>
+        <p class="lead">Login dengan username &amp; kata sandi yang admin berikan lewat WhatsApp. Kami siap bantu kamu lanjut kerja hari ini.</p>
+
+        <form id="login-form" data-od-id="login-form" autocomplete="on">
+          <div class="field" id="field-username">
+            <label for="username">Username</label>
+            <input type="text" class="input" id="username" name="username" placeholder="mis. sasa.id" autocomplete="username" autocapitalize="none" spellcheck="false" />
+          </div>
+          <div class="field" id="field-password">
+            <div class="password-label-row">
+              <label for="password">Kata sandi</label>
+              <a href="https://wa.me/6281234567890?text=Halo%20admin%2C%20saya%20lupa%20kata%20sandi%20akun%20saya.%20Bisa%20dibantu%20reset%3F" target="_blank" rel="noopener" class="forgot">Lupa sandi?</a>
+            </div>
+            <div class="password-wrap">
+              <input type="password" class="input" id="password" name="password" placeholder="Kata sandi kamu" autocomplete="current-password" />
+              <button type="button" class="password-toggle" id="pw-toggle" aria-label="Lihat atau sembunyikan kata sandi" title="Lihat/sembunyikan">
+                <svg id="pw-icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="pw-icon-eyeoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none;"><path d="M3 3l18 18M10.6 10.6a3 3 0 004.2 4.2M9.9 5.1A10 10 0 0112 5c6.5 0 10 7 10 7a13.4 13.4 0 01-3.1 4M6.1 6.1A13.4 13.4 0 002 12s3.5 7 10 7c1.7 0 3.2-.4 4.6-1"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit-btn">Masuk</button>
+        </form>
+
+        <div class="helper">
+          Jika mengalami kendala, silakan <a href="https://wa.me/6281234567890?text=Halo%20admin%2C%20saya%20kesulitan%20login%20ke%20Gipsy%20Group.%20Bisa%20dibantu%3F" target="_blank" rel="noopener"><strong>klik di sini</strong></a> untuk terhubung dengan admin via WhatsApp.
+        </div>
+      </div>
+    </div>
+
+    <footer class="pagefoot">© 2026 Gipsy Group · Internal tool</footer>
+  </div>
+
+  <!-- ===== DASHBOARD VIEW ===== -->
+  <div id="dashboard-screen" class="hidden" style="display: flex; flex-direction: column; flex: 1; min-height: 100vh;">
+    <div class="dashboard-bar">
+      <div class="who">
+        <span class="avatar" id="dash-avatar">SA</span>
+        <span>Login sebagai <strong id="dash-name">Sasa A.</strong> <span style="color: var(--muted);">·</span> <span id="dash-username" class="meta" style="font-family: var(--font-mono);">sasa.id</span></span>
+      </div>
+      <div class="actions">
+        <span class="role-pill" id="dash-role">kreator</span>
+        <button type="button" class="btn btn-ghost" id="btn-switch">Ganti akun</button>
+        <button type="button" class="btn btn-primary" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+    <div class="dashboard-content" id="dashboard-content">
+      <div class="dashboard-welcome" id="dashboard-welcome">
+        <div class="mark" id="welcome-mark">SA</div>
+        <h1 id="welcome-title">Halo, Sasa 👋</h1>
+        <p id="welcome-desc">Anda login sebagai <strong id="welcome-name">Sasa A.</strong>. Klik tombol di bawah untuk masuk ke dasbor Anda.</p>
+        <a class="btn-primary" id="welcome-link" href="screens-creator.html">Buka dasbor kreator →</a>
+        <small class="alt-link">Atau buka langsung <a href="../index.html">halaman utama</a></small>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function log() {
+      if (window.console && console.log) console.log.apply(console, ['[login]'].concat([].slice.call(arguments)));
+    }
+    log('script dimuat');
+
+    var form     = document.getElementById('login-form');
+    var userEl   = document.getElementById('username');
+    var passEl   = document.getElementById('password');
+    var submitEl = document.getElementById('submit-btn');
+    var toastEl  = document.getElementById('toast');
+
+    var loginScreen   = document.getElementById('login-screen');
+    var dashScreen    = document.getElementById('dashboard-screen');
+    var dashName      = document.getElementById('dash-name');
+    var dashUsername  = document.getElementById('dash-username');
+    var dashAvatar    = document.getElementById('dash-avatar');
+    var dashRole      = document.getElementById('dash-role');
+    var welcomeMark   = document.getElementById('welcome-mark');
+    var welcomeTitle  = document.getElementById('welcome-title');
+    var welcomeDesc   = document.getElementById('welcome-desc');
+    var welcomeName   = document.getElementById('welcome-name');
+    var welcomeLink   = document.getElementById('welcome-link');
+    var btnSwitch     = document.getElementById('btn-switch');
+    var btnSignout    = document.getElementById('btn-signout');
+
+    var toastTimer = null;
+    function showToast(msg, kind) {
+      if (!toastEl) return;
+      toastEl.textContent = msg;
+      toastEl.className = 'toast show' + (kind ? ' ' + kind : '');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2400);
+    }
+
+    // semua kreator punya akses ke semua brand (gak eksklusif 1 orang)
+    var ALL_BRANDS = ['Jamuzen', 'CalmadeAI', 'Conventio', 'Gipsy Research'];
+
+    // akun demo — target = halaman dasbor (file screens-* di folder yang sama)
+    var ACCOUNTS = {
+      'sasa.id':     { password: 'kreator123',  role: 'kreator', displayName: 'Sasa A.',   brand: 'Jamuzen',        brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'dimas.h':     { password: 'kreator123',  role: 'kreator', displayName: 'Dimas H.',  brand: 'CalmadeAI',      brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'rangga.p':    { password: 'kreator123',  role: 'kreator', displayName: 'Rangga P.', brand: 'Conventio',      brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'maya.n':      { password: 'kreator123',  role: 'kreator', displayName: 'Maya N.',   brand: 'Gipsy Research', brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'aulia.t':     { password: 'kreator123',  role: 'kreator', displayName: 'Aulia T.',  brand: 'Jamuzen',        brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'testing123':  { password: 'testing123',  role: 'kreator', displayName: 'Tester',    brand: 'Jamuzen',        brands: ALL_BRANDS, target: 'screens-creator.html' },
+      'admin':       { password: 'admin123',    role: 'admin',   displayName: 'Mira R.',   brand: 'Gipsy Group',    brands: ['Gipsy Group'], target: 'screens-admin1.html'   }
+    };
+
+    // demo fill dihapus — kreator ngetik manual akun yang dikasih admin
+
+    // toggle lihat/sembunyikan password
+    var pwToggle = document.getElementById('pw-toggle');
+    if (pwToggle) {
+      pwToggle.addEventListener('click', function () {
+        var isPw = passEl.type === 'password';
+        passEl.type = isPw ? 'text' : 'password';
+        document.getElementById('pw-icon-eye').style.display = isPw ? 'none' : '';
+        document.getElementById('pw-icon-eyeoff').style.display = isPw ? '' : 'none';
+        // tetap fokus di input setelah toggle
+        passEl.focus();
+      });
+    }
+
+    function showLoginView() {
+      log('tampilkan login view');
+      document.body.className = 'login-view';
+      loginScreen.classList.remove('hidden');
+      dashScreen.classList.add('hidden');
+    }
+
+    function showDashboardView(session) {
+      log('tampilkan dashboard view untuk ' + session.username);
+      document.body.className = 'dashboard-view';
+      loginScreen.classList.add('hidden');
+      dashScreen.classList.remove('hidden');
+
+      // header
+      dashName.textContent = session.displayName;
+      dashUsername.textContent = session.username;
+      dashAvatar.textContent = (session.username.substring(0, 2) || '??').toUpperCase();
+      dashRole.textContent = session.role;
+
+      // welcome block — target pakai nama file screens-* yang ada di folder
+      var target = session.role === 'admin' ? 'screens-admin1.html' : 'screens-creator.html';
+      welcomeMark.textContent = (session.username.substring(0, 2) || '??').toUpperCase();
+      welcomeTitle.textContent = 'Halo, ' + (session.displayName.split(' ')[0] || 'kamu') + ' 👋';
+      welcomeName.textContent = session.displayName;
+      welcomeLink.textContent = session.role === 'admin' ? 'Buka dasbor admin →' : 'Buka dasbor kreator →';
+      welcomeLink.setAttribute('href', target);
+
+      // simpan target di session biar tombol lain juga tau
+      session.target = target;
+      try { localStorage.setItem('kreatorhub.session', JSON.stringify(session)); } catch (e) {}
+    }
+
+    function doLogin() {
+      log('doLogin dipanggil');
+      var username = (userEl.value || '').trim().toLowerCase();
+      var password = passEl.value || '';
+      log('username=' + JSON.stringify(username) + ' passwordLength=' + password.length);
+
+      var userField = document.getElementById('field-username');
+      var pwField = document.getElementById('field-password');
+      if (userField) userField.classList.remove('has-error');
+      if (pwField) pwField.classList.remove('has-error');
+
+      if (!username || !password) {
+        if (userField && !username) userField.classList.add('has-error');
+        if (pwField && !password) pwField.classList.add('has-error');
+        showToast('Lengkapi username dan kata sandi dulu', 'error');
+        try { (username ? passEl : userEl).focus(); } catch (e) {}
+        return;
+      }
+
+      var account = ACCOUNTS[username];
+      if (!account || account.password !== password) {
+        log('akun tidak cocok: ' + username);
+        if (pwField) pwField.classList.add('has-error');
+        showToast('Password salah untuk akun "' + username + '"', 'error');
+        try { passEl.focus(); passEl.select(); } catch (e) {}
+        return;
+      }
+
+      log('login OK untuk ' + username + ' role=' + account.role);
+
+      var target = account.target || (account.role === 'admin' ? 'screens-admin1.html' : 'screens-creator.html');
+
+      var session = {
+        username: username,
+        role: account.role,
+        displayName: account.displayName,
+        brand: account.brand,
+        brands: account.brands,
+        avatar: (username.substring(0, 2) || '??').toUpperCase(),
+        target: target,
+        loggedInAt: Date.now()
+      };
+
+      try { localStorage.setItem('kreatorhub.session', JSON.stringify(session)); }
+      catch (e) { log('localStorage tidak tersedia: ' + e.message); }
+
+      showToast('Berhasil masuk sebagai ' + session.displayName + ' — membuka dasbor…', 'success');
+
+      // langsung pindah ke dasbor (jeda singkat biar toast kelihatan)
+      submitEl.disabled = true;
+      submitEl.textContent = 'Membuka dasbor…';
+      setTimeout(function () { window.location.href = target; }, 350);
+    }
+
+    // submit handler
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      try { doLogin(); }
+      catch (err) {
+        log('doLogin error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
+      }
+    });
+
+    // switch akun
+    btnSwitch.addEventListener('click', function () {
+      log('ganti akun');
+      showToast('Pilih akun baru di bawah, lalu klik Masuk.', 'success');
+      try { localStorage.removeItem('kreatorhub.session'); } catch (e) {}
+      showLoginView();
+      // pre-fill dengan user yang sama biar cepet
+      if (userEl && !userEl.value) userEl.value = '';
+      passEl.value = '';
+    });
+
+    // signout
+    btnSignout.addEventListener('click', function () {
+      log('logout');
+      try { localStorage.removeItem('kreatorhub.session'); } catch (e) {}
+      showToast('Anda sudah keluar. Sampai jumpa!', 'success');
+      // clear inputs
+      userEl.value = '';
+      passEl.value = '';
+      showLoginView();
+    });
+
+    // kalau ada session tersimpan, langsung masuk (auto-login → redirect ke dasbor)
+    try {
+      var raw = localStorage.getItem('kreatorhub.session');
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && s.username && ACCOUNTS[s.username]) {
+          log('session ditemukan, auto-login: ' + s.username);
+          var autoTarget = s.target || (s.role === 'admin' ? 'screens-admin1.html' : 'screens-creator.html');
+          window.location.href = autoTarget;
+        }
+      }
+    } catch (e) {
+      log('auto-login skip: ' + e.message);
+    }
+
+    log('init selesai');
+  })();
+  </script>
+</body>
+</html>

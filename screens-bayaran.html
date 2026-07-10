@@ -143,8 +143,16 @@
       if (!A) return;
 
       function formatRp(n) {
-        if (typeof n !== 'number') return '—';
+        n = Number(n);
+        if (isNaN(n)) return '—';
         return 'Rp ' + n.toLocaleString('id-ID');
+      }
+      // timestamp Supabase (ISO) → tanggal ramah, mis. "11 Jul 2026"
+      function formatDate(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       }
 
       // ---- bank info card ----
@@ -163,11 +171,11 @@
 
       // ---- stat tiles ----
       const payments = A.data.payments || [];
-      const totalFee   = payments.reduce((s, p) => s + p.fee, 0);
+      const totalFee   = payments.reduce((s, p) => s + (Number(p.fee) || 0), 0);
       const paidItems  = payments.filter(p => p.status === 'paid');
       const pendItems  = payments.filter(p => p.status === 'pending');
-      const paidTotal  = paidItems.reduce((s, p) => s + p.fee, 0);
-      const pendTotal  = pendItems.reduce((s, p) => s + p.fee, 0);
+      const paidTotal  = paidItems.reduce((s, p) => s + (Number(p.fee) || 0), 0);
+      const pendTotal  = pendItems.reduce((s, p) => s + (Number(p.fee) || 0), 0);
       document.getElementById('stat-total').textContent   = formatRp(totalFee);
       document.getElementById('stat-paid').textContent    = formatRp(paidTotal);
       document.getElementById('stat-pending').textContent = formatRp(pendTotal);
@@ -186,12 +194,12 @@
         const statusLabel = { paid: 'Sudah dibayar', pending: 'Menunggu' };
         tbody.innerHTML = items.map(p => `
           <tr data-od-id="${p.id}">
-            <td><strong>${p.videoTitle}</strong></td>
-            <td>${p.brand}</td>
+            <td><strong>${p.video_title || '—'}</strong></td>
+            <td>${p.brand || '—'}</td>
             <td class="fee-cell">${formatRp(p.fee)}</td>
             <td><span class="payment-status ${p.status}">${statusLabel[p.status] || p.status}</span></td>
-            <td>${p.submittedAt}</td>
-            <td>${p.paidAt || '<span style="color: var(--muted);">—</span>'}</td>
+            <td>${formatDate(p.submitted_at) || '—'}</td>
+            <td>${formatDate(p.paid_at) || '<span style="color: var(--muted);">—</span>'}</td>
             <td class="note-cell">${p.note || ''}</td>
           </tr>
         `).join('');

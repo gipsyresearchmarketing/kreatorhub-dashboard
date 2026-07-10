@@ -236,7 +236,27 @@
       const briefs = A.data.briefs;
       const progress = A.data.progress;
       const history = A.data.history;
-      const payments = A.data.payments;
+      // Normalisasi payments: Supabase kasih snake_case + numeric bisa string + ad_spend/gross_revenue null.
+      // Coerce ke number (hindari NaN) + map ke camelCase yang dipakai kode dashboard.
+      function daysAgoText(ts) {
+        if (!ts) return '';
+        const d = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
+        if (isNaN(d)) return '';
+        if (d <= 0) return 'hari ini';
+        if (d === 1) return 'kemarin';
+        if (d < 7)  return d + ' hari lalu';
+        if (d < 14) return 'minggu lalu';
+        return Math.floor(d / 7) + ' minggu lalu';
+      }
+      const payments = (A.data.payments || []).map(p => ({
+        ...p,
+        fee:          Number(p.fee) || 0,
+        adSpend:      Number(p.ad_spend) || 0,
+        grossRevenue: Number(p.gross_revenue) || 0,
+        videoTitle:   p.video_title,
+        submittedAt:  daysAgoText(p.submitted_at),
+        paidAt:       p.paid_at
+      }));
       const waitingReview = progress.filter(p => p.status === 'review').length;
       const approved = history.filter(h => h.status === 'approved').length;
       const totalFee = payments.reduce((s, p) => s + p.fee, 0);

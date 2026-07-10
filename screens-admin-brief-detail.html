@@ -711,14 +711,137 @@
         const A = window.AdminApp;
         if (!A) return;
         const sbBrief = A.data.briefs.find(b => b.id === briefId);
-        if (sbBrief) {
-          const titleEl = document.getElementById('page-title');
-          const leadEl  = document.getElementById('page-lead');
-          if (titleEl) titleEl.textContent = sbBrief.title;
-          if (leadEl)  leadEl.textContent = (sbBrief.brand || '—') + ' · Deadline ' + (sbBrief.deadline || '—');
-          A.showToast('Brief dimuat dari database ✓', 'success');
+
+        // Build videos array dari progress yang terkait brief ini
+        const relatedProgress = A.data.progress.filter(p => p.brief_id === briefId || (sbBrief && p.title && sbBrief.title && p.title.toLowerCase().includes(sbBrief.title.toLowerCase().split(/\s+/).slice(0, 2).join(' '))));
+
+        // Map progress.status → brief.videos[].status (paid/pending)
+        function statusForVideo(p) {
+          if (p.status === 'approved' || p.status === 'selesai') return 'paid';
+          if (p.status === 'rejected') return 'rejected';
+          return 'pending';
         }
+        function fmtRelative(iso) {
+          if (!iso) return '—';
+          const d = new Date(iso);
+          const now = new Date();
+          const diffH = Math.round((now - d) / 36e5);
+          if (diffH < 1) return 'baru saja';
+          if (diffH < 24) return diffH + ' jam lalu';
+          const diffD = Math.round(diffH / 24);
+          if (diffD === 1) return 'kemarin';
+          if (diffD < 7) return diffD + ' hari lalu';
+          if (diffD < 30) return Math.round(diffD / 7) + ' minggu lalu';
+          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        }
+        const dynamicVideos = relatedProgress.map(p => {
+          // Cari payment yang match
+          const pay = A.data.payments.find(pay => pay.kreator === p.kreator && pay.video_title === p.title);
+          return {
+            title: p.title,
+            link: p.video_url || (p.video_storage_path ? '[storage] ' + p.video_storage_path : '—'),
+            status: statusForVideo(p),
+            date: fmtRelative(p.updated_at),
+            fee: pay ? Number(pay.fee) : 0,
+            progress_id: p.id,
+            kreator: p.kreator,
+            current_status: p.status
+          };
+        });
+
+        // Build timeline dari history items untuk video-video ini
+        const relatedHistory = A.data.history.filter(h => relatedProgress.some(p => p.id === h.progress_id));
+        const dynamicTimeline = relatedHistory
+          .sort((a, b) => new Date(a.reviewed_at) - new Date(b.reviewed_at))
+          .map(h => ({
+            label: h.status === 'approved' ? 'Video di-approve' : h.status === 'rejected' ? 'Video di-reject' : h.status === 'revisi' ? 'Minta revisi' : 'Status: ' + h.status,
+            when: fmtRelative(h.reviewed_at),
+            note: (h.admin ? 'oleh ' + h.admin : '') + (h.feedback ? ' · ' + h.feedback : '')
+          }));
+        // Add "brief dibuat" dari created_at brief
+        if (sbBrief) {
+          dynamicTimeline.unshift({
+            label: 'Brief dibuat',
+            when: fmtRelative(sbBrief.created_at),
+            note: 'oleh admin'
+          });
+        }
+
+        // Override BRIEFS[briefId] dengan data Supabase
+        BRIEFS[briefId] = Object.assign({}, BRIEFS[briefId] || {}, {
+          title: sbBrief ? sbBrief.title : (BRIEFS[briefId] && BRIEFS[briefId].title) || 'Brief',
+          brand: sbBrief ? (sbBrief.brand || '—') : (BRIEFS[briefId] && BRIEFS[briefId].brand) || '—',
+          deadline: sbBrief ? (sbBrief.deadline || '—') : (BRIEFS[briefId] && BRIEFS[briefId].deadline) || '—',
+          requirement: sbBrief ? (sbBrief.meta || '') : (BRIEFS[briefId] && BRIEFS[briefId].requirement) || '',
+          sb_id: sbBrief ? sbBrief.id : null,
+          videos: dynamicVideos,
+          timeline: dynamicTimeline
+        });
+
+        // Update header
+        const titleEl = document.getElementById('page-title');
+        const leadEl  = document.getElementById('page-lead');
+        const b = BRIEFS[briefId];
+        if (titleEl) titleEl.textContent = b.title;
+        if (leadEl)  leadEl.textContent = b.brand + ' · deadline ' + b.deadline;
+
+        // Re-render video list & timeline
+        const briefObj = BRIEFS[briefId];
+        const contentEl = document.getElementById('content-area');
+        if (!contentEl) return;
+        // Cari section yang berisi video & timeline
+        const allCards = contentEl.querySelectorAll('.card');
+        // Re-render pakai logika yang sama dengan kode existing — extract render functions kalau ada
+        // Pendekatan: replace innerHTML card videos & timeline
+        // Cari id "videos-list" atau pattern yang ada di static
+        const videosContainer = document.getElementById('videos-section')
+          || Array.from(contentEl.querySelectorAll('.card')).find(c => c.textContent.includes('Video'))
+          || null;
+        // Kalau container ada, replace dengan dynamic
+        if (videosContainer && briefObj.videos.length > 0) {
+          videosContainer.innerHTML = '<div class="card-head">Video dari kreator</div>' + briefObj.videos.map(v => {
+            const statusMap = { paid: 'paid', pending: 'pending', rejected: 'rejected' };
+            return `<div class="video-item">
+              <div class="v-info">
+                <strong>${escapeHtml(v.title)}</strong>
+                <small>${escapeHtml(v.date)} · ${escapeHtml(v.kreator || '')} · <a href="${escapeHtml(v.link)}" target="_blank" rel="noopener">${escapeHtml(v.link.length > 40 ? v.link.slice(0, 40) + '…' : v.link)}</a></small>
+                ${v.current_status ? `<span class="pill" style="margin-left: 6px;">${escapeHtml(v.current_status)}</span>` : ''}
+              </div>
+              <div class="v-fee">${v.fee ? 'Rp ' + v.fee.toLocaleString('id-ID') : '—'}</div>
+              <span class="fee-status ${statusMap[v.status] || 'pending'}">${v.status === 'paid' ? 'Lunas' : v.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span>
+            </div>`;
+          }).join('');
+        }
+        if (videosContainer && briefObj.videos.length === 0) {
+          videosContainer.innerHTML = '<div class="card"><p class="meta" style="padding: 18px; text-align: center;">Belum ada video dari kreator untuk brief ini.</p></div>';
+        }
+
+        // Timeline
+        const timelineContainer = document.getElementById('timeline-section')
+          || Array.from(contentEl.querySelectorAll('.card')).find(c => c.textContent.includes('Timeline') || c.textContent.includes('Aktivitas'))
+          || null;
+        if (timelineContainer && briefObj.timeline.length > 0) {
+          timelineContainer.innerHTML = '<div class="card-head">Aktivitas</div>' + briefObj.timeline.map(t => `
+            <div class="timeline-item">
+              <div class="t-dot"></div>
+              <div class="t-body">
+                <strong>${escapeHtml(t.label)}</strong>
+                <small>${escapeHtml(t.when)}</small>
+                ${t.note ? '<div class="t-note">' + escapeHtml(t.note) + '</div>' : ''}
+              </div>
+            </div>`).join('');
+        }
+        if (timelineContainer && briefObj.timeline.length === 0) {
+          timelineContainer.innerHTML = '<div class="card"><p class="meta" style="padding: 18px; text-align: center;">Belum ada aktivitas.</p></div>';
+        }
+
+        A.showToast('Brief dimuat dari database ✓', 'success');
       });
+
+      // Helper untuk escape HTML
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
 
       const brief = BRIEFS[briefId];
 
@@ -1002,7 +1125,7 @@
         </div>
 
         <!-- 3. Videos (each video row carries its own per-video actions) -->
-        <div class="card">
+        <div class="card" id="videos-section">
           <div class="row-between" style="margin-bottom: 10px;">
             <h2 class="h2" style="font-size: 18px;">Video di-submit</h2>
             <span class="meta">${videosHeaderMeta}</span>
@@ -1020,7 +1143,7 @@
         </div>
 
         <!-- 5. Timeline -->
-        <div class="card">
+        <div class="card" id="timeline-section">
           <h2 class="h2" style="font-size: 18px; margin-bottom: 10px;">Riwayat brief</h2>
           <div class="timeline">${timelineHtml}</div>
         </div>

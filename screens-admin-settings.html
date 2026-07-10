@@ -999,18 +999,38 @@
 
         // Re-wire action buttons after rebuild
         tbody.querySelectorAll('[data-act="reset-pw"]').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', async () => {
             const target = btn.dataset.target;
-            if (confirm('Reset password untuk "' + target + '"?\n\n(Untuk MVP: minta kreator reset lewat Supabase Dashboard → Authentication → Users.)')) {
-              showToast('Link reset terkirim ke ' + target + ' (simulasi).');
+            if (!confirm('Kirim link reset password ke "' + target + '"?\n\nEmail akan dikirim ke ' + target + '@gipsyresearch.id')) return;
+            const A = window.AdminApp;
+            if (!A || !A.sb) { showToast('Supabase belum siap.'); return; }
+            const orig = btn.textContent;
+            btn.disabled = true; btn.textContent = 'Mengirim…';
+            try {
+              const { error } = await A.sb.auth.resetPasswordForEmail(target + '@gipsyresearch.id', {
+                redirectTo: window.location.origin + '/kreatorhub-dashboard/screens-login.html'
+              });
+              if (error) throw error;
+              showToast('Link reset terkirim ke ' + target + '@gipsyresearch.id ✓', 'success');
+            } catch (err) {
+              showToast('Gagal: ' + err.message, 'error');
+            } finally {
+              btn.disabled = false; btn.textContent = orig;
             }
           });
         });
         tbody.querySelectorAll('[data-act="deactivate"]').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', async () => {
             const target = btn.dataset.target;
-            if (confirm('Nonaktifkan akun "' + target + '"?\n\nUntuk MVP: ubah di Supabase Dashboard → profiles.')) {
-              showToast('Akun ' + target + ' dinonaktifkan (simulasi).');
+            if (!confirm('Nonaktifkan akun "' + target + '"?\n\nAksi ini akan mengubah role-nya jadi "kreator_disabled" (perlu schema update dulu). Untuk sekarang, minta admin nonaktifkan manual via Supabase Dashboard → profiles.')) return;
+            const A = window.AdminApp;
+            if (!A || !A.sb) { showToast('Supabase belum siap.'); return; }
+            try {
+              // Update role ke 'kreator_disabled' — perlu ALTER TABLE untuk allow ini di CHECK constraint
+              // Untuk MVP, tampilkan instruksi manual
+              showToast('Untuk nonaktifkan: buka Supabase → Table Editor → profiles → set role = "kreator_disabled" untuk ' + target + '. (Schema perlu di-update untuk izinkan nilai ini.)');
+            } catch (err) {
+              showToast('Gagal: ' + err.message, 'error');
             }
           });
         });

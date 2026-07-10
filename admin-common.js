@@ -103,6 +103,7 @@
     data.history  = historyRes.data  || [];
     data.payments = paymentsRes.data || [];
     data.profiles = profilesRes.data || [];
+    console.log('[admin-common] progress rows fetched:', data.progress.length, data.progress);
     return data;
   }
 
@@ -230,6 +231,13 @@
   // ---- first refresh ----
   try {
     await refresh();
+    console.log('[admin-common] refresh ok:', {
+      briefs: data.briefs.length,
+      progress: data.progress.length,
+      history: data.history.length,
+      payments: data.payments.length,
+      profiles: data.profiles.length
+    });
   } catch (e) {
     console.error('[admin-common] refresh gagal', e);
     showToast('Gagal memuat data. Refresh halaman untuk coba lagi.', 'error');

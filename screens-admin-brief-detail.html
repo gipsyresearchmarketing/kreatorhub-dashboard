@@ -676,11 +676,51 @@
       // ---- load brief ----
       const params = new URLSearchParams(window.location.search);
       const briefId = params.get('id') || 'b-1';
+
+      // Hydrate BRIEFS dari Supabase (kalau ada) — gabung dengan fallback statis
+      function hydrateBriefsFromSupabase() {
+        const A = window.AdminApp;
+        if (!A || !A.data || !A.data.briefs) return;
+        A.data.briefs.forEach(sb => {
+          // Cari key BRIEFS yang match (id Supabase vs b-N di static)
+          // Mapping: 'b-N' legacy → pakai brand + judul yang match
+          let matchedKey = null;
+          for (const k of Object.keys(BRIEFS)) {
+            const b = BRIEFS[k];
+            if (!b) continue;
+            const titleNorm = (b.title || '').toLowerCase().split(/\s+/).slice(0, 4).join(' ');
+            const sbNorm = (sb.title || '').toLowerCase().split(/\s+/).slice(0, 4).join(' ');
+            if (titleNorm === sbNorm || (b.brand && sb.brand && b.brand.toLowerCase() === sb.brand.toLowerCase() && titleNorm.split(' ')[0] === sbNorm.split(' ')[0])) {
+              matchedKey = k;
+              break;
+            }
+          }
+          // Pakai sb.id sebagai key baru kalau tidak ada match (jadi BRIEFS[sb.id] tersedia)
+          const key = matchedKey || sb.id;
+          BRIEFS[key] = Object.assign({}, BRIEFS[key] || {}, {
+            title: sb.title || (BRIEFS[key] && BRIEFS[key].title) || 'Brief',
+            brand: sb.brand ? sb.brand.toUpperCase() : (BRIEFS[key] && BRIEFS[key].brand) || '—',
+            deadline: sb.deadline || (BRIEFS[key] && BRIEFS[key].deadline) || '—',
+            requirement: sb.meta || (BRIEFS[key] && BRIEFS[key].requirement) || '',
+            sb_id: sb.id  // Simpan id asli Supabase untuk writeback nanti
+          });
+        });
+      }
+      // Hook ke event ready — render header after Supabase loaded
+      document.addEventListener('adminapp:ready', () => {
+        const A = window.AdminApp;
+        if (!A) return;
+        const sbBrief = A.data.briefs.find(b => b.id === briefId);
+        if (sbBrief) {
+          const titleEl = document.getElementById('page-title');
+          const leadEl  = document.getElementById('page-lead');
+          if (titleEl) titleEl.textContent = sbBrief.title;
+          if (leadEl)  leadEl.textContent = (sbBrief.brand || '—') + ' · Deadline ' + (sbBrief.deadline || '—');
+          A.showToast('Brief dimuat dari database ✓', 'success');
+        }
+      });
+
       const brief = BRIEFS[briefId];
-      const contentEl = document.getElementById('content-area');
-      const pageTitle = document.getElementById('page-title');
-      const pageLead  = document.getElementById('page-lead');
-      const statusPill = document.getElementById('brief-status-pill');
 
       if (!brief) {
         contentEl.innerHTML = `<div class="card"><p>Brief dengan ID <code>${briefId}</code> tidak ditemukan.</p></div>`;

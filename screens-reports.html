@@ -905,6 +905,103 @@
       renderFeeMenungguApproval();
       renderFeeRataRata();
 
+      // ---- Supabase override: replace static numbers with live counts ----
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+      function fmtIDR(n) {
+        if (n == null) return '—';
+        return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
+      }
+      function setVal(id, v) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = v;
+      }
+      document.addEventListener('adminapp:ready', () => {
+        const A = window.AdminApp;
+        if (!A || !A.data) return;
+        const prog = A.data.progress || [];
+        const hist = A.data.history || [];
+        const pays = A.data.payments || [];
+        const briefs = A.data.briefs || [];
+        const profiles = (A.data.profiles || []).filter(p => p.role === 'kreator');
+
+        // Brief aktif (count + list)
+        setVal('brief-aktif-value', briefs.length);
+        const briefList = document.getElementById('brief-aktif-list');
+        if (briefList) {
+          briefList.innerHTML = briefs.length === 0
+            ? '<div class="meta">Belum ada brief.</div>'
+            : briefs.map(b => `<div class="item-row">
+                <div><strong>${escapeHtml(b.title)}</strong><small>${escapeHtml(b.brand)} · deadline ${escapeHtml(b.deadline || '—')}</small></div>
+              </div>`).join('');
+        }
+
+        // Disetujui
+        const approvedCount = prog.filter(p => p.status === 'approved').length + hist.filter(h => h.status === 'approved').length;
+        setVal('disetujui-value', approvedCount);
+        const disetujuiList = document.getElementById('disetujui-list');
+        if (disetujuiList) {
+          const items = hist.filter(h => h.status === 'approved').slice(0, 10);
+          disetujuiList.innerHTML = items.length === 0
+            ? '<div class="meta">Belum ada video disetujui.</div>'
+            : items.map(h => `<div class="item-row">
+                <div><strong>${escapeHtml(h.title)}</strong><small>${escapeHtml(h.kreator)} · ${escapeHtml(h.brand)}</small></div>
+                <span class="meta">${escapeHtml(h.admin || '')}</span>
+              </div>`).join('');
+        }
+
+        // Revisi diminta
+        const revisiCount = prog.filter(p => p.status === 'revisi').length + hist.filter(h => h.status === 'revisi' || h.status === 'revision').length;
+        setVal('revisi-diminta-value', revisiCount);
+        const revisiList = document.getElementById('revisi-diminta-list');
+        if (revisiList) {
+          const items = hist.filter(h => h.status === 'revisi' || h.status === 'revision').slice(0, 10);
+          revisiList.innerHTML = items.length === 0
+            ? '<div class="meta">Tidak ada revisi diminta.</div>'
+            : items.map(h => `<div class="item-row">
+                <div><strong>${escapeHtml(h.title)}</strong><small>${escapeHtml(h.feedback || '(tanpa catatan)')}</small></div>
+                <span class="meta">${escapeHtml(h.admin || '')}</span>
+              </div>`).join('');
+        }
+
+        // Ditolak
+        const rejectedCount = prog.filter(p => p.status === 'rejected').length + hist.filter(h => h.status === 'rejected').length;
+        setVal('ditolak-value', rejectedCount);
+        const ditolakList = document.getElementById('ditolak-list');
+        if (ditolakList) {
+          const items = hist.filter(h => h.status === 'rejected').slice(0, 10);
+          ditolakList.innerHTML = items.length === 0
+            ? '<div class="meta">Tidak ada penolakan.</div>'
+            : items.map(h => `<div class="item-row">
+                <div><strong>${escapeHtml(h.title)}</strong><small>${escapeHtml(h.feedback || '(tanpa alasan)')}</small></div>
+                <span class="meta">${escapeHtml(h.admin || '')}</span>
+              </div>`).join('');
+        }
+
+        // Pendapatan dibayarkan
+        const paid = pays.filter(p => p.status === 'paid');
+        const paidTotal = paid.reduce((sum, p) => sum + (Number(p.fee) || 0), 0);
+        setVal('pendapatan-dibayarkan-value', fmtIDR(paidTotal));
+        const paidList = document.getElementById('pendapatan-dibayarkan-list');
+        if (paidList) {
+          paidList.innerHTML = paid.length === 0
+            ? '<div class="meta">Belum ada pembayaran.</div>'
+            : paid.map(p => `<div class="item-row">
+                <div><strong>${escapeHtml(p.video_title)}</strong><small>${escapeHtml(p.kreator)} · ${escapeHtml(p.brand)}</small></div>
+                <span class="num">${fmtIDR(p.fee)}</span>
+              </div>`).join('');
+        }
+
+        // Override kreator aktif dengan jumlah profile Supabase
+        const kreatorEl = document.querySelector('#kreator-aktif .value');
+        if (kreatorEl) kreatorEl.textContent = profiles.length;
+        const menungguEl = document.querySelector('#menunggu-review .value');
+        if (menungguEl) menungguEl.textContent = prog.filter(p => p.status === 'review').length;
+
+        A.showToast('Laporan dimuat dari database ✓');
+      });
+
       // scroll to hash on load
       if (window.location.hash) {
         const target = document.querySelector(window.location.hash);

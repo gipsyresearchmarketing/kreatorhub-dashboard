@@ -963,15 +963,100 @@
         showToast(`Akun ${handle} dibuat. Kredensial sementara sudah dikirim ke ${wa} via WhatsApp.`);
       });
 
-      // ---- profile admin actions ----
-      document.getElementById('btn-save-pw')?.addEventListener('click', () => {
+      // ---- dynamic creators table (Supabase-backed) ----
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+      function renderSettingsCreators(A) {
+        const tbody = document.querySelector('#settings-creators-table tbody');
+        if (!tbody) return;
+        const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        if (kreators.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada kreator.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = kreators.map(p => {
+          const initials = (p.display_name || p.username || '?').split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+          return `<tr data-creator="${escapeHtml(p.username)}">
+            <td>
+              <div class="row-creator">
+                <div class="avatar">${initials}</div>
+                <div class="name">${escapeHtml(p.display_name || p.username)}<small>${escapeHtml(p.username)}</small></div>
+              </div>
+            </td>
+            <td>—</td>
+            <td><span class="num" style="font-family: var(--font-mono); font-size: 12px;">—</span></td>
+            <td><span class="status approved">Aktif</span></td>
+            <td class="num-col">${A.data.progress.filter(i => i.kreator === p.username).length}</td>
+            <td>
+              <div class="row-actions-cell">
+                <button class="btn btn-ghost" data-act="reset-pw" data-target="${escapeHtml(p.username)}">Reset sandi</button>
+                <button class="btn btn-ghost" data-act="deactivate" data-target="${escapeHtml(p.username)}">Nonaktifkan</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+
+        // Re-wire action buttons after rebuild
+        tbody.querySelectorAll('[data-act="reset-pw"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const target = btn.dataset.target;
+            if (confirm('Reset password untuk "' + target + '"?\n\n(Untuk MVP: minta kreator reset lewat Supabase Dashboard → Authentication → Users.)')) {
+              showToast('Link reset terkirim ke ' + target + ' (simulasi).');
+            }
+          });
+        });
+        tbody.querySelectorAll('[data-act="deactivate"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const target = btn.dataset.target;
+            if (confirm('Nonaktifkan akun "' + target + '"?\n\nUntuk MVP: ubah di Supabase Dashboard → profiles.')) {
+              showToast('Akun ' + target + ' dinonaktifkan (simulasi).');
+            }
+          });
+        });
+      }
+      document.addEventListener('adminapp:ready', () => {
+        const A = window.AdminApp;
+        if (!A) return;
+        renderSettingsCreators(A);
+        // Hydrate profile email field kalau ada
+        const emailEl = document.getElementById('admin-email');
+        if (emailEl && A.session) {
+          const sess = A.sb ? null : null;  // best-effort
+          // Keep current value if no user.email available
+        }
+      });
+      document.addEventListener('adminapp:data-changed', () => {
+        const A = window.AdminApp;
+        if (A) renderSettingsCreators(A);
+      });
+      document.getElementById('btn-save-pw')?.addEventListener('click', async () => {
         const cur = document.getElementById('admin-pw-current').value;
         const nw  = document.getElementById('admin-pw-new').value;
         if (!cur || !nw) { showToast('Isi password saat ini & password baru.'); return; }
         if (nw.length < 8) { showToast('Password baru minimal 8 karakter.'); return; }
-        showToast('Password admin berhasil diperbarui.');
-        document.getElementById('admin-pw-current').value = '';
-        document.getElementById('admin-pw-new').value = '';
+        const A = window.AdminApp;
+        if (!A || !A.sb) { showToast('Supabase belum siap. Refresh halaman.'); return; }
+        const btn = document.getElementById('btn-save-pw');
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Menyimpan…';
+        try {
+          // Re-login dulu untuk verify password saat ini, lalu update
+          const { data: sess } = await A.sb.auth.getSession();
+          if (!sess || !sess.session) { showToast('Sesi habis, login ulang dulu.'); throw new Error('no session'); }
+          const userEmail = sess.session.user.email;
+          const re = await A.sb.auth.signInWithPassword({ email: userEmail, password: cur });
+          if (re.error) throw new Error('Password saat ini salah');
+          const up = await A.sb.auth.updateUser({ password: nw });
+          if (up.error) throw up.error;
+          showToast('Password admin berhasil diperbarui ✓', 'success');
+          document.getElementById('admin-pw-current').value = '';
+          document.getElementById('admin-pw-new').value = '';
+        } catch (err) {
+          showToast('Gagal: ' + (err.message || err), 'error');
+        } finally {
+          btn.disabled = false; btn.textContent = orig;
+        }
       });
       document.getElementById('btn-cancel-pw')?.addEventListener('click', () => {
         document.getElementById('admin-pw-current').value = '';

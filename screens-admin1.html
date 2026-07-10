@@ -442,6 +442,10 @@
       text-underline-offset: 2px;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="admin-common.js"></script>
 </head>
 <body>
   <header class="topnav" data-od-id="topnav">
@@ -2962,6 +2966,269 @@
         }
       });
     })();
+  </script>
+
+  <script>
+  /* ===== Supabase dynamic rendering (override static seed rows) ===== */
+  (function () {
+    'use strict';
+
+    function brandTag(name) {
+      return (name || '').toUpperCase().slice(0, 12);
+    }
+    function statusPill(status) {
+      const map = {
+        draft:    ['draft',    'Draft'],
+        editing:  ['editing',  'Editing'],
+        review:   ['review',   'Review'],
+        revisi:   ['revision', 'Revisi'],
+        approved: ['approved', 'Disetujui'],
+        rejected: ['rejected', 'Ditolak'],
+        selesai:  ['selesai',  'Selesai']
+      };
+      const [cls, label] = map[status] || ['draft', status || '—'];
+      return `<span class="status ${cls}">${label}</span>`;
+    }
+    function avatarFor(username, displayName) {
+      const initials = (displayName || username || '??').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      return initials || (username || '??').substring(0, 2).toUpperCase();
+    }
+    function profileByUsername(username, profiles) {
+      return (profiles || []).find(p => p.username === username) || null;
+    }
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderQueueTable(A) {
+      const tbody = document.querySelector('#queue-table tbody');
+      if (!tbody) return;
+      const items = (A.data.progress || []);
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada progres dari kreator. Kreator perlu submit dari menu "Kirim link video".</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = items.map(item => {
+        const profile = profileByUsername(item.kreator, A.data.profiles);
+        const displayName = profile ? (profile.display_name || item.kreator) : item.kreator;
+        const avatar = avatarFor(item.kreator, displayName);
+        const linkHtml = item.video_url
+          ? `<a href="${escapeHtml(item.video_url)}" target="_blank" rel="noopener" class="link-cell">${escapeHtml(item.video_url)}</a>`
+          : (item.video_storage_path
+              ? `<span style="color: var(--muted); font-family: var(--font-mono); font-size: 11px;">[file: ${escapeHtml(item.video_storage_path.split('/').pop())}]</span>`
+              : '<span style="color: var(--muted);">—</span>');
+        const actionsHtml = (item.status === 'review' || item.status === 'revisi')
+          ? `<div class="row-actions-cell">
+               <button class="btn btn-primary" data-act="approve">Setujui</button>
+               <button class="btn btn-secondary" data-act="revision">Revisi</button>
+               <button class="btn btn-ghost" data-act="reject">Tolak</button>
+             </div>`
+          : `<span class="pill">${statusPill(item.status).replace(/<[^>]+>/g, '')}</span>`;
+        return `<tr data-row data-progress-id="${escapeHtml(item.id)}" data-status="${escapeHtml(item.status)}" data-brand="${escapeHtml(item.brand)}">
+          <td>
+            <div class="row-title">
+              <div>
+                <strong data-video-link tabindex="0">${escapeHtml(item.title)}</strong>
+                <small>${escapeHtml(item.meta || '')}</small>
+              </div>
+            </div>
+            <div style="margin-top: 4px; font-size: 11px;">${linkHtml}</div>
+          </td>
+          <td><span class="brand-tag">${brandTag(item.brand)}</span></td>
+          <td>
+            <div class="row-creator">
+              <div class="avatar">${avatar}</div>
+              <div class="name">${escapeHtml(displayName)}<small>${escapeHtml(item.kreator)}</small></div>
+            </div>
+          </td>
+          <td>${statusPill(item.status)}</td>
+          <td class="num-col">—</td>
+          <td>${actionsHtml}</td>
+        </tr>`;
+      }).join('');
+
+      // Wire approve/revision/reject buttons
+      tbody.querySelectorAll('[data-act]').forEach(btn => {
+        btn.addEventListener('click', () => handleDecision(btn.closest('tr'), btn.dataset.act));
+      });
+      // Wire video link clicks
+      tbody.querySelectorAll('[data-video-link]').forEach(titleEl => {
+        titleEl.addEventListener('click', () => {
+          const tr = titleEl.closest('tr');
+          const item = A.data.progress.find(p => p.id === tr.dataset.progressId);
+          if (!item) return;
+          if (item.video_url) {
+            window.open(item.video_url, '_blank', 'noopener');
+          } else if (item.video_storage_path) {
+            // Generate signed URL on-demand
+            A.sb.storage.from('videos').createSignedUrl(item.video_storage_path, 3600)
+              .then(({ data: signed }) => {
+                if (signed && signed.signedUrl) window.open(signed.signedUrl, '_blank', 'noopener');
+                else A.showToast('File tidak bisa dibuka.', 'error');
+              });
+          }
+        });
+      });
+    }
+
+    function renderBriefsTable(A) {
+      const tbody = document.querySelector('#briefs-table tbody');
+      if (!tbody) return;
+      const items = (A.data.briefs || []);
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada brief. Klik "Brief baru" untuk membuat.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = items.map(b => `<tr data-od-id="${escapeHtml(b.id)}" data-brief-id="${escapeHtml(b.id)}">
+        <td>
+          <a href="screens-admin-brief-detail.html?id=${encodeURIComponent(b.id)}" class="brief-title-link">
+            <strong>${escapeHtml(b.title)}</strong>
+            <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">${escapeHtml(b.meta || '')}</small>
+          </a>
+        </td>
+        <td><span class="brand-tag">${brandTag(b.brand)}</span></td>
+        <td>—</td>
+        <td><span class="status review">Aktif</span></td>
+        <td class="num-col">${escapeHtml(b.deadline || '—')}</td>
+      </tr>`).join('');
+    }
+
+    function renderCreatorsTable(A) {
+      const tbody = document.getElementById('creators-tbody');
+      if (!tbody) return;
+      const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+      if (kreators.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada kreator.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = kreators.map(p => {
+        const items = A.data.progress.filter(i => i.kreator === p.username);
+        const displayName = p.display_name || p.username;
+        return `<tr data-creator="${escapeHtml(p.username)}">
+          <td>
+            <div class="row-creator">
+              <div class="avatar">${avatarFor(p.username, displayName)}</div>
+              <div class="name">${escapeHtml(displayName)}<small>${escapeHtml(p.username)}</small></div>
+            </div>
+          </td>
+          <td>—</td>
+          <td>${items.length}</td>
+          <td>${items.filter(i => i.status === 'review').length}</td>
+          <td>${items.filter(i => i.status === 'approved').length}</td>
+          <td>${items.filter(i => i.status === 'rejected').length}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Decision handler — pakai modal pattern yang sudah ada di script utama
+    function handleDecision(row, act) {
+      const A = window.AdminApp;
+      const id = row.dataset.progressId;
+      const item = A.data.progress.find(p => p.id === id);
+      if (!item) return;
+      // Pakai modal utama (kalau ada), kalau tidak, konfirmasi native
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalComment = document.getElementById('modal-comment');
+      const modalConfirm = document.getElementById('modal-confirm');
+      if (modal && modalTitle && modalDesc && modalComment && modalConfirm) {
+        const cfg = {
+          approve:  { title: 'Setujui video ini?', desc: 'Tambahkan komentar (opsional), lalu kirim ke kreator.', btn: 'Setujui', status: 'approved', label: 'Disetujui' },
+          revision: { title: 'Minta revisi', desc: 'Jelaskan apa yang perlu diperbaiki.', btn: 'Kirim revisi', status: 'revisi', label: 'Revisi' },
+          reject:   { title: 'Tolak video ini?', desc: 'Beri alasan agar kreator paham.', btn: 'Tolak', status: 'rejected', label: 'Ditolak' }
+        }[act];
+        modalTitle.textContent = cfg.title;
+        modalDesc.textContent = cfg.desc;
+        modalComment.value = '';
+        modalConfirm.textContent = cfg.btn;
+        modal.classList.add('show');
+        // Bind one-shot handler
+        const onConfirm = async () => {
+          if ((act === 'revision' || act === 'reject') && modalComment.value.trim().length < 5) {
+            modalComment.style.borderColor = 'var(--danger)';
+            setTimeout(() => modalComment.style.borderColor = '', 1500);
+            modalComment.focus();
+            return;
+          }
+          modalConfirm.removeEventListener('click', onConfirm);
+          modal.classList.remove('show');
+          modalConfirm.disabled = true;
+          const originalLabel = modalConfirm.textContent;
+          modalConfirm.textContent = 'Menyimpan…';
+          try {
+            if (act === 'approve') await A.approveProgress(id, modalComment.value.trim());
+            else if (act === 'revision') await A.requestRevision(id, modalComment.value.trim());
+            else if (act === 'reject') await A.rejectProgress(id, modalComment.value.trim());
+            A.showToast(cfg.label + ' tersimpan ✓');
+            renderQueueTable(A);
+            renderCreatorsTable(A);
+          } catch (err) {
+            A.showToast('Gagal: ' + err.message, 'error');
+          } finally {
+            modalConfirm.disabled = false;
+            modalConfirm.textContent = originalLabel;
+          }
+        };
+        modalConfirm.addEventListener('click', onConfirm);
+        // Cancel handler — hapus one-shot listener
+        const modalCancel = document.getElementById('modal-cancel');
+        if (modalCancel) {
+          const onCancel = () => {
+            modalConfirm.removeEventListener('click', onConfirm);
+            modalCancel.removeEventListener('click', onCancel);
+          };
+          modalCancel.addEventListener('click', onCancel);
+        }
+        setTimeout(() => modalComment.focus(), 50);
+      } else {
+        // Fallback: native confirm
+        if (!confirm('Yakin ' + act + ' untuk "' + item.title + '"?')) return;
+        A[act === 'approve' ? 'approveProgress' : act === 'revision' ? 'requestRevision' : 'rejectProgress'](id, '')
+          .then(() => { A.showToast('Tersimpan ✓'); renderQueueTable(A); })
+          .catch(err => A.showToast('Gagal: ' + err.message, 'error'));
+      }
+    }
+
+    // Brief baru handler
+    function wireNewBriefButton(A) {
+      const btn = document.querySelector('[data-panel="briefs"] .btn-primary');
+      if (!btn) return;
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const title = prompt('Judul brief:');
+        if (!title) return;
+        const brand = prompt('Brand (Jamuzen/CalmadeAI/Conventio/Gipsy Research):', 'Jamuzen');
+        if (!brand) return;
+        const deadline = prompt('Deadline (mis. 22 Jul, atau kosongkan):', '') || '—';
+        const meta = prompt('Catatan untuk kreator (opsional):', '') || '';
+        try {
+          await A.createBrief({ brand, title, meta, deadline });
+          A.showToast('Brief baru dibuat ✓');
+          renderBriefsTable(A);
+        } catch (err) {
+          A.showToast('Gagal: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Hook ke event ready + changes
+    document.addEventListener('adminapp:ready', (e) => {
+      const A = window.AdminApp;
+      if (!A) return;
+      renderQueueTable(A);
+      renderBriefsTable(A);
+      renderCreatorsTable(A);
+      wireNewBriefButton(A);
+    });
+    document.addEventListener('adminapp:data-changed', (e) => {
+      const A = window.AdminApp;
+      if (!A) return;
+      renderQueueTable(A);
+      renderBriefsTable(A);
+      renderCreatorsTable(A);
+    });
+  })();
   </script>
 </body>
 </html>

@@ -937,24 +937,8 @@ End of session 9.
 
 # PENDING untuk sesi berikutnya (belum dikerjain — di-pause karena Bagas mau sleep)
 
-## 1. Stat tile bisa diklik → ke list terkait (DECIDED, belum diimplement)
-Bagas pilih (AskUserQuestion): stat tile diklik → **ke halaman/list terkait**. Mapping yang disepakati:
-
-**Kreator (`screens-creator.html`)** — 5 tile, sekarang cuma `<div class="stat-tile">` tanpa wiring klik. Bikin clickable:
-- Brief aktif (`#stat-brief`) → `screens-brief.html`
-- Video progres (`#stat-progress`) → `screens-progres.html`
-- Menunggu review (`#stat-review`) → `screens-progres.html?status=review`
-- Disetujui (`#stat-approved`) → `screens-progres.html?status=approved`
-- Total fee (`#stat-total-fee`) → `screens-bayaran.html`
-Pola: di ready handler, `el.closest('.stat-tile')` → tambah cursor pointer + click/keydown → `window.location.href`.
-
-**`screens-progres.html`** — filter pills `data-status` (all/draft/editing/review/approved/selesai) BELUM baca URL. Tambah: on load baca `?status=` → aktifkan pill yang cocok (trigger click / set filter + re-render).
-
-**Admin (`screens-admin1.html`)** — stat card SEKARANG navigate ke `screens-reports.html#<key>` (inline `onclick` + forEach handler di IIFE #1 ~line 2095-2125) → halaman Laporan detail kosong sejak dummy dibersihin. GANTI jadi switch panel in-page. Panel: `queue/briefs/creators/fee` (toggle `.panel.active`, lihat `sidePanelMap` line 1350 + sidebar handler 1356-1368). Mapping key→panel:
-  - kreator-aktif→creators · menunggu-review/disetujui-minggu/disetujui/revisi-diminta/ditolak→queue · brief-aktif→briefs · pendapatan-dibayarkan/fee-total/fee-sudah-dibayar/fee-menunggu-approval/fee-rata-rata→fee
-  Cara: bikin helper `activateAdminPanel(name)` (toggle panel + sync sidebar active + scroll top), di forEach stat-card set `card.onclick = null` (matiin navigasi inline lama) lalu addEventListener → activateAdminPanel(map[key]). `openStatDetail` (drawer, line 2081) = dead code, boleh diabaikan.
-
-Verifikasi: `jsc` syntax + cek klik. Lalu commit + push.
+## 1. Stat tile bisa diklik → ke list terkait — ✅ SELESAI (commit `471fd19`)
+Diimplement sesi 10. Kreator (`screens-creator.html`): 5 tile clickable (Brief aktif→brief, Video progres→progres, Menunggu review→progres?status=review, Disetujui→progres?status=approved, Total fee→bayaran). `screens-progres.html`: baca `?status=` → aktifkan filter pill. Admin (`screens-admin1.html`): stat card → `activateAdminPanel(panel)` (creators/queue/briefs/fee) ganti navigasi ke Laporan detail; `card.onclick=null` matiin inline lama. Verified: jsc syntax + smoke test (5/5 PASS panel mapping). **Perlu Bagas cek visual di live** (Vercel rebuild ~1 menit).
 
 ## 2. ⚠️ SQL migrasi masih BELUM dijalanin Bagas
 Konfirmasi via REST: `column profiles.phone does not exist` → Bagas belum run SQL. Jalanin di Supabase → SQL Editor:

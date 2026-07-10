@@ -58,8 +58,13 @@ create table if not exists public.briefs (
   title text not null,
   meta text,
   deadline text,
+  fee numeric,            -- nominal fee yang ditawarkan (dipakai jadi fee payment pas approve)
+  assigned_to text,       -- username kreator PIC; null = terbuka (kreator pilih sendiri)
   created_at timestamptz default now()
 );
+-- Kalau tabel briefs sudah ada dari migrasi lama, jalanin ALTER berikut sekali:
+--   alter table public.briefs add column if not exists fee numeric;
+--   alter table public.briefs add column if not exists assigned_to text;
 
 -- ---- 4. PROGRESS: kreator upload kerja ----------------------------------
 create table if not exists public.progress (

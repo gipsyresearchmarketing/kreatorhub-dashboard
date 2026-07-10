@@ -180,10 +180,12 @@
   function requestRevision(id, feedback)        { return recordDecision(id, 'revision', feedback); }
 
   // ---- action: create brief ----
-  async function createBrief({ brand, title, meta, deadline }) {
+  async function createBrief({ brand, title, meta, deadline, fee, assignedTo }) {
     const id = 'brief-' + brand.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
     const insRes = await sb.from('briefs').insert({
-      id, brand, title, meta: meta || '', deadline: deadline || '—'
+      id, brand, title, meta: meta || '', deadline: deadline || '—',
+      fee: (fee === '' || fee == null) ? null : (Number(fee) || 0),
+      assigned_to: assignedTo || null
     });
     if (insRes.error) throw new Error('Buat brief gagal: ' + insRes.error.message);
     await refresh();

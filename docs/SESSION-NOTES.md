@@ -935,18 +935,25 @@ End of session 9.
 
 ---
 
-# PENDING untuk sesi berikutnya (belum dikerjain — di-pause karena Bagas mau sleep)
+# STATUS terkini (akhir sesi 10) — semua ter-commit & ter-push, working tree bersih
 
 ## 1. Stat tile bisa diklik → ke list terkait — ✅ SELESAI (commit `471fd19`)
-Diimplement sesi 10. Kreator (`screens-creator.html`): 5 tile clickable (Brief aktif→brief, Video progres→progres, Menunggu review→progres?status=review, Disetujui→progres?status=approved, Total fee→bayaran). `screens-progres.html`: baca `?status=` → aktifkan filter pill. Admin (`screens-admin1.html`): stat card → `activateAdminPanel(panel)` (creators/queue/briefs/fee) ganti navigasi ke Laporan detail; `card.onclick=null` matiin inline lama. Verified: jsc syntax + smoke test (5/5 PASS panel mapping). **Perlu Bagas cek visual di live** (Vercel rebuild ~1 menit).
+Diimplement sesi 10. Kreator (`screens-creator.html`): 5 tile clickable (Brief aktif→brief, Video progres→progres, Menunggu review→progres?status=review, Disetujui→progres?status=approved, Total fee→bayaran). `screens-progres.html`: baca `?status=` → aktifkan filter pill. Admin (`screens-admin1.html`): stat card → `activateAdminPanel(panel)` (creators/queue/briefs/fee) ganti navigasi ke Laporan detail; `card.onclick=null` matiin inline lama. Verified: jsc syntax + smoke test (5/5 PASS panel mapping).
 
-## 2. ⚠️ SQL migrasi masih BELUM dijalanin Bagas
-Konfirmasi via REST: `column profiles.phone does not exist` → Bagas belum run SQL. Jalanin di Supabase → SQL Editor:
-```sql
-alter table public.profiles add column if not exists phone text;
-alter table public.briefs   add column if not exists fee numeric;
-alter table public.briefs   add column if not exists assigned_to text;
-```
-Tanpa ini: simpan nomor WA di Akun gagal sync + "Buat brief" error.
+## 2. SQL migrasi — ✅ SUDAH DIJALANIN Bagas (dikonfirmasi via REST akhir sesi 10)
+`profiles.phone`, `briefs.fee`, `briefs.assigned_to` sekarang ADA (query balik `[]`, bukan error 42703). Jadi notif WhatsApp + modal brief (fee/PIC) udah aktif end-to-end. Tinggal Bagas tes visual.
+
+## Yang tinggal Bagas tes (bukan kerjaan kode)
+- Kreator → Akun → isi Nomor WhatsApp → Simpan → harus sukses sync (nggak ada toast merah).
+- Admin → Brief baru (fee + assign PIC) → cek tabel briefs kolom Fee + Kreator dituju + tombol Buka WhatsApp.
+- Admin → Setujui konten → tombol Buka WhatsApp ke nomor kreator.
+
+## Opsi kalau lanjut (belum ada yang urgent / semua fitur utama beres)
+- Jalur B WhatsApp OTOMATIS (provider Fonnte/Wablas + Supabase Edge Function + biaya) — ganti dari manual wa.me.
+- Re-apply fee brief→payment + pembatasan visibility per-kreator (udah pernah dibangun, di-revert atas permintaan; tinggal re-apply kalau mau).
+- Rapiin URL Vercel (Project Name / custom domain).
+- `screens-admin-brief-detail.html` / `screens-reports.html` masih pakai static BRIEFS dict — belum full Supabase.
+- Notif WhatsApp buat revisi/reject (sekarang cuma approve + brief baru).
 
 ---
+

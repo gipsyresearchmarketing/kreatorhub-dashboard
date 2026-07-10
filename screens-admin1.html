@@ -2158,10 +2158,24 @@
       }
 
       // repopulate select scope brand/kreator dari FEE_DATA (pertahankan option[0] placeholder)
+      // 4 brand tetap yang dihandle Gipsy Group
+      const FIXED_BRANDS = ['Jamuzen', 'CalmadeAI', 'Conventio', 'Gipsy Research'];
+
+      // Dropdown scope: tampilkan SEMUA kreator terdaftar (profiles) + 4 brand tetap,
+      // di-union dengan apapun yang muncul di FEE_DATA (jaga-jaga ada data di luar master).
       function refreshScopeSelects() {
-        const uniqueBrands   = [...new Set(FEE_DATA.map(r => r.brand))].filter(Boolean).sort();
-        const uniqueCreators = [...new Map(FEE_DATA.map(r => [r.creator, r.creatorNm])).entries()];
-        [[scopeBrandSel, uniqueBrands.map(b => [b, b])], [scopeCreatorSel, uniqueCreators]].forEach(([sel, entries]) => {
+        const A = window.AdminApp;
+        const profiles = (A && A.data && A.data.profiles) || [];
+        // kreator: semua profiles role=kreator, lalu tambah yang ada di fee tapi belum ke-list
+        const creatorMap = new Map();
+        profiles.filter(p => p.role === 'kreator').forEach(p => creatorMap.set(p.username, p.display_name || p.username));
+        FEE_DATA.forEach(r => { if (r.creator && !creatorMap.has(r.creator)) creatorMap.set(r.creator, r.creatorNm || r.creator); });
+        const uniqueCreators = [...creatorMap.entries()];
+        // brand: 4 brand tetap (urutan dipertahankan) + brand lain yang muncul di fee
+        const brandList = FIXED_BRANDS.slice();
+        FEE_DATA.forEach(r => { if (r.brand && brandList.indexOf(r.brand) === -1) brandList.push(r.brand); });
+
+        [[scopeBrandSel, brandList.map(b => [b, b])], [scopeCreatorSel, uniqueCreators]].forEach(([sel, entries]) => {
           if (!sel) return;
           const placeholder = sel.options[0] || null;
           sel.innerHTML = '';

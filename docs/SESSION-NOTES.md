@@ -359,3 +359,153 @@ Real production perlu backend (Postgres + Node/Express, JWT auth, file storage, 
 ---
 
 End of session 4.
+
+---
+
+# SESSION 5 (2026-07-10) — Migrasi ke Supabase + GitHub Pages
+
+> **Goal utama**: dari static localStorage-only prototype → real 2-sided app (kreator ↔ admin) + file upload, hosted di GitHub Pages dengan Supabase sebagai backend.
+> **Status**: 4 fase selesai, ter-deploy. Ada 2 bug residual yang perlu di-debug di sesi berikutnya.
+
+## TL;DR
+
+Semua 4 fase migrasi selesai dalam 1 sesi panjang:
+
+| Fase | Apa | Status |
+|---|---|---|
+| **A** | Push ke GitHub + aktifin Pages | ✅ |
+| **B** | Setup Supabase project (schema + RLS + storage buckets) | ✅ |
+| **C** | Wire 10 halaman kreator ke Supabase (auth + data + upload) | ✅ |
+| **D** | Wire 4 halaman admin ke Supabase (auth + actions) | ✅ |
+
+**Live URL:** https://gipsyresearchmarketing.github.io/kreatorhub-dashboard/
+**Supabase project:** `bbzminpiwjnlubwvgmgk` (region Singapore, free tier)
+**Repo:** github.com/gipsyresearchmarketing/kreatorhub-dashboard (public)
+
+## Akun yang dibuat
+
+Di Supabase Dashboard → Authentication → Users:
+- `admin@gipsyresearch.id` → `update profiles set role = 'admin' where username = 'admin'` (password `AdminKreator2026!`)
+- `sasa.id@gipsyresearch.id` → role default `kreator` (password `SasaTest2026!`)
+
+**Login form trick:** screens-login.html coba suffix `@gipsyresearch.id`, `@gipsy.id`, atau tanpa suffix, jadi user bisa ketik `admin` atau `sasa.id` di form.
+
+## File baru
+
+| File | Purpose |
+|---|---|
+| `supabase-config.js` | Project URL + anon key (committed, aman karena RLS) |
+| `supabase-client.js` | Init `window.sb` dari CDN |
+| `admin-common.js` | `window.AdminApp` — auth guard admin + helpers (approve/reject/revision, createBrief, updatePayment) |
+| `supabase/schema.sql` | Skema + RLS policies + auth trigger |
+| `.gitignore` | Exclude `.claude/settings.local.json`, `supabase-config.local.js` |
+
+## File yang di-rewrite / di-extend
+
+- `creator-common.js` — totally rewrite ke Supabase-backed (async refresh, `creatorapp:ready` event, `setStatusOverride` jadi async)
+- `screens-login.html` — pakai Supabase Auth, session shape baru `{ userId, username, role, displayName, avatar }`
+- `screens-upload.html` — tambah support upload file video (ke bucket `videos`) + thumbnail (ke bucket `thumbnails`); keep link URL pattern juga
+- `screens-admin1.html` — render queue/briefs/creators tables dinamis; action button panggil modal → `admin-common.js` helpers; "Brief baru" pakai `prompt()` (MVP)
+- `screens-admin-brief-detail.html` — header dari `A.data.briefs`, videos/timeline masih static
+- `screens-admin-settings.html` — ganti password via Supabase Auth (re-login + updateUser), creators table dinamis
+- `screens-reports.html` — override nilai statis dengan live counts dari Supabase
+- 9 halaman kreator lain — replace `DOMContentLoaded` → `creatorapp:ready` (data siap setelah async refresh)
+
+## Skema database (5 tabel + 1 mirror)
+
+```sql
+profiles    -- mirror auth.users, ada role (kreator/admin)
+brands      -- seed 4 brand
+briefs      -- admin-write, read-all
+progress    -- kreator-write, admin-read-all, status check constraint
+history     -- snapshot setelah admin review
+payments    -- fee + ROAS
+```
+
+**Helper functions:** `public.current_role()`, `public.is_admin()` (security definer, baca profiles.role by auth.uid).
+
+**RLS highlights:**
+- `briefs`: read-all auth, admin-write
+- `progress`: kreator CRUD sendiri (`kreator = profiles.username`), admin read+update all
+- `history`/`payments`: kreator read sendiri, admin full
+- Storage `videos` private, `thumbnails` public, policy: kreator folder sendiri + admin all
+
+**Auth trigger:** `on_auth_user_created` auto-insert ke `profiles` dengan `username = split_part(email, '@', 1)`, role default `kreator`.
+
+## Pola yang dipakai untuk halaman baru
+
+Setiap halaman yang load `creator-common.js` atau `admin-common.js`:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script src="creator-common.js"></script>  <!-- atau admin-common.js -->
+```
+
+```js
+document.addEventListener('creatorapp:ready', () => {
+  const A = window.CreatorApp;  // atau window.AdminApp
+  // A.data.{briefs, progress, history, payments, profiles}
+  // A.sb (raw Supabase client)
+  // A.refresh() — fetch ulang
+  // A.showToast(msg, kind?)
+  // A.setStatusOverride(id, status)   -- kreator
+  // A.approveProgress / rejectProgress / requestRevision / createBrief  -- admin
+});
+```
+
+Race condition aman karena `creator-common.js` IIFE async — event di-dispatch setelah refresh selesai, sehingga listener selalu dapat data populated.
+
+## Bug / issue residual (perlu debug sesi berikutnya)
+
+### 1. Kreator upload ga muncul di admin
+- Kreator login sebagai `sasa.id`, submit upload di screens-upload.html, dapat toast "✓ Terkirim untuk review"
+- Admin login sebagai `admin`, buka screens-admin1.html → Antrian review masih static mock rows (UNBOXING KOPISACHET dll, bukan data Supabase)
+- Direct API query `GET /rest/v1/progress` dengan anon key returns `[]` (expected karena RLS, anon ga bisa baca)
+- **Possible causes:**
+  - Row masuk ke DB tapi kreator side baca gak match — perlu verify `kreator` column di row
+  - RLS policy allow kreator write tapi admin read-all — perlu verify dengan service_role
+  - Admin refresh jalan tapi gagal silently (cuma logged ke console)
+- **Tambahin diagnostic log** di admin-common.js (commit `d2609fc`): console.log jumlah rows fetched + array progress. Belum ditest.
+
+### 2. Static mock di admin side
+- `screens-admin-brief-detail.html` → videos & timeline sections masih hardcoded BRIEFS dict
+- `screens-admin-settings.html` → "Reset password" & "Nonaktifkan" button cuma simulasi (perlu manual via Supabase Dashboard untuk MVP)
+- `screens-reports.html` → beberapa section render manual baru ke-override di adminapp:ready listener (yang render duluan kelihatan bentar)
+
+### 3. Login flow rough edge
+- Multi-suffix try (`@gipsyresearch.id` → `@gipsy.id` → ``) — works tapi hacky. Kalau tambah user di production, harus konsisten pakai 1 domain.
+- "Ganti akun" button clear session tapi ga signOut dari Supabase Auth (token masih valid untuk user lain di localStorage)
+
+## Memory links
+
+- `[[project-overview]]` — what this project is
+- `[[supabase-migration-plan]]` — the 4-phase plan (skema sketch, RLS direction)
+- `[[supabase-migration-completed]]` — final state, accounts, MVP limitations
+- `[[creator-data-shape]]` — original SHARED_* shapes (referensi historis)
+- `[[navigation-flow]]` — halaman → ?id= conventions
+- `[[status-state-model]]` — status taxonomy
+
+## File path absolute
+
+`/Users/bagas/Documents/Website content creator/`
+
+## Quick reference buat next session
+
+```bash
+# Cek rows progress
+curl "https://bbzminpiwjnlubwvgmgk.supabase.co/rest/v1/progress?select=*" \
+  -H "apikey: <anon_key>" -H "Authorization: Bearer <anon_key>"
+# Note: returns [] karena RLS filter anon; perlu service_role untuk bypass
+
+# Push perubahan
+cd "/Users/bagas/Documents/Website content creator"
+git add -A
+git -c user.name="Bagas" -c user.email="bagas@gipsyresearch.id" commit -m "..."
+git push origin main  # GH Pages auto-rebuild
+```
+
+---
+
+End of session 5.

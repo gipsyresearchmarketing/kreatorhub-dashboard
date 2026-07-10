@@ -509,3 +509,145 @@ git push origin main  # GH Pages auto-rebuild
 ---
 
 End of session 5.
+
+---
+
+# SESSION 6 (2026-07-10) — Bersihkan dummy data + prep clean test
+
+> **Goal**: admin side masih ada data dummy yang bikin Bagas ga bisa clean test. Hapus semua mock dari 3 admin pages + kosongkan tabel Supabase.
+> **Status**: ✅ semua dummy dihapus, deploy live. SQL script untuk kosongkan tabel sudah disiapkan.
+
+## TL;DR
+
+- `screens-admin-brief-detail.html` — BRIEFS hardcoded dict dikosongkan (`const BRIEFS = {};`); refactor render code jadi function `renderBriefDetail(brief)`; halaman show "⏳ Memuat..." dulu, populate dari Supabase pas `adminapp:ready` fires; kalau brief ID ga ada di DB, show "tidak ditemukan di database" + link balik
+- `screens-admin-settings.html` — hapus 5 static rows di `#settings-creators-table tbody`, biarkan tbody kosong (cuma ada comment "rows di-render dinamis"); dynamic render populate dari `A.data.profiles`
+- `screens-reports.html` — hardcoded values (`>5<`, `>3<`, `>1<`, `>2<`) diganti jadi `>—<`; array `CREATORS`/`QUEUE`/`BRIEFS`/`FEE` dikosongkan; static render set 0/empty dulu, adminapp:ready override dengan live count
+
+## File yang diubah (commit `41aa158`)
+
+```
+docs/SESSION-NOTES.md             ← update +150 baris (sesi 5)
+screens-admin-brief-detail.html   ← -274 baris (kosongkan BRIEFS + refactor render)
+screens-admin-settings.html       ← -74 baris (5 static rows removed)
+screens-reports.html              ← -22 baris (hardcoded numbers + arrays)
+supabase/empty-tables.sql         ← +21 baris (TRUNCATE script)
+```
+
+## Refactor penting: render function pattern
+
+Di `screens-admin-brief-detail.html`, refactor dari imperative sync ke async data-driven:
+
+**Sebelum (sync, hardcoded fallback):**
+```js
+const BRIEFS = { 'b-1': {...}, 'b-2': {...} };
+const brief = BRIEFS[briefId];
+if (!brief) {
+  contentEl.innerHTML = '...tidak ditemukan...';
+  return;  // ❌ stops execution, no re-render possible
+}
+// 450 baris render code follows...
+```
+
+**Sesudah (async, data-driven):**
+```js
+const BRIEFS = {};  // populated by adminapp:ready
+
+// helper
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ...); }
+
+// initial render: show loading or fallback
+const brief = BRIEFS[briefId];
+if (!brief) {
+  contentEl.innerHTML = '<p>⏳ Memuat brief dari database...</p>';
+  pageTitle.textContent = 'Memuat...';
+} else {
+  renderBriefDetail(brief);
+}
+
+// 450 baris render code wrapped in function
+function renderBriefDetail(brief) {
+  pageTitle.textContent = brief.title;
+  // ... all the existing render code, now indented +2 inside function ...
+  contentEl.innerHTML = `...complex template...`;
+}
+
+// hydrate from Supabase
+document.addEventListener('adminapp:ready', () => {
+  const A = window.AdminApp;
+  const sbBrief = A.data.briefs.find(b => b.id === briefId);
+  // build BRIEFS[briefId] from sbBrief + related progress + related history
+  BRIEFS[briefId] = { title, brand, deadline, requirement, videos: [...], timeline: [...] };
+  // re-render
+  if (BRIEFS[briefId]) renderBriefDetail(BRIEFS[briefId]);
+  else { /* show "tidak ditemukan di database" */ }
+});
+```
+
+**Pattern ini bisa di-copy** ke halaman admin lain yang butuh render dinamis (brief-detail lain, settings sub-sections, reports detail).
+
+## SQL kosongkan tabel
+
+File: `supabase/empty-tables.sql` (run di SQL Editor):
+
+```sql
+TRUNCATE TABLE public.history CASCADE;
+TRUNCATE TABLE public.progress CASCADE;
+TRUNCATE TABLE public.payments CASCADE;
+TRUNCATE TABLE public.briefs CASCADE;
+
+SELECT 'briefs' as tabel, count(*) as rows FROM public.briefs
+UNION ALL SELECT 'progress', count(*) FROM public.progress
+UNION ALL SELECT 'history',  count(*) FROM public.history
+UNION ALL SELECT 'payments', count(*) FROM public.payments
+UNION ALL SELECT 'profiles', count(*) FROM public.profiles;
+-- Expected: 0/0/0/0/2
+```
+
+Profile & auth.users DIBIARKAN (admin + sasa.id harus tetap ada buat login). Storage buckets juga perlu di-empty manual via dashboard (videos + thumbnails → select all → delete).
+
+## Skenario clean test
+
+1. Run SQL truncate di Supabase
+2. Hapus file di Storage (videos + thumbnails)
+3. Refresh `screens-admin1.html` → Antrian review kosong, Brief aktif kosong, Kreator cuma 1 (sasa.id)
+4. Login kreator → upload video baru (jangan lupa klik "Kirim untuk review")
+5. Login admin → Antrian review muncul row kreator yang baru diupload
+6. Test approve/reject/revision → row status berubah, masuk history
+7. Test bikin brief baru dari admin → cek muncul di kreator side menu "Brief & script"
+
+## Diskusi Vercel (tidak di-eksekusi)
+
+Bagas mention deploy ke Vercel. Diskusi:
+- Vercel vs GH Pages: Vercel punya preview URL per PR, custom domain lebih gampang, build logs lebih jelas
+- Setup: import repo `kreatorhub-dashboard`, framework = Other, no build, output = `.`
+- URL default: `kreatorhub-dashboard.vercel.app` atau pakai username
+- Belum di-eksekusi karena fokus ke clean test dulu
+
+## Memory links
+
+- `[[supabase-migration-completed]]` — status migrasi, akun, MVP limits
+- `[[supabase-migration-plan]]` — original 4-phase plan
+- `[[project-overview]]` — what this project is
+- `[[navigation-flow]]` — page → ?id= conventions
+- `[[creator-data-shape]]` — original SHARED_* shapes (historical)
+
+## File path absolute
+
+`/Users/bagas/Documents/Website content creator/`
+
+## Quick reference
+
+```bash
+# Lihat status
+cd "/Users/bagas/Documents/Website content creator"
+git log --oneline -10
+
+# Test kreator → admin
+open "https://gipsyresearchmarketing.github.io/kreatorhub-dashboard/screens-login.html"
+# Login sasa.id / SasaTest2026! → upload video
+# Logout, login admin / AdminKreator2026! → cek antrian review
+```
+
+---
+
+End of session 6.

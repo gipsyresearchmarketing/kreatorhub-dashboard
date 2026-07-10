@@ -934,7 +934,8 @@
             btn.disabled = true; btn.textContent = 'Mengirim…';
             try {
               const { error } = await A.sb.auth.resetPasswordForEmail(target + '@gipsyresearch.id', {
-                redirectTo: window.location.origin + '/kreatorhub-dashboard/screens-login.html'
+                // path-relative → jalan di GH Pages (subfolder) maupun Vercel (root)
+                redirectTo: new URL('screens-login.html', window.location.href).href
               });
               if (error) throw error;
               showToast('Link reset terkirim ke ' + target + '@gipsyresearch.id ✓', 'success');

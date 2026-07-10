@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="creator-common.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
 </head>
 <body>
   <header class="topnav" data-od-id="topnav">
@@ -81,7 +84,7 @@
 
   <script src="creator-common.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('creatorapp:ready', function () {
       const A = window.CreatorApp;
       if (!A) return;
 
@@ -250,7 +253,7 @@
       let item = A.data.progress.find(p => p.id === id);
       let fromHistory = false;
       if (!item) {
-        item = A.SHARED_HISTORY.find(h => h.id === id);
+        item = A.data.history.find(h => h.id === id);
         if (item) fromHistory = true;
       }
       // if still not found, check history by reference (overrides won't change history key)
@@ -283,7 +286,7 @@
         relevantHistory = item;
       } else {
         const itemWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const candidates = A.SHARED_HISTORY.filter(h => {
+        const candidates = A.data.history.filter(h => {
           if (h.brand !== item.brand) return false;
           const hWords = h.title.toLowerCase().split(/\s+/);
           return itemWords.some(w => hWords.includes(w));

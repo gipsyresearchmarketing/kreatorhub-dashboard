@@ -27,6 +27,7 @@
   'use strict';
 
   const SESSION_KEY = 'kreatorhub.session';
+  const DEFAULT_FEE = 300000;   // nominal fee default per video di-approve (editable di fee panel)
   function getSession() {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
   }
@@ -146,6 +147,26 @@
     if (insRes.error) {
       console.warn('[recordDecision] history insert gagal', insRes.error);
       // Lanjut, status utama sudah terupdate
+    }
+
+    // 3) Approve → auto-create baris fee (status pending, nominal default).
+    //    id deterministik + ignoreDuplicates → aman kalau video di-approve ulang
+    //    setelah revisi (fee yang udah dikoreksi admin nggak ke-reset).
+    if (decision === 'approve') {
+      const payRes = await sb.from('payments').upsert({
+        id: 'pay-' + progressId,
+        kreator: item.kreator,
+        video_title: item.title,
+        brand: item.brand,
+        fee: DEFAULT_FEE,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+        note: ''
+      }, { onConflict: 'id', ignoreDuplicates: true });
+      if (payRes.error) {
+        console.warn('[recordDecision] payment upsert gagal', payRes.error);
+        // Lanjut, status utama sudah terupdate
+      }
     }
 
     await refresh();

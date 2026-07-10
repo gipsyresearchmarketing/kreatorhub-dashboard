@@ -208,6 +208,10 @@
     .fee-table .col-fee strong { font-weight: 600; }
     .fee-table tr[data-status="pending"] td.col-fee strong { color: color-mix(in oklch, var(--warn) 60%, var(--fg)); }
     .fee-table tr[data-status="paid"] td.col-fee strong { color: var(--success); }
+    /* fee bisa diedit admin (nominal beragam) — kasih afaordance klik */
+    .fee-table td.col-fee.fee-editable { cursor: pointer; }
+    .fee-table td.col-fee.fee-editable strong { border-bottom: 1px dashed color-mix(in oklch, var(--muted) 60%, transparent); }
+    .fee-table td.col-fee.fee-editable:hover strong { border-bottom-color: var(--accent); color: var(--accent); }
     .fee-table .row-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     /* group header row in fee table */
@@ -538,7 +542,7 @@
         <div>
           <p class="eyebrow">PANEL ADMIN</p>
           <h1 style="margin-top: 6px;">Antrian review</h1>
-          <p>5 video menunggu keputusan Anda. Hasil review akan dikirim otomatis ke email atau WhatsApp kreator.</p>
+          <p>Kreator yang upload video untuk review muncul di antrian di bawah. Hasil review akan dikirim otomatis ke email atau WhatsApp kreator.</p>
         </div>
         <a href="#" class="btn btn-secondary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/></svg>
@@ -551,29 +555,29 @@
         <div class="card stat-card" data-stat="kreator-aktif" onclick="window.location.href='screens-reports.html#kreator-aktif'" role="link" tabindex="0">
           <span class="stat-hint">klik →</span>
           <div class="stat-label">Kreator aktif</div>
-          <div class="stat-num num">18</div>
-          <div class="stat-sub">+2 bulan ini</div>
+          <div class="stat-num num">—</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <span class="stat-arrow" aria-hidden="true">›</span>
         <div class="card stat-card" data-stat="menunggu-review" onclick="window.location.href='screens-reports.html#menunggu-review'" role="link" tabindex="0">
           <span class="stat-hint">klik →</span>
           <div class="stat-label">Menunggu review</div>
-          <div class="stat-num num">5</div>
-          <div class="stat-sub"><span class="warn">1 terlambat</span></div>
+          <div class="stat-num num">—</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <span class="stat-arrow" aria-hidden="true">›</span>
         <div class="card stat-card" data-stat="disetujui-minggu" onclick="window.location.href='screens-reports.html#disetujui-minggu'" role="link" tabindex="0">
           <span class="stat-hint">klik →</span>
           <div class="stat-label">Disetujui minggu ini</div>
-          <div class="stat-num num">14</div>
-          <div class="stat-sub"><span class="up">+8%</span> minggu lalu</div>
+          <div class="stat-num num">—</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
         <span class="stat-arrow" aria-hidden="true">›</span>
         <div class="card stat-card" data-stat="brief-aktif" onclick="window.location.href='screens-reports.html#brief-aktif'" role="link" tabindex="0">
           <span class="stat-hint">klik →</span>
           <div class="stat-label">Brief aktif</div>
-          <div class="stat-num num">9</div>
-          <div class="stat-sub">3 baru minggu ini</div>
+          <div class="stat-num num">—</div>
+          <div class="stat-sub">&nbsp;</div>
         </div>
       </section>
 
@@ -605,134 +609,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr data-row data-status="review" data-brand="JZ" data-brief-id="b-1" data-od-id="row-1">
-                <td>
-                  <div class="row-title">
-                    <div>
-                      <strong data-video-link tabindex="0">Unboxing Kopi Sachet — V2</strong>
-                      <small>0:48 · <a href="#" class="link-cell">drive.google/…/v2</a></small>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td>
-                  <div class="row-creator">
-                    <div class="avatar">SA</div>
-                    <div class="name">Sasa A.<small>sasa.id</small></div>
-                  </div>
-                </td>
-                <td><span class="status review">Review</span></td>
-                <td class="num-col">3 hari lagi</td>
-                <td>
-                  <div class="row-actions-cell">
-                    <button class="btn btn-primary" data-act="approve">Setujui</button>
-                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
-                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
-                  </div>
-                </td>
-              </tr>
-              <tr data-row data-status="review" data-brand="CA" data-brief-id="b-2" data-od-id="row-2">
-                <td>
-                  <div class="row-title">
-                    <div>
-                      <strong data-video-link tabindex="0">Tutorial AI: Thumbnail 5 Menit</strong>
-                      <small>3:12 · <a href="#" class="link-cell">youtu.be/…/ai1</a></small>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td>
-                  <div class="row-creator">
-                    <div class="avatar">DH</div>
-                    <div class="name">Dimas H.<small>dimshub</small></div>
-                  </div>
-                </td>
-                <td><span class="status review">Review</span></td>
-                <td class="num-col">5 hari lagi</td>
-                <td>
-                  <div class="row-actions-cell">
-                    <button class="btn btn-primary" data-act="approve">Setujui</button>
-                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
-                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
-                  </div>
-                </td>
-              </tr>
-              <tr data-row data-status="revision" data-brand="JZ" data-brief-id="b-1" data-od-id="row-3">
-                <td>
-                  <div class="row-title">
-                    <div>
-                      <strong data-video-link tabindex="0">POV Pagi Barista — Revisi</strong>
-                      <small>1:05 · <a href="#" class="link-cell">drive.google/…/pagi2</a></small>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td>
-                  <div class="row-creator">
-                    <div class="avatar">SA</div>
-                    <div class="name">Sasa A.<small>sasa.id</small></div>
-                  </div>
-                </td>
-                <td><span class="status revision">Revisi</span></td>
-                <td class="num-col" style="color: var(--danger);">Kemarin</td>
-                <td>
-                  <div class="row-actions-cell">
-                    <button class="btn btn-primary" data-act="approve">Setujui</button>
-                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
-                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
-                  </div>
-                </td>
-              </tr>
-              <tr data-row data-status="review" data-brand="CV" data-brief-id="b-3" data-od-id="row-4">
-                <td>
-                  <div class="row-title">
-                    <div>
-                      <strong data-video-link tabindex="0">Teaser Creative Day — Variasi B</strong>
-                      <small>0:15 · <a href="#" class="link-cell">vimeo.com/…/cd-b</a></small>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td>
-                  <div class="row-creator">
-                    <div class="avatar">RP</div>
-                    <div class="name">Rangga P.<small>ranggap.id</small></div>
-                  </div>
-                </td>
-                <td><span class="status review">Review</span></td>
-                <td class="num-col">2 hari lagi</td>
-                <td>
-                  <div class="row-actions-cell">
-                    <button class="btn btn-primary" data-act="approve">Setujui</button>
-                    <button class="btn btn-secondary" data-act="revision">Revisi</button>
-                    <button class="btn btn-ghost" data-act="reject">Tolak</button>
-                  </div>
-                </td>
-              </tr>
-              <tr data-row data-status="draft" data-brand="GR" data-od-id="row-5">
-                <td>
-                  <div class="row-title">
-                    <div>
-                      <strong data-video-link tabindex="0">Eksperimen Kopi Dingin V3</strong>
-                      <small>2:00 · <a href="#" class="link-cell">drive.google/…/dingin3</a></small>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
-                <td>
-                  <div class="row-creator">
-                    <div class="avatar">MN</div>
-                    <div class="name">Maya N.<small>mayacontent</small></div>
-                  </div>
-                </td>
-                <td><span class="status draft">Draft</span></td>
-                <td class="num-col">—</td>
-                <td>
-                  <div class="row-actions-cell">
-                    <span class="pill">Menunggu kirim kreator</span>
-                  </div>
-                </td>
-              </tr>
+              <!-- rows di-render dinamis dari Supabase via renderQueueTable(A) -->
             </tbody>
           </table>
         </div>
@@ -763,54 +640,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr data-od-id="b-1" data-brief-id="b-1">
-                <td>
-                  <a href="screens-admin-brief-detail.html?id=b-1" class="brief-title-link">
-                    <strong>Video unboxing kopi sachet — 30 detik</strong>
-                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Target 18–25 · Tone kasual · Pakai musik upbeat</small>
-                  </a>
-                </td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td>Sasa A.</td>
-                <td><span class="status review">Aktif</span></td>
-                <td class="num-col">15 Jul</td>
-              </tr>
-              <tr data-od-id="b-2" data-brief-id="b-2">
-                <td>
-                  <a href="screens-admin-brief-detail.html?id=b-2" class="brief-title-link">
-                    <strong>Tutorial AI: bikin thumbnail 5 menit</strong>
-                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Voice-over Indonesia · 1080p landscape</small>
-                  </a>
-                </td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td>Dimas H.</td>
-                <td><span class="status review">Aktif</span></td>
-                <td class="num-col">17 Jul</td>
-              </tr>
-              <tr data-od-id="b-3" data-brief-id="b-3">
-                <td>
-                  <a href="screens-admin-brief-detail.html?id=b-3" class="brief-title-link">
-                    <strong>Teaser Creative Day — 15 detik</strong>
-                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">3 variasi hook · Musik bebas</small>
-                  </a>
-                </td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td>Rangga P.</td>
-                <td><span class="status review">Aktif</span></td>
-                <td class="num-col">—</td>
-              </tr>
-              <tr data-od-id="b-4" data-brief-id="b-4">
-                <td>
-                  <a href="screens-admin-brief-detail.html?id=b-4" class="brief-title-link">
-                    <strong>Riset audiens Gen Z — 3 take wawancara</strong>
-                    <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">Sample 5 orang · Tanpa lighting studio</small>
-                  </a>
-                </td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
-                <td>—</td>
-                <td><span class="status draft">Draft</span></td>
-                <td class="num-col">22 Jul</td>
-              </tr>
+              <!-- rows di-render dinamis dari Supabase via renderBriefsTable(A) -->
             </tbody>
           </table>
         </div>
@@ -849,61 +679,7 @@
               </tr>
             </thead>
             <tbody id="creators-tbody">
-              <tr data-creator="sasa" data-od-id="creator-row-sasa">
-                <td>
-                  <div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id · sasa@gipsy.id</small></div></div>
-                </td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col" data-m="brief">—</td>
-                <td class="num-col" data-m="video">—</td>
-                <td class="num-col" data-m="approval">—</td>
-                <td class="num-col" data-m="income">—</td>
-                <td><span class="status approved">Aktif</span></td>
-              </tr>
-              <tr data-creator="dimas" data-od-id="creator-row-dimas">
-                <td>
-                  <div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h · dimas@gipsy.id</small></div></div>
-                </td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td class="num-col" data-m="brief">—</td>
-                <td class="num-col" data-m="video">—</td>
-                <td class="num-col" data-m="approval">—</td>
-                <td class="num-col" data-m="income">—</td>
-                <td><span class="status approved">Aktif</span></td>
-              </tr>
-              <tr data-creator="rangga" data-od-id="creator-row-rangga">
-                <td>
-                  <div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p · rangga@gipsy.id</small></div></div>
-                </td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col" data-m="brief">—</td>
-                <td class="num-col" data-m="video">—</td>
-                <td class="num-col" data-m="approval">—</td>
-                <td class="num-col" data-m="income">—</td>
-                <td><span class="status approved">Aktif</span></td>
-              </tr>
-              <tr data-creator="maya" data-od-id="creator-row-maya">
-                <td>
-                  <div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n · maya@gipsy.id</small></div></div>
-                </td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span> <span class="brand-tag">JAMUZEN</span> <span class="brand-count">2 brand</span></td>
-                <td class="num-col" data-m="brief">—</td>
-                <td class="num-col" data-m="video">—</td>
-                <td class="num-col" data-m="approval">—</td>
-                <td class="num-col" data-m="income">—</td>
-                <td><span class="status approved">Aktif</span></td>
-              </tr>
-              <tr data-creator="aulia" data-od-id="creator-row-aulia">
-                <td>
-                  <div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t · aulia@gipsy.id</small></div></div>
-                </td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col" data-m="brief">—</td>
-                <td class="num-col" data-m="video">—</td>
-                <td class="num-col" data-m="approval">—</td>
-                <td class="num-col" data-m="income">—</td>
-                <td><span class="status approved">Aktif</span></td>
-              </tr>
+              <!-- rows di-render dinamis dari Supabase via renderCreatorsTable(A) -->
             </tbody>
           </table>
         </div>
@@ -925,38 +701,37 @@
             <div class="card stat-card" data-stat="disetujui" onclick="window.location.href='screens-reports.html#disetujui'" role="link" tabindex="0">
               <span class="stat-hint">klik →</span>
               <div class="stat-label">Disetujui</div>
-              <div class="stat-num num">19</div>
-              <div class="stat-sub"><span class="up">+8%</span> dari periode lalu</div>
+              <div class="stat-num num">—</div>
+              <div class="stat-sub">&nbsp;</div>
             </div>
             <div class="card stat-card" data-stat="revisi-diminta" onclick="window.location.href='screens-reports.html#revisi-diminta'" role="link" tabindex="0">
               <span class="stat-hint">klik →</span>
               <div class="stat-label">Revisi diminta</div>
-              <div class="stat-num num">6</div>
-              <div class="stat-sub">4 sudah diresubmit</div>
+              <div class="stat-num num">—</div>
+              <div class="stat-sub">&nbsp;</div>
             </div>
             <div class="card stat-card" data-stat="ditolak" onclick="window.location.href='screens-reports.html#ditolak'" role="link" tabindex="0">
               <span class="stat-hint">klik →</span>
               <div class="stat-label">Ditolak</div>
-              <div class="stat-num num">2</div>
-              <div class="stat-sub">1 butuh diskusi manual</div>
+              <div class="stat-num num">—</div>
+              <div class="stat-sub">&nbsp;</div>
             </div>
             <div class="card stat-card" data-stat="pendapatan-dibayarkan" onclick="window.location.href='screens-reports.html#pendapatan-dibayarkan'" role="link" tabindex="0">
               <span class="stat-hint">klik →</span>
               <div class="stat-label">Pendapatan dibayarkan</div>
-              <div class="stat-num num">Rp 24.6 jt</div>
-              <div class="stat-sub">ke 6 kreator</div>
+              <div class="stat-num num">—</div>
+              <div class="stat-sub">&nbsp;</div>
             </div>
-          </div>
 
           <div class="grid-2" style="gap: var(--gap-lg); margin-bottom: var(--gap-lg);">
             <div class="card chart-card" data-od-id="chart-brand">
               <h3>Video per brand</h3>
               <div class="chart-sub">Disetujui dalam 30 hari terakhir</div>
               <div class="bar-chart" style="margin-top: 8px;">
-                <div class="bar-row"><span class="bar-label">Jamuzen</span><div class="bar-track"><div class="bar-fill" style="width: 78%;"></div></div><span class="bar-value num">14</span></div>
-                <div class="bar-row"><span class="bar-label">CalmadeAI</span><div class="bar-track"><div class="bar-fill" style="width: 50%;"></div></div><span class="bar-value num">9</span></div>
-                <div class="bar-row"><span class="bar-label">Conventio</span><div class="bar-track"><div class="bar-fill" style="width: 33%;"></div></div><span class="bar-value num">6</span></div>
-                <div class="bar-row"><span class="bar-label">Gipsy Research</span><div class="bar-track"><div class="bar-fill" style="width: 22%;"></div></div><span class="bar-value num">4</span></div>
+                <div class="bar-row"><span class="bar-label">Jamuzen</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">CalmadeAI</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Conventio</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Gipsy Research</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
               </div>
             </div>
 
@@ -964,11 +739,11 @@
               <h3>Aktivitas review 7 hari</h3>
               <div class="chart-sub">Jumlah video yang diproses tiap hari</div>
               <div class="bar-chart" style="margin-top: 8px;">
-                <div class="bar-row"><span class="bar-label">Senin</span><div class="bar-track"><div class="bar-fill" style="width: 60%;"></div></div><span class="bar-value num">9</span></div>
-                <div class="bar-row"><span class="bar-label">Selasa</span><div class="bar-track"><div class="bar-fill" style="width: 47%;"></div></div><span class="bar-value num">7</span></div>
-                <div class="bar-row"><span class="bar-label">Rabu</span><div class="bar-track"><div class="bar-fill success" style="width: 80%;"></div></div><span class="bar-value num">12</span></div>
-                <div class="bar-row"><span class="bar-label">Kamis</span><div class="bar-track"><div class="bar-fill warn" style="width: 53%;"></div></div><span class="bar-value num">8</span></div>
-                <div class="bar-row"><span class="bar-label">Jumat</span><div class="bar-track"><div class="bar-fill" style="width: 67%;"></div></div><span class="bar-value num">10</span></div>
+                <div class="bar-row"><span class="bar-label">Senin</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Selasa</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Rabu</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Kamis</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Jumat</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
               </div>
             </div>
           </div>
@@ -983,10 +758,7 @@
                 <tr><th>Kreator</th><th>Brand</th><th class="num-col">Video disetujui</th><th class="num-col">Avg. waktu review</th><th class="num-col">Pendapatan</th></tr>
               </thead>
               <tbody>
-                <tr><td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td><td><span class="brand-tag">JAMUZEN</span></td><td class="num-col">9</td><td class="num-col">3.2 jam</td><td class="num-col">Rp 8.1 jt</td></tr>
-                <tr><td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td><td><span class="brand-tag">CONVENTIO</span></td><td class="num-col">7</td><td class="num-col">4.1 jam</td><td class="num-col">Rp 6.7 jt</td></tr>
-                <tr><td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td><td><span class="brand-tag">JAMUZEN</span></td><td class="num-col">5</td><td class="num-col">5.8 jam</td><td class="num-col">Rp 4.2 jt</td></tr>
-                <tr><td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td><td><span class="brand-tag">CALMADEA.I</span></td><td class="num-col">3</td><td class="num-col">6.2 jam</td><td class="num-col">Rp 1.8 jt</td></tr>
+                <!-- rows top-kreator di-render dinamis (renderer belum ada — lihat TODO) -->
               </tbody>
             </table>
           </div>
@@ -1101,245 +873,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-1">
-                <td><div class="row-title"><div><strong>POV Pagi Barista</strong><small class="row-meta">drive.google/…/pagi</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 hari lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-2">
-                <td><div class="row-title"><div><strong>Eksperimen Boba</strong><small class="row-meta">drive.google/…/boba</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">2 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-3">
-                <td><div class="row-title"><div><strong>Mini-series eps 1</strong><small class="row-meta">drive.google/…/mini1</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">kemarin</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-4">
-                <td><div class="row-title"><div><strong>Mini-series eps 2</strong><small class="row-meta">drive.google/…/mini2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 jam lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="sasa" data-od-id="fee-5">
-                <td><div class="row-title"><div><strong>Cuplikan event bulan lalu</strong><small class="row-meta">drive.google/…/cup</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">SA</div><div class="name">Sasa A.<small>sasa.id</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">2 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-
-              <tr data-status="paid" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-6">
-                <td><div class="row-title"><div><strong>Voice-over Tutorial Batch 1</strong><small class="row-meta">youtu.be/…/batch1</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">2 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-7">
-                <td><div class="row-title"><div><strong>Tutorial AI Thumbnail — Take 1</strong><small class="row-meta">youtu.be/…/ai-t1</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 hari lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-8">
-                <td><div class="row-title"><div><strong>Tutorial AI Thumbnail — Take 2</strong><small class="row-meta">youtu.be/…/ai-t2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 jam lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="CalmadeAI" data-creator="dimas" data-od-id="fee-9">
-                <td><div class="row-title"><div><strong>Thumbnail AI Batch 3</strong><small class="row-meta">youtu.be/…/ai-t3</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">DH</div><div class="name">Dimas H.<small>dimas.h</small></div></div></td>
-                <td><span class="brand-tag">CALMADEA.I</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">kemarin</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-
-              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-10">
-                <td><div class="row-title"><div><strong>Behind The Scene Lipat Kertas</strong><small class="row-meta">vimeo.com/…/kertas</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
-                <td class="num-col">2 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-11">
-                <td><div class="row-title"><div><strong>Teaser Creative Day — Variasi A</strong><small class="row-meta">vimeo.com/…/cd-a</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
-                <td class="num-col">minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Conventio" data-creator="rangga" data-od-id="fee-12">
-                <td><div class="row-title"><div><strong>Lipat Kertas (revisi)</strong><small class="row-meta">vimeo.com/…/kertas-r</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
-                <td class="num-col">1 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Conventio" data-creator="rangga" data-od-id="fee-13">
-                <td><div class="row-title"><div><strong>Teaser Creative Day — Variasi B</strong><small class="row-meta">vimeo.com/…/cd-b</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
-                <td class="num-col">1 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Conventio" data-creator="rangga" data-od-id="fee-14">
-                <td><div class="row-title"><div><strong>Lipat Kertas Take 2</strong><small class="row-meta">vimeo.com/…/kertas-2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">RP</div><div class="name">Rangga P.<small>rangga.p</small></div></div></td>
-                <td><span class="brand-tag">CONVENTIO</span></td>
-                <td class="num-col col-fee"><strong>Rp 400.000</strong></td>
-                <td class="num-col">kemarin</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-
-              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-15">
-                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 1</strong><small class="row-meta">drive.google/…/genz1</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
-                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
-                <td class="num-col">3 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-16">
-                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 2</strong><small class="row-meta">drive.google/…/genz2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
-                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
-                <td class="num-col">2 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Gipsy Research" data-creator="maya" data-od-id="fee-17">
-                <td><div class="row-title"><div><strong>Riset audiens Gen Z — take 3</strong><small class="row-meta">drive.google/…/genz3</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
-                <td><span class="brand-tag">GIPSY RESEARCH</span></td>
-                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
-                <td class="num-col">5 jam lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="maya" data-od-id="fee-18">
-                <td><div class="row-title"><div><strong>Eksperimen Kopi Dingin</strong><small class="row-meta">drive.google/…/dingin</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">MN</div><div class="name">Maya N.<small>maya.n</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 185.000</strong></td>
-                <td class="num-col">1 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-19">
-                <td><div class="row-title"><div><strong>POV Pagi Barista (Aulia)</strong><small class="row-meta">drive.google/…/pagi-a</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-20">
-                <td><div class="row-title"><div><strong>Eksperimen Boba V2</strong><small class="row-meta">drive.google/…/boba2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">2 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-21">
-                <td><div class="row-title"><div><strong>Mini-series eps 1 (Aulia)</strong><small class="row-meta">drive.google/…/mini1-a</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">2 minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="paid" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-22">
-                <td><div class="row-title"><div><strong>Mini-series eps 2 (Aulia)</strong><small class="row-meta">drive.google/…/mini2-a</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">minggu lalu</td>
-                <td><span class="status paid">Sudah dibayar</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-23">
-                <td><div class="row-title"><div><strong>Mini-series eps 3</strong><small class="row-meta">drive.google/…/mini3</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-24">
-                <td><div class="row-title"><div><strong>Behind the barista</strong><small class="row-meta">drive.google/…/behind</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">3 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-25">
-                <td><div class="row-title"><div><strong>Behind the barista Take 2</strong><small class="row-meta">drive.google/…/behind2</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">1 hari lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-              <tr data-status="pending" data-brand="Jamuzen" data-creator="aulia" data-od-id="fee-26">
-                <td><div class="row-title"><div><strong>Eksperimen Sachet Premium</strong><small class="row-meta">drive.google/…/sachet</small></div></div></td>
-                <td><div class="row-creator"><div class="avatar">AT</div><div class="name">Aulia T.<small>aulia.t</small></div></div></td>
-                <td><span class="brand-tag">JAMUZEN</span></td>
-                <td class="num-col col-fee"><strong>Rp 350.000</strong></td>
-                <td class="num-col">5 jam lalu</td>
-                <td><span class="status pending">Menunggu</span></td>
-                <td><div class="row-actions-cell"><button class="btn btn-primary" data-act="fee-approve">Setujui bayar</button><button class="btn btn-ghost" data-act="fee-detail">Detail</button></div></td>
-              </tr>
-            </tbody>
+              <!-- rows di-render dinamis dari FEE_DATA via renderFeeTable() — FEE_DATA sendiri masih hardcoded, lihat TODO -->
           </table>
           <div class="empty-state" id="fee-empty" style="display: none; padding: 24px;">Tidak ada data fee sesuai filter.</div>
         </div>
@@ -1466,7 +1000,7 @@
       <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 14px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; padding: 4px 0;">
           <span style="color: var(--muted); font-size: 12px;">Fee yang disetujui</span>
-          <span id="fee-modal-amount" class="num" style="font-family: var(--font-mono); font-weight: 600; font-size: 16px;">—</span>
+          <input id="fee-modal-amount" type="text" inputmode="numeric" class="num" style="font-family: var(--font-mono); font-weight: 600; font-size: 16px; text-align: right; width: 140px; border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; background: var(--surface); color: var(--fg);">
         </div>
         <div style="display: flex; justify-content: space-between; padding: 4px 0;">
           <span style="color: var(--muted); font-size: 12px;">Disubmit</span>
@@ -1847,26 +1381,20 @@
       creatorsSearch?.addEventListener('input', applyCreatorsFilter);
 
       // ---- kreator: period-aware metrics + brief/video dashboard ----
-      // extract briefs from the briefs table once
-      const BRIEFS = [];
-      document.querySelectorAll('#briefs-table tbody tr').forEach(tr => {
-        const titleEl = tr.querySelector('strong');
-        const brandEl = tr.querySelector('.brand-tag');
-        const creatorCell = tr.children[2]?.textContent?.trim() || '—';
-        const statusEl = tr.querySelector('.status');
-        const deadlineCell = tr.children[4]?.textContent?.trim() || '—';
-        BRIEFS.push({
-          id:       tr.dataset.briefId || '',
-          title:    titleEl?.textContent.trim() || '',
-          brand:    brandEl?.textContent.trim() || '',
-          creator:  creatorCell,                 // display name like "Sasa A." or "—"
-          status:   (statusEl?.textContent.trim() || '') === 'Draft' ? 'draft' : 'aktif',
-          deadline: deadlineCell
-        });
-      });
-
-      // map creator display-name (from brief table) → data-creator key (from fee table)
-      const BRIEF_CREATOR_MAP = { 'Sasa A.': 'sasa', 'Dimas H.': 'dimas', 'Rangga P.': 'rangga', 'Maya N.': 'maya', 'Aulia T.': 'aulia' };
+      // BRIEFS di-build dari A.data.briefs (Supabase) via buildBriefsData(), bukan scrape DOM.
+      let BRIEFS = [];
+      function buildBriefsData() {
+        const A = window.AdminApp;
+        const briefs = (A && A.data && A.data.briefs) || [];
+        BRIEFS = briefs.map(b => ({
+          id:       b.id || '',
+          title:    b.title || '',
+          brand:    b.brand || '',
+          creator:  '—',        // schema briefs nggak punya kolom kreator
+          status:   'aktif',    // semua brief dianggap aktif (nggak ada status field)
+          deadline: b.deadline || '—'
+        }));
+      }
 
       let creatorsPeriod = creatorsPeriodSel?.value || 'all';
 
@@ -1874,35 +1402,8 @@
         return p === 'all' ? 'Lifetime' : (p + ' hari terakhir');
       }
 
-      function computeCreatorMetrics(creator, period) {
-        const vids = FEE_DATA.filter(r => r.creator === creator && inPeriod(r.daysAgo, period));
-        const videoCount = vids.length;
-        const income = vids.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
-        const reviewed = vids.filter(r => r.status === 'paid' || r.status === 'rejected');
-        const approved = vids.filter(r => r.status === 'paid');
-        const approval = reviewed.length ? Math.round((approved.length / reviewed.length) * 100) : 0;
-        // brief count (always "active" briefs from BRIEFS — period not applicable)
-        const brief = BRIEFS.filter(b => b.status === 'aktif' && (b.creator === '—' || BRIEF_CREATOR_MAP[b.creator] === creator)).length;
-        return { brief, videoCount, approval, income };
-      }
-
-      function renderCreatorsTable() {
-        document.querySelectorAll('#creators-table tbody tr[data-creator]').forEach(row => {
-          const c = row.dataset.creator;
-          const m = computeCreatorMetrics(c, creatorsPeriod);
-          row.querySelectorAll('[data-m]').forEach(cell => {
-            const k = cell.dataset.m;
-            if      (k === 'brief')    cell.textContent = m.brief || '0';
-            else if (k === 'video')    cell.textContent = m.videoCount;
-            else if (k === 'approval') cell.textContent = m.approval ? m.approval + '%' : '—';
-            else if (k === 'income')   cell.textContent = m.income ? formatRp(m.income) : 'Rp 0';
-          });
-        });
-        // header labels
-        const pl = periodLabelCreators(creatorsPeriod);
-        document.getElementById('creators-video-th').textContent = `Video (${pl})`;
-        document.getElementById('creators-income-th').textContent = `Pendapatan (${pl})`;
-      }
+      // Catatan: tabel kreator (#creators-tbody) sekarang full di-render IIFE #2
+      // dari A.data.profiles. IIFE #1 cuma pegang dashboard list (brief + video).
 
       function renderCreatorsDashboard() {
         const pl = periodLabelCreators(creatorsPeriod);
@@ -1949,7 +1450,6 @@
       }
 
       function updateCreatorsView() {
-        renderCreatorsTable();
         renderCreatorsDashboard();
       }
 
@@ -2583,80 +2083,46 @@
       const feeTableBody = document.querySelector('#fee-table tbody');
       const feeTableScope = document.getElementById('fee-table-scope');
 
+      function feeInitials(name) {
+        return String(name || '??').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '??';
+      }
+
+      // Bangun <tr> fee dari objek data (bukan clone DOM — sumbernya A.data.payments).
       function renderFeeRow(data) {
-        const tr = data.el.cloneNode(true);
+        const tr = document.createElement('tr');
+        tr.dataset.paymentId = data.id;
+        tr.dataset.creator = data.creator;
+        tr.dataset.brand = data.brand;
         tr.dataset.status = data.status;
-        if (data.status === 'paid') {
-          const statusCell = tr.querySelector('.status');
-          if (statusCell) { statusCell.className = 'status paid'; statusCell.textContent = 'Sudah dibayar'; }
-          const actionsCell = tr.querySelector('.row-actions-cell');
-          if (actionsCell) { actionsCell.innerHTML = '<button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button>'; }
-        }
-        // make brand & kreator names clickable to filter scope (data-data di page bisa di klik)
-        const brandCell = tr.querySelector('.brand-tag');
-        if (brandCell) {
-          brandCell.classList.add('filter-target');
-          brandCell.dataset.filterBrand = data.brand;
-          brandCell.title = 'Klik untuk filter ke brand ' + data.brand;
-        }
-        const creatorCell = tr.querySelector('.row-creator .name');
-        if (creatorCell) {
-          creatorCell.classList.add('filter-target');
-          creatorCell.dataset.filterCreator = data.creator;
-          creatorCell.title = 'Klik untuk filter ke kreator ' + (data.creatorNm || data.creator);
-        }
+        const isPaid = data.status === 'paid';
+        const statusLabel = isPaid ? 'Sudah dibayar' : 'Menunggu';
+        const actionBtn = isPaid
+          ? '<button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button>'
+          : '<button class="btn btn-primary" data-act="fee-approve">Tandai bayar</button>';
+        // fee cell selalu bisa diklik buat ubah nominal (pending & paid) — nominal beragam
+        const feeCell = `<td class="col-fee fee-editable" data-fee-edit="1" title="Klik untuk ubah nominal fee"><strong>${formatRp(data.fee)}</strong></td>`;
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(data.title)}</strong></td>
+          <td>
+            <div class="row-creator">
+              <div class="avatar">${escapeHtml(feeInitials(data.creatorNm))}</div>
+              <div class="name filter-target" data-filter-creator="${escapeHtml(data.creator)}" title="Klik untuk filter ke kreator ${escapeHtml(data.creatorNm || data.creator)}">${escapeHtml(data.creatorNm)}<small>${escapeHtml(data.creator)}</small></div>
+            </div>
+          </td>
+          <td><span class="brand-tag filter-target" data-filter-brand="${escapeHtml(data.brand)}" title="Klik untuk filter ke brand ${escapeHtml(data.brand)}">${escapeHtml(data.brand)}</span></td>
+          ${feeCell}
+          <td class="num-col">${escapeHtml(data.submittedText)}</td>
+          <td><span class="status ${isPaid ? 'paid' : 'pending'}">${statusLabel}</span></td>
+          <td class="row-actions-cell">${actionBtn}</td>
+        `;
         return tr;
       }
 
-      function renderFeeTable() {
-        const q = (feeSearch?.value || '').toLowerCase();
-        const statusFilter = feeFilterStatus?.value;
-        // filter: search + status + top scope toggle (brand/creator)
-        const filtered = FEE_DATA.filter(r => {
-          const hay = (r.title + ' ' + r.creatorNm + ' ' + r.brand + ' ' + r.submittedText).toLowerCase();
-          const okQ  = !q || hay.includes(q);
-          const okS  = !statusFilter || r.status === statusFilter;
-          const okSc = feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal);
-          return okQ && okS && okSc;
-        });
-        feeTableBody.innerHTML = '';
-        filtered.forEach(r => feeTableBody.appendChild(renderFeeRow(r)));
-        // scope indicator
-        if (feeTableScope) {
-          let label;
-          if (feeScope === 'brand')        label = `Brand: ${feeScopeVal}`;
-          else if (feeScope === 'creator') label = `Kreator: ${feeScopeVal}`;
-          else                              label = 'Semua brand & kreator';
-          const totalInScope = FEE_DATA.filter(r =>
-            feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal)
-          ).length;
-          feeTableScope.textContent = filtered.length === totalInScope
-            ? `Menampilkan ${filtered.length} entri · ${label}`
-            : `Menampilkan ${filtered.length} dari ${totalInScope} entri · ${label}`;
-        }
-        if (feeEmpty) feeEmpty.style.display = filtered.length === 0 ? '' : 'none';
-      }
-
-      feeSearch?.addEventListener('input', renderFeeTable);
-      feeFilterStatus?.addEventListener('change', renderFeeTable);
-
-      // ---- fee: scope toggle (Semua / Per Brand / Per Kreator) + reactive period ----
-      // parse the existing fee table into a data array once
+      // HTML-escape helper (dipakai renderFeeRow, renderStats, dll.)
       function escapeHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         })[c]);
-      }
-      function parseDaysAgo(text) {
-        if (!text) return 999;
-        const t = text.toLowerCase().trim();
-        if (t.includes('jam')) return 0;                 // hours ago → still today
-        if (t === 'kemarin') return 1;
-        let m;
-        if ((m = t.match(/(\d+)\s*minggu/))) return parseInt(m[1], 10) * 7;
-        if (t.includes('minggu lalu')) return 7;
-        if ((m = t.match(/(\d+)\s*hari/))) return parseInt(m[1], 10);
-        return 999;
       }
       function inPeriod(days, period) {
         if (period === 'all') return true;
@@ -2669,42 +2135,68 @@
         return 'Rp ' + n.toLocaleString('id-ID');
       }
 
-      const FEE_DATA = [];
-      document.querySelectorAll('#fee-table tbody tr').forEach(tr => {
-        const feeTxt = tr.querySelector('.col-fee strong')?.textContent || '';
-        const fee = parseInt(feeTxt.replace(/\D/g, ''), 10) || 0;
-        const submittedText = (tr.children[4]?.textContent || '').trim();
-        const nameEl = tr.querySelector('.row-creator .name');
-        const fullName = nameEl ? nameEl.textContent.replace(/\s+/g, ' ').trim() : tr.dataset.creator;
-        // first text node is the display name, the <small> has the username
-        const displayName = (nameEl?.childNodes[0]?.textContent || fullName).trim().split('\n')[0].trim();
-        const title = tr.querySelector('strong')?.textContent || '';
-        FEE_DATA.push({
-          el:         tr,
-          creator:    tr.dataset.creator,
-          creatorNm:  displayName,
-          brand:      tr.dataset.brand,
-          status:     tr.dataset.status,
-          fee,
-          daysAgo:    parseDaysAgo(submittedText),
-          submittedText,
-          title
-        });
-      });
+      // FEE_DATA di-build dari A.data.payments (Supabase), bukan scrape DOM.
+      // Shape row: { id, creator, creatorNm, brand, status, fee, daysAgo, submittedText, title }
+      let FEE_DATA = [];
 
-      // populate scope selects
       const scopeBrandSel   = document.getElementById('fee-scope-brand');
       const scopeCreatorSel = document.getElementById('fee-scope-creator');
-      const uniqueBrands    = [...new Set(FEE_DATA.map(r => r.brand))].sort();
-      const uniqueCreators  = [...new Map(FEE_DATA.map(r => [r.creator, r.creatorNm])).entries()];
-      uniqueBrands.forEach(b => {
-        const o = document.createElement('option'); o.value = b; o.textContent = b;
-        scopeBrandSel.appendChild(o);
-      });
-      uniqueCreators.forEach(([k, v]) => {
-        const o = document.createElement('option'); o.value = k; o.textContent = v;
-        scopeCreatorSel.appendChild(o);
-      });
+
+      // hitung "x hari lalu" dari timestamp submitted_at
+      function submittedFromTs(ts) {
+        if (!ts) return { daysAgo: 999, text: '—' };
+        const then = new Date(ts).getTime();
+        if (isNaN(then)) return { daysAgo: 999, text: '—' };
+        const days = Math.floor((Date.now() - then) / 86400000);
+        let text;
+        if (days <= 0)       text = 'Hari ini';
+        else if (days === 1) text = 'Kemarin';
+        else if (days < 7)   text = days + ' hari lalu';
+        else if (days < 14)  text = 'Minggu lalu';
+        else                 text = Math.floor(days / 7) + ' minggu lalu';
+        return { daysAgo: Math.max(0, days), text };
+      }
+
+      // repopulate select scope brand/kreator dari FEE_DATA (pertahankan option[0] placeholder)
+      function refreshScopeSelects() {
+        const uniqueBrands   = [...new Set(FEE_DATA.map(r => r.brand))].filter(Boolean).sort();
+        const uniqueCreators = [...new Map(FEE_DATA.map(r => [r.creator, r.creatorNm])).entries()];
+        [[scopeBrandSel, uniqueBrands.map(b => [b, b])], [scopeCreatorSel, uniqueCreators]].forEach(([sel, entries]) => {
+          if (!sel) return;
+          const placeholder = sel.options[0] || null;
+          sel.innerHTML = '';
+          if (placeholder) sel.appendChild(placeholder);
+          entries.forEach(([val, label]) => {
+            const o = document.createElement('option'); o.value = val; o.textContent = label;
+            sel.appendChild(o);
+          });
+        });
+      }
+
+      function buildFeeData() {
+        const A = window.AdminApp;
+        const payments = (A && A.data && A.data.payments) || [];
+        const profiles = (A && A.data && A.data.profiles) || [];
+        const nameOf = (username) => {
+          const p = profiles.find(pr => pr.username === username);
+          return (p && p.display_name) || username || '—';
+        };
+        FEE_DATA = payments.map(p => {
+          const s = submittedFromTs(p.submitted_at);
+          return {
+            id:            p.id,
+            creator:       p.kreator,
+            creatorNm:     nameOf(p.kreator),
+            brand:         p.brand || '—',
+            status:        p.status === 'paid' ? 'paid' : 'pending',
+            fee:           Number(p.fee) || 0,
+            daysAgo:       s.daysAgo,
+            submittedText: s.text,
+            title:         p.video_title || '—'
+          };
+        });
+        refreshScopeSelects();
+      }
 
       let feeScope = 'all';
       let feeScopeVal = '';
@@ -2905,27 +2397,25 @@
       const feeModalConfirm = document.getElementById('fee-modal-confirm');
       const feeModalCancel = document.getElementById('fee-modal-cancel');
       const feeChannelBtns = document.querySelectorAll('#fee-notif-channels .notif-channel');
-      let currentFeeRow = null;
+      let currentFeePayment = null;
       let currentFeeChannel = 'email';
 
       function openFeeModal(row) {
-        currentFeeRow = row;
-        const titleEl = row.querySelector('strong');
-        const brandEl = row.querySelector('.brand-tag');
-        const creatorName = row.querySelector('.row-creator .name');
-        const feeCell = row.querySelector('.col-fee strong');
-        const submittedCell = row.children[4];
-        feeModalTitle.textContent = titleEl ? titleEl.textContent : '—';
-        feeModalBrand.textContent = brandEl ? brandEl.textContent : '—';
-        feeModalCreator.textContent = creatorName ? (creatorName.childNodes[0].textContent || creatorName.textContent).trim().split('\n')[0] : '—';
-        feeModalAmount.textContent = feeCell ? feeCell.textContent : '—';
-        feeModalSubmitted.textContent = submittedCell ? submittedCell.textContent.trim() : '—';
+        const id = row.dataset.paymentId;
+        const pay = FEE_DATA.find(r => r.id === id);
+        if (!pay) return;
+        currentFeePayment = pay;
+        feeModalTitle.textContent = pay.title || '—';
+        feeModalBrand.textContent = pay.brand || '—';
+        feeModalCreator.textContent = pay.creatorNm || pay.creator || '—';
+        feeModalAmount.value = pay.fee || 0;
+        feeModalSubmitted.textContent = pay.submittedText || '—';
         feeModalNote.value = '';
         currentFeeChannel = 'email';
         feeChannelBtns.forEach(b => b.classList.toggle('active', b.dataset.channel === 'email'));
         feeModal.classList.add('show');
       }
-      function closeFeeModal() { feeModal.classList.remove('show'); currentFeeRow = null; }
+      function closeFeeModal() { feeModal.classList.remove('show'); currentFeePayment = null; }
       feeModalCancel?.addEventListener('click', closeFeeModal);
       feeModal?.addEventListener('click', (e) => { if (e.target === feeModal) closeFeeModal(); });
       feeChannelBtns.forEach(b => b.addEventListener('click', () => {
@@ -2933,27 +2423,49 @@
         currentFeeChannel = b.dataset.channel;
       }));
 
-      feeModalConfirm?.addEventListener('click', () => {
-        if (!currentFeeRow) return;
-        const amount = feeModalAmount.textContent || '';
-        const creator = currentFeeRow.dataset.creator;
-        const brand = currentFeeRow.dataset.brand;
-        const title = currentFeeRow.querySelector('strong')?.textContent || '';
-        // update master data so stats + table reflect new status
-        const match = FEE_DATA.find(r =>
-          r.creator === creator && r.brand === brand && r.title === title && r.status !== 'paid'
-        );
-        if (match) match.status = 'paid';
-        // re-render table (row moves/updates visually) + recompute top stats
-        renderFeeTable();
-        updateFeeView();
-        closeFeeModal();
+      feeModalConfirm?.addEventListener('click', async () => {
+        if (!currentFeePayment) return;
+        const A = window.AdminApp;
+        if (!A || !A.updatePayment) { showToast('Data belum siap, coba lagi.', 'error'); return; }
+        const newFee = parseInt(String(feeModalAmount.value).replace(/\D/g, ''), 10) || 0;
+        const id = currentFeePayment.id;
         const channelLabel = currentFeeChannel === 'email' ? 'email' : currentFeeChannel === 'wa' ? 'WhatsApp' : 'email & WhatsApp';
-        showToast(`Pembayaran ${amount} ditandai lunas. Notifikasi dikirim ke kreator lewat ${channelLabel}.`);
+        feeModalConfirm.disabled = true;
+        const origLabel = feeModalConfirm.textContent;
+        feeModalConfirm.textContent = 'Menyimpan…';
+        try {
+          await A.updatePayment(id, { fee: newFee, status: 'paid', paid_at: new Date().toISOString() });
+          closeFeeModal();
+          showToast(`Pembayaran ${formatRp(newFee)} ditandai lunas. Notifikasi dikirim ke kreator lewat ${channelLabel}.`);
+        } catch (err) {
+          showToast('Gagal simpan pembayaran: ' + err.message, 'error');
+        } finally {
+          feeModalConfirm.disabled = false;
+          feeModalConfirm.textContent = origLabel;
+        }
       });
 
-      // wire fee table action buttons (event delegation on tbody — survives rebuilds)
-      feeTableBody.addEventListener('click', (e) => {
+      // wire fee table: edit nominal (row pending) + tombol aksi (delegation di tbody — survive rebuild)
+      feeTableBody.addEventListener('click', async (e) => {
+        // 1) klik sel fee row pending → prompt ubah nominal
+        const feeEditCell = e.target.closest('[data-fee-edit]');
+        if (feeEditCell) {
+          const row = feeEditCell.closest('tr');
+          const id = row?.dataset.paymentId;
+          const pay = FEE_DATA.find(r => r.id === id);
+          if (!pay) return;
+          const input = prompt('Nominal fee (Rp) untuk "' + pay.title + '":', pay.fee);
+          if (input == null) return;
+          const newFee = parseInt(String(input).replace(/\D/g, ''), 10);
+          if (isNaN(newFee)) { showToast('Nominal tidak valid.', 'error'); return; }
+          const A = window.AdminApp;
+          try {
+            await A.updatePayment(id, { fee: newFee });
+            showToast('Fee diperbarui jadi ' + formatRp(newFee) + '.');
+          } catch (err) { showToast('Gagal ubah fee: ' + err.message, 'error'); }
+          return;
+        }
+        // 2) tombol aksi (Tandai bayar / Lihat detail)
         const btn = e.target.closest('[data-act]');
         if (!btn) return;
         e.preventDefault();
@@ -2965,6 +2477,18 @@
           showToast(`Membuka detail fee untuk "${titleEl ? titleEl.textContent : 'video'}" (simulasi).`);
         }
       });
+
+      // ---- Supabase: (re)build fee + brief data lalu re-render semua view IIFE #1 ----
+      function hydrateFromAdmin() {
+        buildFeeData();
+        buildBriefsData();
+        updateFeeView();
+        updateCreatorsView();
+      }
+      document.addEventListener('adminapp:ready', hydrateFromAdmin);
+      document.addEventListener('adminapp:data-changed', hydrateFromAdmin);
+      // kalau AdminApp udah siap sebelum listener kepasang (race), langsung hydrate
+      if (window.AdminApp && window.AdminApp.data) hydrateFromAdmin();
     })();
   </script>
 
@@ -2998,6 +2522,14 @@
     }
     function escapeHtml(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    // Rp formatter (lokal IIFE #2 — dipakai renderMetricsStats)
+    function formatRp(n) {
+      n = Number(n) || 0;
+      if (n >= 1e9)  return 'Rp ' + (n/1e9).toFixed(1).replace('.', ',') + ' M';
+      if (n >= 1e6)  return 'Rp ' + (n/1e6).toFixed(1).replace('.', ',') + ' jt';
+      if (n >= 1e3)  return 'Rp ' + Math.round(n/1e3) + ' rb';
+      return 'Rp ' + n.toLocaleString('id-ID');
     }
 
     function renderQueueTable(A) {
@@ -3120,6 +2652,55 @@
       }).join('');
     }
 
+    // Update stat card numeric value + sub-text. Card dipilih via data-stat attr.
+    function setStat(key, value, sub) {
+      const card = document.querySelector(`.stat-card[data-stat="${key}"]`);
+      if (!card) return;
+      const num = card.querySelector('.stat-num');
+      const subEl = card.querySelector('.stat-sub');
+      if (num && value !== undefined && value !== null) num.textContent = value;
+      if (subEl && sub) subEl.innerHTML = sub;
+    }
+
+    function renderTopStats(A) {
+      const profiles   = A.data.profiles || [];
+      const progress   = A.data.progress || [];
+      const briefs     = A.data.briefs   || [];
+
+      const kreatorCount = profiles.filter(p => p.role === 'kreator').length;
+      setStat('kreator-aktif', kreatorCount, kreatorCount === 0 ? '&nbsp;' : `${kreatorCount} akun terdaftar`);
+
+      const reviewQ = progress.filter(p => p.status === 'review' || p.status === 'revisi').length;
+      setStat('menunggu-review', reviewQ, reviewQ === 0 ? 'antrian kosong' : `${reviewQ} video perlu keputusan`);
+
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const approvedThisWeek = progress.filter(p =>
+        (p.status === 'approved' || p.status === 'selesai') &&
+        p.updated_at && new Date(p.updated_at).getTime() >= weekAgo
+      ).length;
+      setStat('disetujui-minggu', approvedThisWeek, approvedThisWeek === 0 ? 'belum ada' : `dari 7 hari terakhir`);
+
+      setStat('brief-aktif', briefs.length, briefs.length === 0 ? 'belum ada brief' : `${briefs.length} brief berjalan`);
+    }
+
+    function renderMetricsStats(A) {
+      const progress = A.data.progress || [];
+      const payments = A.data.payments || [];
+
+      const approved = progress.filter(p => p.status === 'approved' || p.status === 'selesai').length;
+      setStat('disetujui', approved, approved === 0 ? '&nbsp;' : `${approved} total disetujui`);
+
+      const revisi = progress.filter(p => p.status === 'revisi').length;
+      setStat('revisi-diminta', revisi, revisi === 0 ? 'tidak ada' : `${revisi} butuh perbaikan`);
+
+      const ditolak = progress.filter(p => p.status === 'rejected').length;
+      setStat('ditolak', ditolak, ditolak === 0 ? 'tidak ada' : `${ditolak} video ditolak`);
+
+      const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (Number(p.fee) || 0), 0);
+      const paidCount = payments.filter(p => p.status === 'paid').length;
+      setStat('pendapatan-dibayarkan', formatRp(totalPaid) || '—', paidCount === 0 ? '&nbsp;' : `ke ${paidCount} kreator`);
+    }
+
     // Decision handler — pakai modal pattern yang sudah ada di script utama
     function handleDecision(row, act) {
       const A = window.AdminApp;
@@ -3219,6 +2800,8 @@
       renderQueueTable(A);
       renderBriefsTable(A);
       renderCreatorsTable(A);
+      renderTopStats(A);
+      renderMetricsStats(A);
       wireNewBriefButton(A);
     });
     document.addEventListener('adminapp:data-changed', (e) => {
@@ -3227,6 +2810,8 @@
       renderQueueTable(A);
       renderBriefsTable(A);
       renderCreatorsTable(A);
+      renderTopStats(A);
+      renderMetricsStats(A);
     });
   })();
   </script>

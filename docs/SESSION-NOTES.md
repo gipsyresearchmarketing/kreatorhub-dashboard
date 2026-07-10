@@ -382,13 +382,17 @@ Semua 4 fase migrasi selesai dalam 1 sesi panjang:
 **Supabase project:** `bbzminpiwjnlubwvgmgk` (region Singapore, free tier)
 **Repo:** github.com/gipsyresearchmarketing/kreatorhub-dashboard (public)
 
-## Akun yang dibuat
+## Akun yang aktif (per 2026-07-10, sesi 7)
 
 Di Supabase Dashboard → Authentication → Users:
-- `admin@gipsyresearch.id` → `update profiles set role = 'admin' where username = 'admin'` (password `AdminKreator2026!`)
-- `sasa.id@gipsyresearch.id` → role default `kreator` (password `SasaTest2026!`)
+- `marketinggipsyresearch@gmail.com` → admin (password `kreator123`). Username di profile = `marketinggipsyresearch` (split dari email). **Ini admin yang dipakai untuk testing.**
+- `kreator@gmail.com` → kreator (password `kreator123`). Username di profile = `kreator`.
 
-**Login form trick:** screens-login.html coba suffix `@gipsyresearch.id`, `@gipsy.id`, atau tanpa suffix, jadi user bisa ketik `admin` atau `sasa.id` di form.
+Akun lain yang ada di profiles tapi ga work:
+- `admingipsyresearch@gmail.com` → role admin, password `Ashtywn13@` (return 400 invalid_credentials — kemungkinan salah set password di dashboard, tapi UUID `ffe8d603-8fe1-4c8b-b1da-a48fcd7b3536` valid)
+- `admin@gipsyresearch.id` + `sasa.id@gipsyresearch.id` (sesi 5) → udah ga work, dihapus/disabled.
+
+**Login form trick:** screens-login.html coba suffix `@gipsyresearch.id`, `@gipsy.id`, atau tanpa suffix. Akun Gmail (`@gmail.com`) langsung works tanpa suffix trick.
 
 ## File baru
 
@@ -603,13 +607,13 @@ UNION ALL SELECT 'profiles', count(*) FROM public.profiles;
 -- Expected: 0/0/0/0/2
 ```
 
-Profile & auth.users DIBIARKAN (admin + sasa.id harus tetap ada buat login). Storage buckets juga perlu di-empty manual via dashboard (videos + thumbnails → select all → delete).
+Profile & auth.users DIBIARKAN (marketinggipsyresearch + kreator harus tetap ada buat login). Storage buckets juga perlu di-empty manual via dashboard (videos + thumbnails → select all → delete).
 
 ## Skenario clean test
 
 1. Run SQL truncate di Supabase
 2. Hapus file di Storage (videos + thumbnails)
-3. Refresh `screens-admin1.html` → Antrian review kosong, Brief aktif kosong, Kreator cuma 1 (sasa.id)
+3. Refresh `screens-admin1.html` → Antrian review kosong, Brief aktif kosong, Kreator cuma 1 (kreator)
 4. Login kreator → upload video baru (jangan lupa klik "Kirim untuk review")
 5. Login admin → Antrian review muncul row kreator yang baru diupload
 6. Test approve/reject/revision → row status berubah, masuk history
@@ -644,10 +648,212 @@ git log --oneline -10
 
 # Test kreator → admin
 open "https://gipsyresearchmarketing.github.io/kreatorhub-dashboard/screens-login.html"
-# Login sasa.id / SasaTest2026! → upload video
-# Logout, login admin / AdminKreator2026! → cek antrian review
+# Login kreator@gmail.com / kreator123 → upload video
+# Logout, login marketinggipsyresearch@gmail.com / kreator123 → cek antrian review
 ```
 
 ---
 
-End of session 6.
+# SESSION 7 (2026-07-10) — Debug upload flow + cleanup dummy admin + status taxonomy fix
+
+> **Goal**: debug kenapa kreator upload ga muncul di admin + bersihin dummy data admin yang masih ke-render + wire stat cards kosong + fix bug feedback revisi yang ga muncul ke kreator.
+> **Status**: ✅ semua selesai dan verified end-to-end (API + browser). Belum commit per akhir sesi.
+
+## TL;DR
+
+| Task | Hasil |
+|---|---|
+| **A. Debug upload flow** | E2E verified works setelah Bagas bikin akun admin baru. Bukan code bug, tapi akun admin lama password-nya ga work |
+| **B. Cleanup dummy di admin1.html** | -501 baris net (4 tables + 8 stat cards + 2 bar charts + page-head) |
+| **C. Wire stat cards ke Supabase** | 8 stat cards (4 top stat-row + 4 Metrik & data) sekarang populate dari A.data.profiles/progress/briefs/payments |
+| **D. Fix status taxonomy** | Bug `'revision'` (English legacy) vs `'revisi'` (Indonesian per schema check constraint) di kreator pages. Plus typo `'selesaid'` (extra 'd') → `'selesai'` |
+
+## A. Debug upload flow (sisa sesi 5)
+
+**Investigasi:** sesi 5 notes bilang "kreator upload ga muncul di admin" tapi code path-nya udah bener. Dugaannya: RLS deny admin read-all atau row ga masuk ke DB.
+
+**Verified via API:**
+- Kreator `kreator@gmail.com` INSERT progress → 201 ✅
+- Admin `marketinggipsyresearch@gmail.com` (role=admin) SELECT progress → bisa lihat SEMUA rows ✅
+- Cross-kreator INSERT (kreator=kreator insert dengan kreator='sasa.id') → **403 RLS** (correctly blocked) ✅
+
+**Root cause:** akun admin lama `admin@gipsyresearch.id / AdminKreator2026!` dan `admingipsyresearch@gmail.com / Ashtywn13@` return 400 invalid_credentials. Setelah Bagas bikin akun baru `marketinggipsyresearch@gmail.com / kreator123` (role='admin'), semua works.
+
+**Akun aktif (per akhir sesi 7):**
+- `marketinggipsyresearch@gmail.com / kreator123` → admin (UUID `21c17028-1f42-42fc-afbe-e5c6923296df`)
+- `kreator@gmail.com / kreator123` → kreator (UUID `742de4d7-71a2-4ddd-a532-4a541d645a7c`)
+- Akun `admingipsyresearch@gmail.com` ada di profiles tapi password-nya ga work (jangan pakai)
+
+## B. Cleanup dummy di `screens-admin1.html`
+
+**Yang dihapus** (sesi 6 luput dari halaman ini):
+- `#queue-table tbody` — 5 rows (Unboxing Kopi Sachet V2, Tutorial AI, POV Pagi Barista, Teaser Creative Day, Eksperimen Kopi Dingin V3)
+- `#briefs-table tbody` — 4 rows (unboxing kopi sachet, Tutorial AI, Teaser Creative Day, Riset audiens Gen Z)
+- `#creators-tbody` — 5 rows (Sasa, Dimas, Rangga, Maya, Aulia — semuanya dummy names)
+- `#fee-table tbody` — 26+ rows (POV Pagi Barista Rp 350.000, Eksperimen Boba, dll)
+- Top kreator bulan ini table tbody — 4 rows (Aulia, Rangga, Sasa, Dimas)
+- 8 stat cards di top stat-row + Metrik & data section → nilai hardcoded (`18`, `5`, `14`, `9`, `19`, `6`, `2`, `Rp 24.6 jt`) diganti `—`
+- 2 bar chart (Video per brand, Aktivitas review 7 hari) → widths 0% + values `—`
+- Page-head description "5 video menunggu keputusan Anda" → generic copy
+
+**Renderer yang udah ada (akan populate dari Supabase):**
+- `renderQueueTable(A)` — line ~2533
+- `renderBriefsTable(A)` — line ~2604
+- `renderCreatorsTable(A)` — line ~2626
+- `renderFeeTable()` — line yang lebih dalam, baca dari `FEE_DATA` (masih hardcoded — separate bug)
+
+## C. Wire stat cards ke Supabase
+
+**Yang ditambah:**
+- `setStat(key, value, sub)` helper — update `.stat-num` + `.stat-sub` via `data-stat` selector
+- `renderTopStats(A)` — populate 4 top stat-row cards:
+  - `kreator-aktif` = count profiles WHERE role='kreator'
+  - `menunggu-review` = count progress WHERE status IN ('review', 'revisi')
+  - `disetujui-minggu` = count progress WHERE status IN ('approved', 'selesai') AND updated_at >= 7 hari
+  - `brief-aktif` = count briefs (semua brief dianggap aktif — schema ga punya status field)
+- `renderMetricsStats(A)` — populate 4 Metrik & data cards:
+  - `disetujui` = count progress status approved/selesai (all-time)
+  - `revisi-diminta` = count progress status='revisi'
+  - `ditolak` = count progress status='rejected'
+  - `pendapatan-dibayarkan` = sum `payments.fee` WHERE status='paid'
+
+**Wire:** dipanggil dari listener `adminapp:ready` + `adminapp:data-changed` supaya re-render setelah setiap mutation.
+
+## D. Fix status taxonomy (bug feedback revisi)
+
+**Symptom (dari Bagas):** "data revisi dari admin kaya catatan dari admin untuk kreator nya gamasuk".
+
+**Root cause:** DB pakai Indonesian status per `supabase/schema.sql` line 71 check constraint:
+```sql
+check (status in ('draft','editing','review','revisi','approved','rejected','selesai'))
+```
+
+Tapi kreator pages masih filter pake English legacy `'revision'`. Plus typo `'selesaid'` (extra 'd') di 1 tempat.
+
+**Files fixed:**
+- `screens-progres-detail.html` line 294, 307: `'revision'` → `'revisi'` (relevantHistory filter + branch)
+- `screens-progres-detail.html` line 225, 309: `'selesaid'` → `'selesai'`
+- `screens-progres-detail.html` line 227: CSS class `selesaid` → `selesai` (untuk match dengan `.detail-feedback.selesai` di CSS line 905)
+- `screens-creator.html` line 280: `'revision'` → `'revisi'` (donut chart count)
+- `screens-creator.html` line 282: `'selesaid'` → `'selesai'`
+
+**Verified via API:** insert progress sebagai kreator → admin PATCH status='revisi' + POST history dengan feedback → kreator GET history → feedback visible. Data flow works, hanya client-side filter yang perlu disamakan.
+
+**Side benefit:** count `revision` di donut chart `screens-creator.html` sekarang akurat (sebelumnya selalu 0 karena filter English).
+
+## Files modified sesi 7
+
+| File | Diff | Purpose |
+|---|---|---|
+| `screens-admin1.html` | +84/-501 (-417 net) | Dummy cleanup + stat card wiring |
+| `screens-progres-detail.html` | +5/-5 | Status taxonomy fix |
+| `screens-creator.html` | +2/-2 | Status taxonomy fix |
+| `creator-common.js` | +9/-8 | Tambah 'kreator' ke DATA greeting map |
+| `docs/SESSION-NOTES.md` | (this entry) | Hand-off notes |
+
+## Belum selesai / TODO
+
+- `FEE_DATA` array di `screens-admin1.html` masih hardcoded (line ~2202). `renderFeeTable()` pakai ini. Untuk full Supabase integration, perlu rewire ke `A.data.payments`. Out of scope sesi 7.
+- Storage buckets `videos` + `thumbnails` perlu di-empty manual via Supabase Dashboard (kalau ada sisa file).
+- Belum commit. Working tree masih dirty.
+
+## Memory links
+
+- `[[supabase-migration-completed]]` — status migrasi + akun aktif
+- `[[supabase-migration-plan]]` — original 4-phase plan
+- `[[admin-dashboard-iteration]]` — major session admin side
+- `[[project-overview]]` — what this project is
+- `[[navigation-flow]]` — page → ?id= conventions
+- `[[creator-data-shape]]` — original SHARED_* shapes (historical)
+
+## File path absolute
+
+`/Users/bagas/Documents/Website content creator/`
+
+## Quick reference
+
+```bash
+# Lihat status
+cd "/Users/bagas/Documents/Website content creator"
+git diff --stat
+
+# Test E2E flow kreator → admin
+# 1. Login kreator@gmail.com / kreator123 → upload video → "Kirim untuk review"
+# 2. Logout
+# 3. Login marketinggipsyresearch@gmail.com / kreator123 → klik tombol "Revisi" di antrian → isi feedback → submit
+# 4. Logout, login kreator lagi → buka Progres → klik Detail di row yang baru di-revisi
+# 5. Feedback card "🔄 Perlu revisi" dengan catatan admin harusnya muncul
+```
+
+---
+
+End of session 7.
+
+---
+
+# SESSION 8 (2026-07-11) — Wire Fee Panel admin ke Supabase (auto-create payment saat approve)
+
+> **Goal**: fee panel admin masih baca `FEE_DATA` hasil scrape DOM (kosong sejak cleanup sesi 6/7). Rewire ke `A.data.payments`. Ditemukan akar masalah lebih dalam: tabel `payments` nggak pernah diisi.
+> **Status**: ✅ selesai + verified (syntax + render smoke test via jsc). E2E live (login beneran) diserahkan ke Bagas.
+
+## TL;DR
+
+Akar masalah: **tabel `payments` tidak pernah di-INSERT.** Approve video (`recordDecision` di `admin-common.js`) cuma update `progress` + insert `history`; `payments` cuma pernah di-`update`. `progress` juga nggak punya kolom fee. Jadi rewire doang = tabel kosong terus.
+
+**Keputusan Bagas**: *auto bikin payment pas approve, fee default (editable di panel)*. Fee nominal **beragam** → dibuat editable di semua baris.
+
+| Task | Hasil |
+|---|---|
+| Auto-create payment | `admin-common.js` `recordDecision`: kalau `approve`, upsert `payments` (id `pay-<progressId>`, fee `DEFAULT_FEE=300000`, status `pending`, `ignoreDuplicates` → aman re-approve) |
+| Rewire fee panel | `FEE_DATA`/`BRIEFS` di IIFE #1 di-build dari `A.data.payments`/`A.data.briefs` (bukan scrape DOM); `renderFeeRow` bangun `<tr>` dari data; hook `adminapp:ready` + `adminapp:data-changed` |
+| Mark-paid + edit fee | Modal "Tandai bayar" → `A.updatePayment(id,{fee,status:'paid',paid_at})`; klik sel fee (pending **& paid**) → prompt ubah nominal → `updatePayment(id,{fee})` |
+| Fix bug | Hapus duplikat `renderFeeTable`; tambah `formatRp` lokal di IIFE #2 (sebelumnya ReferenceError di `renderMetricsStats` → stat "pendapatan-dibayarkan" + tombol "Brief baru" putus) |
+
+## File yang diubah
+
+| File | Diff | Purpose |
+|---|---|---|
+| `admin-common.js` | +21 | `DEFAULT_FEE` + upsert payment on approve |
+| `screens-admin1.html` | net -258 | Fee panel rewire (IIFE #1), fee editable + CSS afaordance `.fee-editable`, `formatRp` fix (IIFE #2), copot creator-table lama |
+
+## Arsitektur penting (buat next session)
+
+`screens-admin1.html` = 2 `<script>` block, IIFE terpisah (share `window`):
+- **IIFE #1**: fee logic (FEE_DATA, `STAT_DETAILS` drawer, fee table/scope/modal, creator dashboard list). Jalan on-load.
+- **IIFE #2**: renderer Supabase (`renderQueueTable/BriefsTable/CreatorsTable/TopStats/MetricsStats`) di-wire ke `adminapp:ready` + `adminapp:data-changed`.
+
+Pola bridging IIFE #1 ke data: `buildFeeData()` + `buildBriefsData()` baca `window.AdminApp.data`, dipanggil dari `hydrateFromAdmin()` yang di-hook ke `adminapp:ready`/`data-changed` (+ langsung kalau `AdminApp` udah ada). Semua build defensif (fallback `[]`).
+
+`payments` shape: `{ id, kreator, video_title, brand, fee, ad_spend, gross_revenue, status('paid'|'pending'), submitted_at, paid_at, note }`. RLS `for all using(is_admin())` → admin boleh insert+update.
+
+## Verifikasi
+
+- Syntax OK (3 file) via `jsc` + `new Function`.
+- **Render smoke test** (stub DOM di jsc, eval block1 asli, dispatch `adminapp:ready`): payments → baris ter-render benar. Pending: fee-editable, "Tandai bayar", "Menunggu". Paid: fee-editable, "Lihat detail", "Sudah dibayar". Fee terformat, creatorNm dari profiles.
+- Load order realistis: `AdminApp` absen saat load → nggak throw; data masuk via ready → render benar.
+
+## TODO / belum
+
+- **E2E live** belum dijalankan (butuh login Supabase beneran + nulis prod): approve → cek `payments` muncul; mark-paid/edit fee → cek persist.
+- `DEFAULT_FEE` (300000) hardcoded di `admin-common.js` — MVP.
+- `ad_spend`/`gross_revenue` (ROAS) tetap kosong — di luar scope.
+- `STAT_DETAILS` drawer 'disetujui-minggu' (IIFE #1) hitung paid-7hari, sedangkan angka stat card (IIFE #2) hitung approved-7hari — semantik beda tipis, MVP.
+
+## Memory links
+
+- `[[supabase-migration-completed]]` — status migrasi + akun aktif
+- `[[admin-dashboard-iteration]]` — major session admin side
+- `[[creator-data-shape]]` — shape data
+- `[[status-state-model]]` — status taxonomy
+
+## Quick reference
+
+```bash
+cd "/Users/bagas/Documents/Website content creator"
+# E2E: login kreator@gmail.com/kreator123 → upload → "Kirim review"
+#      login marketinggipsyresearch@gmail.com/kreator123 → Setujui → cek Fee kreator panel + tabel payments
+```
+
+---
+
+End of session 8.

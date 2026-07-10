@@ -292,7 +292,7 @@
           <div class="metric-strip">
             <div class="left">
               <div class="label">Jumlah kreator</div>
-              <div class="value" id="kreator-aktif-value">5</div>
+              <div class="value" id="kreator-aktif-value">—</div>
             </div>
             <div class="right" id="kreator-aktif-meta">5 aktif</div>
           </div>
@@ -311,7 +311,7 @@
           <div class="metric-strip">
             <div class="left">
               <div class="label">Total antrian</div>
-              <div class="value" id="menunggu-review-value">5</div>
+              <div class="value" id="menunggu-review-value">—</div>
             </div>
             <div class="right" id="menunggu-review-meta">—</div>
           </div>
@@ -349,7 +349,7 @@
           <div class="metric-strip">
             <div class="left">
               <div class="label">Brief berjalan</div>
-              <div class="value" id="brief-aktif-value">3</div>
+              <div class="value" id="brief-aktif-value">—</div>
             </div>
             <div class="right" id="brief-aktif-meta">—</div>
           </div>
@@ -387,7 +387,7 @@
           <div class="metric-strip">
             <div class="left">
               <div class="label">Total revisi</div>
-              <div class="value" id="revisi-diminta-value">1</div>
+              <div class="value" id="revisi-diminta-value">—</div>
             </div>
             <div class="right" id="revisi-diminta-meta">—</div>
           </div>
@@ -406,7 +406,7 @@
           <div class="metric-strip">
             <div class="left">
               <div class="label">Total ditolak</div>
-              <div class="value" id="ditolak-value">2</div>
+              <div class="value" id="ditolak-value">—</div>
             </div>
             <div class="right" id="ditolak-meta">—</div>
           </div>
@@ -617,28 +617,11 @@
       });
 
       // ---- data: same source as admin1 ----
-      const CREATORS = [
-        { key: 'sasa',   name: 'Sasa A.',   brands: ['JAMUZEN'],         video: 5, status: 'Aktif' },
-        { key: 'dimas',  name: 'Dimas H.',  brands: ['CALMADEA.I'],      video: 3, status: 'Aktif' },
-        { key: 'rangga', name: 'Rangga P.', brands: ['CONVENTIO'],       video: 7, status: 'Aktif' },
-        { key: 'maya',   name: 'Maya N.',   brands: ['GIPSY RESEARCH', 'JAMUZEN'], video: 2, status: 'Aktif' },
-        { key: 'aulia',  name: 'Aulia T.',  brands: ['JAMUZEN'],         video: 9, status: 'Aktif' }
-      ];
+      const CREATORS = [];
 
-      const QUEUE = [
-        { status: 'review',   brand: 'JAMUZEN',   creator: 'Sasa A.',   title: 'Unboxing Kopi Sachet — V2',                deadline: '3 hari lagi' },
-        { status: 'review',   brand: 'CALMADEA.I',creator: 'Dimas H.',  title: 'Tutorial AI: Thumbnail 5 Menit',         deadline: '5 hari lagi' },
-        { status: 'revision', brand: 'JAMUZEN',   creator: 'Sasa A.',   title: 'POV Pagi Barista — Revisi',             deadline: 'Kemarin' },
-        { status: 'review',   brand: 'CONVENTIO', creator: 'Rangga P.', title: 'Teaser Creative Day — Variasi B',       deadline: '2 hari lagi' },
-        { status: 'draft',    brand: 'GIPSY RESEARCH', creator: 'Maya N.', title: 'Eksperimen Kopi Dingin V3',         deadline: '—' }
-      ];
+      const QUEUE = [];;
 
-      const BRIEFS = [
-        { title: 'Video unboxing kopi sachet — 30 detik',   brand: 'JAMUZEN',        creator: 'Sasa A.',  deadline: '15 Jul', status: 'aktif' },
-        { title: 'Tutorial AI: bikin thumbnail 5 menit',     brand: 'CALMADEA.I',     creator: 'Dimas H.', deadline: '17 Jul', status: 'aktif' },
-        { title: 'Teaser Creative Day — 15 detik',           brand: 'CONVENTIO',      creator: 'Rangga P.',deadline: '—',      status: 'aktif' },
-        { title: 'Riset audiens Gen Z — 3 take wawancara',    brand: 'GIPSY RESEARCH', creator: '—',       deadline: '22 Jul', status: 'draft' }
-      ];
+      const BRIEFS = [];;
 
       // parse days ago for fee data
       function parseDays(text) {
@@ -658,33 +641,7 @@
         return 'Rp ' + n.toLocaleString('id-ID');
       }
 
-      const FEE = [
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 5,  submitted: '5 hari lalu' },
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 14, submitted: '2 minggu lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 1,  submitted: 'kemarin' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 0,  submitted: '5 jam lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'sasa',  name: 'Sasa A.',   fee: 350000, days: 2,  submitted: '2 hari lalu' },
-        { status: 'paid',     brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
-        { status: 'paid',     brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 5,  submitted: '5 hari lalu' },
-        { status: 'pending',  brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 0,  submitted: '5 jam lalu' },
-        { status: 'pending',  brand: 'CalmadeAI',       creator: 'dimas', name: 'Dimas H.',  fee: 350000, days: 1,  submitted: 'kemarin' },
-        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 14, submitted: '2 minggu lalu' },
-        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 7,  submitted: 'minggu lalu' },
-        { status: 'paid',     brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 7,  submitted: '1 minggu lalu' },
-        { status: 'pending',  brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 1,  submitted: '1 hari lalu' },
-        { status: 'pending',  brand: 'Conventio',       creator: 'rangga',name: 'Rangga P.', fee: 400000, days: 1,  submitted: 'kemarin' },
-        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 3,  submitted: '3 hari lalu' },
-        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 2,  submitted: '2 hari lalu' },
-        { status: 'pending',  brand: 'Gipsy Research',  creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 0,  submitted: '5 jam lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'maya',  name: 'Maya N.',   fee: 185000, days: 1,  submitted: '1 hari lalu' },
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 7,  submitted: 'minggu lalu' },
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 14, submitted: '2 minggu lalu' },
-        { status: 'paid',     brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 7,  submitted: 'minggu lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 5,  submitted: '5 hari lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 3,  submitted: '3 hari lalu' },
-        { status: 'pending',  brand: 'Jamuzen',         creator: 'aulia', name: 'Aulia T.',  fee: 350000, days: 1,  submitted: '1 hari lalu' }
-      ];
+      const FEE = [];;
 
       // ---- rendering helpers ----
       function statusBadge(status) {

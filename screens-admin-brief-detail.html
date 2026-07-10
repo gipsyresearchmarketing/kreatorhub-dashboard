@@ -604,74 +604,8 @@
       });
 
       // ---- brief data ----
-      const BRIEFS = {
-        'b-1': {
-          title: 'Video unboxing kopi sachet — 30 detik',
-          brand: 'JAMUZEN', creator: 'Sasa A.', deadline: '15 Jul',
-          requirement: 'Target 18–25 · Tone kasual · Pakai musik upbeat',
-          status: 'review',
-          videos: [
-            { title: 'POV Pagi Barista',           link: 'drive.google/…/pagi',    status: 'paid',    date: '1 minggu lalu', fee: 350000 },
-            { title: 'Sachet Unboxing V2 (revisi)', link: 'drive.google/…/sachet-v2', status: 'pending', date: '3 hari lalu',   fee: 350000 }
-          ],
-          timeline: [
-            { label: 'Brief dibuat',                  when: '1 Jul 09:14', note: 'oleh Mira R.' },
-            { label: 'Brief dikirim ke kreator',       when: '1 Jul 09:20', note: 'WhatsApp + Email' },
-            { label: 'Script di-submit',                when: '5 Jul 17:42', note: 'oleh Sasa A.' },
-            { label: 'Video pertama di-review',         when: '7 Jul 10:00', note: 'POV Pagi Barista' },
-            { label: 'Video pertama di-approve',        when: '7 Jul 14:20', note: 'fee Rp 350.000' }
-          ]
-        },
-        'b-2': {
-          title: 'Tutorial AI: bikin thumbnail 5 menit',
-          brand: 'CALMADEA.I', creator: 'Dimas H.', deadline: '17 Jul',
-          requirement: 'Voice-over Indonesia · 1080p landscape',
-          status: 'review',
-          videos: [
-            { title: 'Voice-over Tutorial Batch 1',    link: 'youtu.be/…/batch1', status: 'paid',    date: '2 minggu lalu', fee: 350000 },
-            { title: 'Tutorial AI Thumbnail — Take 1', link: 'youtu.be/…/ai-t1', status: 'paid',    date: '5 hari lalu',  fee: 350000 },
-            { title: 'Tutorial AI Thumbnail — Take 2', link: 'youtu.be/…/ai-t2', status: 'pending', date: '5 jam lalu',    fee: 350000 },
-            { title: 'Thumbnail AI Batch 3',          link: 'youtu.be/…/ai-t3', status: 'pending', date: 'kemarin',      fee: 350000 }
-          ],
-          timeline: [
-            { label: 'Brief dibuat',                  when: '1 Jul 10:00', note: 'oleh Mira R.' },
-            { label: 'Script di-submit',                when: '3 Jul 16:00', note: 'oleh Dimas H.' },
-            { label: 'Video pertama di-approve',        when: '5 Jul 11:00', note: 'fee Rp 350.000' }
-          ]
-        },
-        'b-3': {
-          title: 'Teaser Creative Day — 15 detik',
-          brand: 'CONVENTIO', creator: 'Rangga P.', deadline: '—',
-          requirement: '3 variasi hook · Musik bebas',
-          status: 'review',
-          videos: [
-            { title: 'Teaser Creative Day — Variasi A', link: 'vimeo.com/…/cd-a', status: 'paid',    date: 'minggu lalu',  fee: 400000 },
-            { title: 'Teaser Creative Day — Variasi B', link: 'vimeo.com/…/cd-b', status: 'pending', date: '1 hari lalu', fee: 400000 }
-          ],
-          timeline: [
-            { label: 'Brief dibuat',                  when: '2 Jul 11:00', note: 'oleh Mira R.' },
-            { label: 'Script di-submit',                when: '4 Jul 14:30', note: 'oleh Rangga P.' }
-          ]
-        },
-        'b-4': {
-          title: 'Riset audiens Gen Z — 3 take wawancara',
-          brand: 'GIPSY RESEARCH', creator: 'Maya N.', deadline: '22 Jul',
-          requirement: 'Sample 5 orang · Tanpa lighting studio',
-          status: 'review',
-          videos: [
-            { title: 'Wawancara Gen Z — Take 1', link: 'drive.google/…/genz1', status: 'paid',    date: '3 hari lalu',  fee: 185000 },
-            { title: 'Wawancara Gen Z — Take 2', link: 'drive.google/…/genz2', status: 'paid',    date: '2 hari lalu',  fee: 185000 },
-            { title: 'Wawancara Gen Z — Take 3', link: 'drive.google/…/genz3', status: 'pending', date: '5 jam lalu',   fee: 185000 }
-          ],
-          timeline: [
-            { label: 'Brief dibuat',                  when: '6 Jul 13:00', note: 'oleh Mira R.' },
-            { label: 'Di-assign ke Maya N.',           when: '6 Jul 14:00', note: 'WhatsApp' },
-            { label: 'Script di-submit',                when: '7 Jul 09:30', note: 'oleh Maya N.' },
-            { label: 'Take pertama di-review',          when: '8 Jul 10:00', note: 'Wawancara Gen Z — Take 1' },
-            { label: 'Take pertama di-approve',         when: '8 Jul 14:00', note: 'fee Rp 185.000' }
-          ]
-        }
-      };
+      // KOSONG — semua data dari Supabase, di-populate oleh adminapp:ready handler.
+      const BRIEFS = {};
 
       // ---- load brief ----
       const params = new URLSearchParams(window.location.search);
@@ -836,6 +770,21 @@
         }
 
         A.showToast('Brief dimuat dari database ✓', 'success');
+
+        // Re-render seluruh halaman dengan data Supabase (replace loading state)
+        const finalBrief = BRIEFS[briefId];
+        if (finalBrief) {
+          if (typeof renderBriefDetail === 'function') {
+            try { renderBriefDetail(finalBrief); } catch (e) { console.error('[renderBriefDetail]', e); }
+          }
+        } else {
+          // BRIEFS[briefId] masih kosong — brief dengan ID ini tidak ada di Supabase
+          contentEl.innerHTML = `<div class="card" style="padding: 32px; text-align: center;">
+            <p class="meta">Brief dengan ID <code>${escapeHtml(briefId)}</code> tidak ditemukan di database.</p>
+            <p class="meta" style="margin-top: 12px;"><a href="screens-admin1.html#briefs" style="color: var(--accent);">← Balik ke daftar brief</a></p>
+          </div>`;
+          pageTitle.textContent = 'Brief tidak ditemukan';
+        }
       });
 
       // Helper untuk escape HTML
@@ -846,531 +795,534 @@
       const brief = BRIEFS[briefId];
 
       if (!brief) {
-        contentEl.innerHTML = `<div class="card"><p>Brief dengan ID <code>${briefId}</code> tidak ditemukan.</p></div>`;
-        pageTitle.textContent = 'Brief tidak ditemukan';
-        return;
-      }
-
-      pageTitle.textContent = brief.title;
-      pageLead.textContent = `${brief.brand} · ${brief.creator} · deadline ${brief.deadline}`;
-
-      const STATUS_LABEL = {
-        draft: 'Draft', editing: 'Sedang ditulis', review: 'Siap review',
-        revisi: 'Perlu revisi', approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
-      };
-      const STATUS_BTN = {
-        draft:    ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
-        editing:  ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
-        review:   ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
-        revisi:   ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
-        approved: ['Tandai selesai', 'Minta revisi', 'Tolak'],
-        rejected: ['Kembalikan ke draft'],
-        selesai:  ['Buka kembali']
-      };
-
-      // pull script from localStorage (shared with kreator side)
-      function loadScript() {
-        try {
-          const raw = localStorage.getItem('kreatorhub.brief-state.' + briefId);
-          if (!raw) return null;
-          return JSON.parse(raw);
-        } catch (_) { return null; }
-      }
-      function saveScriptStatus(status) {
-        try {
-          const key = 'kreatorhub.brief-state.' + briefId;
-          const raw = localStorage.getItem(key);
-          const data = raw ? JSON.parse(raw) : { status: 'draft', script: '' };
-          data.status = status;
-          data.lastAdminUpdate = new Date().toISOString();
-          localStorage.setItem(key, JSON.stringify(data));
-        } catch (_) {}
-      }
-
-      // ---- seed default demo scripts (prototype) ----
-      // Supaya section Video di-submit selalu punya video + action buttons available,
-      // kita seed default script content ke localStorage untuk b-1/b-2/b-3 (status 'review')
-      // dan b-4 (draft, kosong — sesuai data). Cuma ngisi kalau slot masih kosong,
-      // jadi action admin yang udah jalan sebelumnya tetep ke-persist.
-      (function seedDemoData() {
-        const seeds = {
-          'b-1': {
-            status: 'review',
-            script: '[Hook — 0:00]\n"Pagi-pagi enaknya ngopi sachet!"\n\n[Body — 0:05]\n1. Tangan masukin sachet ke cangkir\n2. Tuangkan air panas\n3. Close-up aroma kopi mengepul\n4. Sip pertama, senyum puas\n\n[CTA — 0:25]\n"Cobain Jamuzen sachet sekarang — link di bio"'
-          },
-          'b-2': {
-            status: 'review',
-            script: '[00:00] Hook: "Bikin thumbnail 5 menit pake AI!"\n[00:05] Tools: Canva + Adobe Firefly\n[00:30] Step 1 — prompt AI\n[01:00] Step 2 — edit di Canva\n[02:00] Step 3 — resize + export\n[04:30] Result\n[04:50] CTA: "Free template di komen"'
-          },
-          'b-3': {
-            status: 'review',
-            script: 'Variasi A — Lipatan kertas unfold cepat\nVariasi B — Waktu berhenti, kertas melayang\nVariasi C — Tangan origami master close-up\n\nTotal 15 detik. Musik bebas. Tone playful.'
-          },
-          'b-4': {
-            status: 'review',
-            script: '[00:00] Hook: "Gen Z mau apa sih dari konten?"\n\n[00:30] Daftar 5 sample:\n1. Pelajar SMA, 17 th\n2. Fresh grad, 22 th\n3. Freelancer, 25 th\n4. Ibu muda, 28 th\n5. Karyawan, 24 th\n\n[01:00] Pertanyaan guide:\n- Konten apa yang lo skip?\n- Yang bikin lo berhenti scroll?\n- Iklan yg lo inget minggu ini?\n\n[05:00] Closing voice-over + tag "Gipsy Research".'
-          }
-        };
-        Object.entries(seeds).forEach(([id, data]) => {
-          const key = 'kreatorhub.brief-state.' + id;
-          if (!localStorage.getItem(key)) {
-            localStorage.setItem(key, JSON.stringify({
-              ...data,
-              lastUpdate: new Date().toISOString()
-            }));
-          }
-        });
-      })();
-
-      // ---- render ----
-      function statusBadge(s) {
-        return `<span class="status ${s}">${STATUS_LABEL[s] || s}</span>`;
-      }
-      function fmtRp(n) {
-        if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(1).replace('.', ',') + ' jt';
-        if (n >= 1e3) return 'Rp ' + Math.round(n/1e3) + ' rb';
-        return 'Rp ' + n.toLocaleString('id-ID');
-      }
-
-      const scriptState = loadScript();
-      const hasScript = scriptState && (scriptState.script || '').trim().length > 0;
-      const currentStatus = (scriptState && scriptState.status) || brief.status;
-      const SCRIPT_AMAN_STATUSES = ['review', 'approved', 'selesai'];
-      const isScriptAman = SCRIPT_AMAN_STATUSES.includes(currentStatus);
-
-      statusPill.innerHTML = statusBadge(currentStatus);
-
-      const ACT_ICON = {
-        'Setujui':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></svg>',
-        'Minta revisi': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
-        'Tolak':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg>',
-        'Tandai selesai':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/><path d="M5 5h14v14H5z"/></svg>',
-        'Kembalikan ke draft': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 4v5h-5"/></svg>',
-        'Buka kembali': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114 7l-4 4M3 20v-5h5"/></svg>'
-      };
-      const ACT_CLS = {
-        'Setujui': 'approve', 'Minta revisi': 'revision', 'Tolak': 'reject', 'Tandai selesai': 'complete',
-        'Kembalikan ke draft': 'revision', 'Buka kembali': 'complete'
-      };
-      const ACT_TARGET = {
-        'Setujui': 'approved', 'Minta revisi': 'revisi', 'Tolak': 'rejected', 'Tandai selesai': 'selesai',
-        'Kembalikan ke draft': 'draft', 'Buka kembali': 'review'
-      };
-
-      const actions = STATUS_BTN[currentStatus] || STATUS_BTN.review;
-
-      // semantic color for each script action — Setujui/Tandai selesai hijau, Revisi biru, Tolak merah
-      function actionVariant(a) {
-        if (a === 'Setujui' || a === 'Tandai selesai') return 'btn-success-soft';
-        if (a === 'Minta revisi') return 'btn-info-soft';
-        if (a === 'Tolak') return 'btn-danger-soft';
-        return 'btn-ghost';
-      }
-
-      // visual state class for script box / empty state (approved=green, rejected=red, lain=pending/warn)
-      function scriptStateClass(status) {
-        if (status === 'approved' || status === 'review' || status === 'selesai') return 'is-approved';
-        if (status === 'rejected') return 'is-rejected';
-        return 'is-pending';
-      }
-
-      // visual state class for video item
-      function videoStateClass(vStatus) {
-        if (vStatus === 'paid') return 'is-paid';
-        if (vStatus === 'rejected') return 'is-rejected';
-        return '';
-      }
-
-      // script actions: compact strip placed inside the Script section (Section 2)
-      const scriptActionsStrip = actions.map(a =>
-        `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${a} script</button>`
-      ).join('');
-
-      // video items: rendered inside the Video section (Section 3) when expanded,
-      // each row carries its own per-video action buttons (Setujui/Revisi/Tolak) dengan semantic color
-      const videoItemsHtml = brief.videos.length
-        ? brief.videos.map(v => {
-            const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
-            const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
-            const stBoxCls = videoStateClass(v.status);
-            return `
-        <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-          <div class="vi-top">
-            <div class="v-info">
-              <strong>${escapeHtml(v.title)}</strong>
-              <small>${escapeHtml(v.date)}</small>
-            </div>
-            <span class="v-fee">${fmtRp(v.fee)}</span>
-            <span class="vi-status status ${stCls}">${stLabel}</span>
-          </div>
-          <div class="vi-actions">
-            <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-            <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-            <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
-          </div>
-          <div class="vi-toolbar">
-            <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-            <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-          </div>
-        </div>`;
-          }).join('')
-        : '<p class="meta">Belum ada video untuk diberi aksi.</p>';
-
-      const paidVideos = brief.videos.filter(v => v.status === 'paid');
-      const feeTotalPaid = paidVideos.reduce((s, v) => s + v.fee, 0);
-      const feeStatusHtml = paidVideos.length
-        ? paidVideos.map(v => `
-        <div class="fee-item" data-video-row="${escapeHtml(v.title)}">
-          <div class="fee-item-info">
-            <strong>${escapeHtml(v.title)}</strong>
-            <small>${escapeHtml(v.date)} · ${escapeHtml(v.link)}</small>
-          </div>
-          <span class="fee-amount">${fmtRp(v.fee)}</span>
-          <span class="status paid">Lunas</span>
-        </div>`).join('')
-        : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
-
-      const scriptBlock = (hasScript
-        ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
-           <small class="meta" style="display: block; margin-top: 6px;">Disimpan oleh kreator di browser-nya (lokal). <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
-        : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script. Kreator belum submit untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Minta kreator untuk submit script via mode kreator.</small></div>`) +
-        `<div class="script-actions" id="script-actions">${scriptActionsStrip}</div>`;
-
-      const videosListHtml = brief.videos.length
-        ? brief.videos.map(v => {
-            const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
-            const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
-            const stBoxCls = videoStateClass(v.status);
-            return `
-        <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-          <div class="vi-top">
-            <div class="v-info">
-              <strong>${escapeHtml(v.title)}</strong>
-              <small>${escapeHtml(v.date)}</small>
-            </div>
-            <span class="v-fee">${fmtRp(v.fee)}</span>
-            <span class="vi-status status ${stCls}">${stLabel}</span>
-          </div>
-          <div class="vi-actions">
-            <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-            <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-            <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
-          </div>
-          <div class="vi-toolbar">
-            <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-            <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-          </div>
-        </div>`;
-          }).join('')
-        : '';
-
-      // video section: tampil kalau BRIEFS punya data video (gate script-aman dihapus biar prototype-friendly)
-      let videosHeaderMeta;
-      let videosHtml;
-      if (brief.videos.length === 0) {
-        videosHeaderMeta = 'Belum ada video';
-        videosHtml = '<p class="meta" style="padding: 8px 0;">Belum ada video di-submit untuk brief ini.</p>';
+        contentEl.innerHTML = `<div class="card"><p class="meta" style="padding: 32px; text-align: center;">⏳ Memuat brief dari database...</p></div>`;
+        pageTitle.textContent = 'Memuat...';
       } else {
-        videosHeaderMeta = 'Akses hanya lewat klik · default tersembunyi';
-        videosHtml = `
-        <button type="button" class="video-toggle" id="video-toggle" aria-expanded="false" aria-controls="video-list">
-          <span class="vt-left">
-            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 4l14 8-14 8z"/></svg>
-            <span class="vt-label">Lihat ${brief.videos.length} video</span>
-          </span>
-          <span class="vt-right">
-            <span class="vt-meta">${brief.videos.filter(v => v.status === 'paid').length} lunas · ${brief.videos.filter(v => v.status === 'pending').length} menunggu</span>
-            <svg class="vt-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="video-list" id="video-list" hidden>
-          ${videosListHtml}
-        </div>`;
+        renderBriefDetail(brief);
       }
 
-      const timelineHtml = brief.timeline.map(t => `
-        <div class="timeline-item">
-          <span class="dot"></span>
-          <div class="body">
-            <div class="label">${escapeHtml(t.label)}</div>
-            <div class="when">${escapeHtml(t.when)} · ${escapeHtml(t.note)}</div>
-          </div>
-        </div>
-      `).join('');
-
-      contentEl.innerHTML = `
-        <!-- 1. Brief info -->
-        <div class="card">
-          <div class="row-between" style="margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <span class="brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand)}</span>
-              <span class="meta">Kreator: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.creator)}</strong></span>
-              <span class="meta">Deadline: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.deadline)}</strong></span>
-            </div>
-            <div>${statusBadge(currentStatus)}</div>
-          </div>
-          <div class="field">
-            <label>Requirement</label>
-            <div style="font-size: 14px; line-height: 1.6;">${escapeHtml(brief.requirement)}</div>
-          </div>
-        </div>
-
-        <!-- 2. Script (includes per-script actions strip at bottom) -->
-        <div class="card">
-          <div class="row-between" style="margin-bottom: 10px;">
-            <h2 class="h2" style="font-size: 18px;">Script dari kreator</h2>
-            <span class="meta" id="script-section-meta">${hasScript ? 'tersimpan' : 'belum ada'} · status ${STATUS_LABEL[currentStatus] || currentStatus}</span>
-          </div>
-          ${scriptBlock}
-        </div>
-
-        <!-- 3. Videos (each video row carries its own per-video actions) -->
-        <div class="card" id="videos-section">
-          <div class="row-between" style="margin-bottom: 10px;">
-            <h2 class="h2" style="font-size: 18px;">Video di-submit</h2>
-            <span class="meta">${videosHeaderMeta}</span>
-          </div>
-          ${videosHtml}
-        </div>
-
-        <!-- 4. Fee status -->
-        <div class="card">
-          <div class="row-between" style="margin-bottom: 12px;">
-            <h2 class="h2" style="font-size: 18px;">Status fee video disetujui</h2>
-            <span class="meta">${paidVideos.length} video · total ${fmtRp(feeTotalPaid)}</span>
-          </div>
-          <div class="fee-status-list" id="fee-status-list">${feeStatusHtml}</div>
-        </div>
-
-        <!-- 5. Timeline -->
-        <div class="card" id="timeline-section">
-          <h2 class="h2" style="font-size: 18px; margin-bottom: 10px;">Riwayat brief</h2>
-          <div class="timeline">${timelineHtml}</div>
-        </div>
-      `;
-
-      function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
-      }
-
-      // ---- video toggle: collapse default, click untuk buka daftar ----
-      const videoToggleBtn = document.getElementById('video-toggle');
-      const videoListEl    = document.getElementById('video-list');
-      const videoLabelEl   = videoToggleBtn?.querySelector('.vt-label');
-      videoToggleBtn?.addEventListener('click', () => {
-        const isOpen = videoToggleBtn.getAttribute('aria-expanded') === 'true';
-        if (isOpen) {
-          videoToggleBtn.setAttribute('aria-expanded', 'false');
-          videoListEl.setAttribute('hidden', '');
-          if (videoLabelEl) videoLabelEl.textContent = `Lihat ${brief.videos.length} video`;
-        } else {
-          videoToggleBtn.setAttribute('aria-expanded', 'true');
-          videoListEl.removeAttribute('hidden');
-          if (videoLabelEl) videoLabelEl.textContent = `Sembunyikan ${brief.videos.length} video`;
-        }
-      });
-
-      // ---- action modal ----
-      const actionModal = document.getElementById('action-modal');
-      const actionModalTitle  = document.getElementById('action-modal-title');
-      const actionModalLead   = document.getElementById('action-modal-lead');
-      const actionModalCreator= document.getElementById('action-modal-creator');
-      const actionModalBrand  = document.getElementById('action-modal-brand');
-      const actionModalTitle2 = document.getElementById('action-modal-title2');
-      const actionModalNote   = document.getElementById('action-modal-note');
-      const actionModalConfirm= document.getElementById('action-modal-confirm');
-      const actionModalCancel = document.getElementById('action-modal-cancel');
-      const actionModalChannels = document.getElementById('action-modal-channels');
-
-      let pendingAction = null;
-
-      // channel chip toggle
-      actionModalChannels?.addEventListener('click', (e) => {
-        const chip = e.target.closest('.notif-channel');
-        if (chip) chip.classList.toggle('active');
-      });
-
-      // per-script actions live inside the Script section (#script-actions strip)
-      document.getElementById('script-actions')?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const action = btn.dataset.action;
-        pendingAction = { label: action, target: ACT_TARGET[action], scope: 'script' };
-        actionModalTitle.textContent = `${action} script ini?`;
-        const leadMap = {
-          'Setujui':        'Script akan ditandai disetujui. Kreator akan menerima notifikasi.',
-          'Minta revisi':   'Kreator akan diminta merevisi script. Pesan kamu akan dikirim via channel yang dipilih.',
-          'Tolak':          'Script akan ditandai ditolak. Status final untuk script ini.',
-          'Tandai selesai': 'Brief ditandai selesai. Video dianggap deliverable final.',
-          'Kembalikan ke draft': 'Status dikembalikan ke draft. Kreator bisa edit script & video lagi.',
-          'Buka kembali':   'Brief dibuka kembali untuk review.'
+      function renderBriefDetail(brief) {
+        pageTitle.textContent = brief.title;
+        pageLead.textContent = `${brief.brand} · ${brief.creator} · deadline ${brief.deadline}`;
+          
+        const STATUS_LABEL = {
+          draft: 'Draft', editing: 'Sedang ditulis', review: 'Siap review',
+          revisi: 'Perlu revisi', approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
         };
-        actionModalLead.textContent = leadMap[action] || 'Aksi akan dikirim ke kreator.';
-        actionModalCreator.textContent = brief.creator;
-        actionModalBrand.textContent = brief.brand;
-        actionModalTitle2.textContent = brief.title;
-        actionModalNote.value = '';
-        actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
-        actionModal.classList.add('show');
-      });
-
-      // per-video actions live inside each video row in #video-list (when expanded)
-      const VIDEO_ACT_TARGET = { approve: 'paid', revision: 'pending', reject: 'rejected' };
-      const VIDEO_ACT_LABEL  = { approve: 'Setujui', revision: 'Minta revisi', reject: 'Tolak' };
-      document.getElementById('video-list')?.addEventListener('click', (e) => {
-        // 1. tool clicks (Buka video / Salin link) — handle BEFORE video actions
-        const toolLink = e.target.closest('[data-link-url]');
-        if (toolLink) {
-          e.preventDefault();
-          e.stopPropagation();
-          const url = toolLink.dataset.linkUrl;
-          if (toolLink.dataset.tool === 'copy') {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(url).then(
-                () => showToast('Link disalin ke clipboard.'),
-                () => showToast('Link: ' + url)
-              );
-            } else {
-              showToast('Link: ' + url);
+        const STATUS_BTN = {
+          draft:    ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
+          editing:  ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
+          review:   ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
+          revisi:   ['Setujui', 'Minta revisi', 'Tolak', 'Tandai selesai'],
+          approved: ['Tandai selesai', 'Minta revisi', 'Tolak'],
+          rejected: ['Kembalikan ke draft'],
+          selesai:  ['Buka kembali']
+        };
+          
+        // pull script from localStorage (shared with kreator side)
+        function loadScript() {
+          try {
+            const raw = localStorage.getItem('kreatorhub.brief-state.' + briefId);
+            if (!raw) return null;
+            return JSON.parse(raw);
+          } catch (_) { return null; }
+        }
+        function saveScriptStatus(status) {
+          try {
+            const key = 'kreatorhub.brief-state.' + briefId;
+            const raw = localStorage.getItem(key);
+            const data = raw ? JSON.parse(raw) : { status: 'draft', script: '' };
+            data.status = status;
+            data.lastAdminUpdate = new Date().toISOString();
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (_) {}
+        }
+          
+        // ---- seed default demo scripts (prototype) ----
+        // Supaya section Video di-submit selalu punya video + action buttons available,
+        // kita seed default script content ke localStorage untuk b-1/b-2/b-3 (status 'review')
+        // dan b-4 (draft, kosong — sesuai data). Cuma ngisi kalau slot masih kosong,
+        // jadi action admin yang udah jalan sebelumnya tetep ke-persist.
+        (function seedDemoData() {
+          const seeds = {
+            'b-1': {
+              status: 'review',
+              script: '[Hook — 0:00]\n"Pagi-pagi enaknya ngopi sachet!"\n\n[Body — 0:05]\n1. Tangan masukin sachet ke cangkir\n2. Tuangkan air panas\n3. Close-up aroma kopi mengepul\n4. Sip pertama, senyum puas\n\n[CTA — 0:25]\n"Cobain Jamuzen sachet sekarang — link di bio"'
+            },
+            'b-2': {
+              status: 'review',
+              script: '[00:00] Hook: "Bikin thumbnail 5 menit pake AI!"\n[00:05] Tools: Canva + Adobe Firefly\n[00:30] Step 1 — prompt AI\n[01:00] Step 2 — edit di Canva\n[02:00] Step 3 — resize + export\n[04:30] Result\n[04:50] CTA: "Free template di komen"'
+            },
+            'b-3': {
+              status: 'review',
+              script: 'Variasi A — Lipatan kertas unfold cepat\nVariasi B — Waktu berhenti, kertas melayang\nVariasi C — Tangan origami master close-up\n\nTotal 15 detik. Musik bebas. Tone playful.'
+            },
+            'b-4': {
+              status: 'review',
+              script: '[00:00] Hook: "Gen Z mau apa sih dari konten?"\n\n[00:30] Daftar 5 sample:\n1. Pelajar SMA, 17 th\n2. Fresh grad, 22 th\n3. Freelancer, 25 th\n4. Ibu muda, 28 th\n5. Karyawan, 24 th\n\n[01:00] Pertanyaan guide:\n- Konten apa yang lo skip?\n- Yang bikin lo berhenti scroll?\n- Iklan yg lo inget minggu ini?\n\n[05:00] Closing voice-over + tag "Gipsy Research".'
             }
-          } else {
-            // default tool: open in new tab (simulated)
-            showToast(`Membuka video di tab baru (simulasi): ${url}`);
-          }
-          return;
+          };
+          Object.entries(seeds).forEach(([id, data]) => {
+            const key = 'kreatorhub.brief-state.' + id;
+            if (!localStorage.getItem(key)) {
+              localStorage.setItem(key, JSON.stringify({
+                ...data,
+                lastUpdate: new Date().toISOString()
+              }));
+            }
+          });
+        })();
+          
+        // ---- render ----
+        function statusBadge(s) {
+          return `<span class="status ${s}">${STATUS_LABEL[s] || s}</span>`;
         }
-        // 2. video action buttons (Setujui/Revisi/Tolak)
-        const btn = e.target.closest('[data-video-action]');
-        if (!btn) return;
-        const act = btn.dataset.videoAction;
-        const vTitle = btn.dataset.videoId;
-        pendingAction = { label: VIDEO_ACT_LABEL[act], target: VIDEO_ACT_TARGET[act], scope: 'video', videoTitle: vTitle };
-        actionModalTitle.textContent = `${VIDEO_ACT_LABEL[act]} video "${vTitle}"?`;
-        const leadMap = {
-          'Setujui':       'Video akan ditandai disetujui. Fee masuk antrian bayar (lihat section Status fee di bawah).',
-          'Minta revisi':  'Kreator akan diminta merevisi video ini saja. Video lain tidak terpengaruh.',
-          'Tolak':         'Video ditandai ditolak. Video lain di brief ini tidak terpengaruh.'
+        function fmtRp(n) {
+          if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(1).replace('.', ',') + ' jt';
+          if (n >= 1e3) return 'Rp ' + Math.round(n/1e3) + ' rb';
+          return 'Rp ' + n.toLocaleString('id-ID');
+        }
+          
+        const scriptState = loadScript();
+        const hasScript = scriptState && (scriptState.script || '').trim().length > 0;
+        const currentStatus = (scriptState && scriptState.status) || brief.status;
+        const SCRIPT_AMAN_STATUSES = ['review', 'approved', 'selesai'];
+        const isScriptAman = SCRIPT_AMAN_STATUSES.includes(currentStatus);
+          
+        statusPill.innerHTML = statusBadge(currentStatus);
+          
+        const ACT_ICON = {
+          'Setujui':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></svg>',
+          'Minta revisi': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
+          'Tolak':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg>',
+          'Tandai selesai':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/><path d="M5 5h14v14H5z"/></svg>',
+          'Kembalikan ke draft': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 4v5h-5"/></svg>',
+          'Buka kembali': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114 7l-4 4M3 20v-5h5"/></svg>'
         };
-        actionModalLead.textContent = leadMap[VIDEO_ACT_LABEL[act]] || 'Aksi akan dikirim ke kreator.';
-        actionModalCreator.textContent = brief.creator;
-        actionModalBrand.textContent = brief.brand;
-        actionModalTitle2.textContent = vTitle;
-        actionModalNote.value = '';
-        actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
-        actionModal.classList.add('show');
-      });
-
-      actionModalCancel?.addEventListener('click', () => actionModal.classList.remove('show'));
-      actionModal?.addEventListener('click', (e) => { if (e.target === actionModal) actionModal.classList.remove('show'); });
-      actionModalConfirm?.addEventListener('click', () => {
-        if (!pendingAction) return;
-        const note = actionModalNote.value.trim();
-        const channels = [...actionModalChannels.querySelectorAll('.notif-channel.active')].map(c => c.dataset.channel);
-        const scope    = pendingAction.scope;
-        const target   = pendingAction.target;
-        const label    = pendingAction.label;
-        const vTitle   = pendingAction.videoTitle;
-        let targetTxt;
-        if (scope === 'video') {
-          // update video in-memory only (prototype); re-render the video list
-          const v = brief.videos.find(vid => vid.title === vTitle);
-          if (v) v.status = target;
-          targetTxt = `video "${vTitle}"`;
-        } else {
-          saveScriptStatus(target);
-          currentStatus = target;
-          targetTxt = 'script';
+        const ACT_CLS = {
+          'Setujui': 'approve', 'Minta revisi': 'revision', 'Tolak': 'reject', 'Tandai selesai': 'complete',
+          'Kembalikan ke draft': 'revision', 'Buka kembali': 'complete'
+        };
+        const ACT_TARGET = {
+          'Setujui': 'approved', 'Minta revisi': 'revisi', 'Tolak': 'rejected', 'Tandai selesai': 'selesai',
+          'Kembalikan ke draft': 'draft', 'Buka kembali': 'review'
+        };
+          
+        const actions = STATUS_BTN[currentStatus] || STATUS_BTN.review;
+          
+        // semantic color for each script action — Setujui/Tandai selesai hijau, Revisi biru, Tolak merah
+        function actionVariant(a) {
+          if (a === 'Setujui' || a === 'Tandai selesai') return 'btn-success-soft';
+          if (a === 'Minta revisi') return 'btn-info-soft';
+          if (a === 'Tolak') return 'btn-danger-soft';
+          return 'btn-ghost';
         }
-        actionModal.classList.remove('show');
-        const channelsTxt = channels.length ? channels.join(' & ') : 'tanpa notifikasi';
-        showToast(`Aksi "${label}" → ${targetTxt} · notifikasi via ${channelsTxt}${note ? ' (dengan pesan)' : ''}.`);
-        // re-render affected sections (script strip, video list, fee status)
-        setTimeout(() => {
-          if (scope === 'script') {
-            statusPill.innerHTML = statusBadge(currentStatus);
-            renderScriptStrip(currentStatus);
-            renderScriptBox(currentStatus);
-            const metaEl = document.getElementById('script-section-meta');
-            if (metaEl) metaEl.textContent = `${hasScript ? 'tersimpan' : 'belum ada'} · status ${STATUS_LABEL[currentStatus] || currentStatus}`;
-          }
-          renderVideoList();
-          renderFeeStatus();
-        }, 100);
-        pendingAction = null;
-      });
-
-      function renderScriptBox(currentSt) {
-        const box = document.getElementById('script-box');
-        if (!box) return;
-        box.classList.remove('is-approved', 'is-rejected', 'is-pending');
-        box.classList.add(scriptStateClass(currentSt));
-      }
-
-      function renderScriptStrip(currentSt) {
-        const strip = document.getElementById('script-actions');
-        if (!strip) return;
-        const newActions = STATUS_BTN[currentSt] || STATUS_BTN.review;
-        strip.innerHTML = newActions.map(a =>
+          
+        // visual state class for script box / empty state (approved=green, rejected=red, lain=pending/warn)
+        function scriptStateClass(status) {
+          if (status === 'approved' || status === 'review' || status === 'selesai') return 'is-approved';
+          if (status === 'rejected') return 'is-rejected';
+          return 'is-pending';
+        }
+          
+        // visual state class for video item
+        function videoStateClass(vStatus) {
+          if (vStatus === 'paid') return 'is-paid';
+          if (vStatus === 'rejected') return 'is-rejected';
+          return '';
+        }
+          
+        // script actions: compact strip placed inside the Script section (Section 2)
+        const scriptActionsStrip = actions.map(a =>
           `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${a} script</button>`
         ).join('');
-      }
-
-      function renderVideoList() {
-        const list = document.getElementById('video-list');
-        if (!list) return;
-        // preserve expanded state of the toggle button
-        const wasOpen = document.getElementById('video-toggle')?.getAttribute('aria-expanded') === 'true';
-        list.innerHTML = brief.videos.length
+          
+        // video items: rendered inside the Video section (Section 3) when expanded,
+        // each row carries its own per-video action buttons (Setujui/Revisi/Tolak) dengan semantic color
+        const videoItemsHtml = brief.videos.length
           ? brief.videos.map(v => {
               const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
               const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
               const stBoxCls = videoStateClass(v.status);
               return `
-        <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-          <div class="vi-top">
-            <div class="v-info">
-              <strong>${escapeHtml(v.title)}</strong>
-              <small>${escapeHtml(v.date)}</small>
+          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
+            <div class="vi-top">
+              <div class="v-info">
+                <strong>${escapeHtml(v.title)}</strong>
+                <small>${escapeHtml(v.date)}</small>
+              </div>
+              <span class="v-fee">${fmtRp(v.fee)}</span>
+              <span class="vi-status status ${stCls}">${stLabel}</span>
             </div>
-            <span class="v-fee">${fmtRp(v.fee)}</span>
-            <span class="vi-status status ${stCls}">${stLabel}</span>
-          </div>
-          <div class="vi-actions">
-            <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-            <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-            <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
-          </div>
-          <div class="vi-toolbar">
-            <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-            <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-          </div>
-        </div>`;
+            <div class="vi-actions">
+              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
+              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
+              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
+            </div>
+            <div class="vi-toolbar">
+              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
+              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
+            </div>
+          </div>`;
+            }).join('')
+          : '<p class="meta">Belum ada video untuk diberi aksi.</p>';
+          
+        const paidVideos = brief.videos.filter(v => v.status === 'paid');
+        const feeTotalPaid = paidVideos.reduce((s, v) => s + v.fee, 0);
+        const feeStatusHtml = paidVideos.length
+          ? paidVideos.map(v => `
+          <div class="fee-item" data-video-row="${escapeHtml(v.title)}">
+            <div class="fee-item-info">
+              <strong>${escapeHtml(v.title)}</strong>
+              <small>${escapeHtml(v.date)} · ${escapeHtml(v.link)}</small>
+            </div>
+            <span class="fee-amount">${fmtRp(v.fee)}</span>
+            <span class="status paid">Lunas</span>
+          </div>`).join('')
+          : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
+          
+        const scriptBlock = (hasScript
+          ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
+             <small class="meta" style="display: block; margin-top: 6px;">Disimpan oleh kreator di browser-nya (lokal). <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
+          : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script. Kreator belum submit untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Minta kreator untuk submit script via mode kreator.</small></div>`) +
+          `<div class="script-actions" id="script-actions">${scriptActionsStrip}</div>`;
+          
+        const videosListHtml = brief.videos.length
+          ? brief.videos.map(v => {
+              const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
+              const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
+              const stBoxCls = videoStateClass(v.status);
+              return `
+          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
+            <div class="vi-top">
+              <div class="v-info">
+                <strong>${escapeHtml(v.title)}</strong>
+                <small>${escapeHtml(v.date)}</small>
+              </div>
+              <span class="v-fee">${fmtRp(v.fee)}</span>
+              <span class="vi-status status ${stCls}">${stLabel}</span>
+            </div>
+            <div class="vi-actions">
+              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
+              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
+              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
+            </div>
+            <div class="vi-toolbar">
+              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
+              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
+            </div>
+          </div>`;
             }).join('')
           : '';
-        if (wasOpen) list.removeAttribute('hidden');
-        else list.setAttribute('hidden', '');
-      }
-
-      function renderFeeStatus() {
-        const list = document.getElementById('fee-status-list');
-        if (!list) return;
-        const paid = brief.videos.filter(v => v.status === 'paid');
-        const total = paid.reduce((s, v) => s + v.fee, 0);
-        const metaEl = document.querySelector('#fee-status-list')?.parentElement?.querySelector('.meta');
-        if (metaEl) metaEl.textContent = `${paid.length} video · total ${fmtRp(total)}`;
-        list.innerHTML = paid.length
-          ? paid.map(v => `
-        <div class="fee-item" data-video-row="${escapeHtml(v.title)}">
-          <div class="fee-item-info">
-            <strong>${escapeHtml(v.title)}</strong>
-            <small>${escapeHtml(v.date)} · ${escapeHtml(v.link)}</small>
+          
+        // video section: tampil kalau BRIEFS punya data video (gate script-aman dihapus biar prototype-friendly)
+        let videosHeaderMeta;
+        let videosHtml;
+        if (brief.videos.length === 0) {
+          videosHeaderMeta = 'Belum ada video';
+          videosHtml = '<p class="meta" style="padding: 8px 0;">Belum ada video di-submit untuk brief ini.</p>';
+        } else {
+          videosHeaderMeta = 'Akses hanya lewat klik · default tersembunyi';
+          videosHtml = `
+          <button type="button" class="video-toggle" id="video-toggle" aria-expanded="false" aria-controls="video-list">
+            <span class="vt-left">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 4l14 8-14 8z"/></svg>
+              <span class="vt-label">Lihat ${brief.videos.length} video</span>
+            </span>
+            <span class="vt-right">
+              <span class="vt-meta">${brief.videos.filter(v => v.status === 'paid').length} lunas · ${brief.videos.filter(v => v.status === 'pending').length} menunggu</span>
+              <svg class="vt-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
+          </button>
+          <div class="video-list" id="video-list" hidden>
+            ${videosListHtml}
+          </div>`;
+        }
+          
+        const timelineHtml = brief.timeline.map(t => `
+          <div class="timeline-item">
+            <span class="dot"></span>
+            <div class="body">
+              <div class="label">${escapeHtml(t.label)}</div>
+              <div class="when">${escapeHtml(t.when)} · ${escapeHtml(t.note)}</div>
+            </div>
           </div>
-          <span class="fee-amount">${fmtRp(v.fee)}</span>
-          <span class="status paid">Lunas</span>
-        </div>`).join('')
-          : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
-      }
+        `).join('');
+          
+        contentEl.innerHTML = `
+          <!-- 1. Brief info -->
+          <div class="card">
+            <div class="row-between" style="margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span class="brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand)}</span>
+                <span class="meta">Kreator: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.creator)}</strong></span>
+                <span class="meta">Deadline: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.deadline)}</strong></span>
+              </div>
+              <div>${statusBadge(currentStatus)}</div>
+            </div>
+            <div class="field">
+              <label>Requirement</label>
+              <div style="font-size: 14px; line-height: 1.6;">${escapeHtml(brief.requirement)}</div>
+            </div>
+          </div>
+          
+          <!-- 2. Script (includes per-script actions strip at bottom) -->
+          <div class="card">
+            <div class="row-between" style="margin-bottom: 10px;">
+              <h2 class="h2" style="font-size: 18px;">Script dari kreator</h2>
+              <span class="meta" id="script-section-meta">${hasScript ? 'tersimpan' : 'belum ada'} · status ${STATUS_LABEL[currentStatus] || currentStatus}</span>
+            </div>
+            ${scriptBlock}
+          </div>
+          
+          <!-- 3. Videos (each video row carries its own per-video actions) -->
+          <div class="card" id="videos-section">
+            <div class="row-between" style="margin-bottom: 10px;">
+              <h2 class="h2" style="font-size: 18px;">Video di-submit</h2>
+              <span class="meta">${videosHeaderMeta}</span>
+            </div>
+            ${videosHtml}
+          </div>
+          
+          <!-- 4. Fee status -->
+          <div class="card">
+            <div class="row-between" style="margin-bottom: 12px;">
+              <h2 class="h2" style="font-size: 18px;">Status fee video disetujui</h2>
+              <span class="meta">${paidVideos.length} video · total ${fmtRp(feeTotalPaid)}</span>
+            </div>
+            <div class="fee-status-list" id="fee-status-list">${feeStatusHtml}</div>
+          </div>
+          
+          <!-- 5. Timeline -->
+          <div class="card" id="timeline-section">
+            <h2 class="h2" style="font-size: 18px; margin-bottom: 10px;">Riwayat brief</h2>
+            <div class="timeline">${timelineHtml}</div>
+          </div>
+        `;
+          
+        function escapeHtml(s) {
+          if (s == null) return '';
+          return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+        }
+          
+        // ---- video toggle: collapse default, click untuk buka daftar ----
+        const videoToggleBtn = document.getElementById('video-toggle');
+        const videoListEl    = document.getElementById('video-list');
+        const videoLabelEl   = videoToggleBtn?.querySelector('.vt-label');
+        videoToggleBtn?.addEventListener('click', () => {
+          const isOpen = videoToggleBtn.getAttribute('aria-expanded') === 'true';
+          if (isOpen) {
+            videoToggleBtn.setAttribute('aria-expanded', 'false');
+            videoListEl.setAttribute('hidden', '');
+            if (videoLabelEl) videoLabelEl.textContent = `Lihat ${brief.videos.length} video`;
+          } else {
+            videoToggleBtn.setAttribute('aria-expanded', 'true');
+            videoListEl.removeAttribute('hidden');
+            if (videoLabelEl) videoLabelEl.textContent = `Sembunyikan ${brief.videos.length} video`;
+          }
+        });
+          
+        // ---- action modal ----
+        const actionModal = document.getElementById('action-modal');
+        const actionModalTitle  = document.getElementById('action-modal-title');
+        const actionModalLead   = document.getElementById('action-modal-lead');
+        const actionModalCreator= document.getElementById('action-modal-creator');
+        const actionModalBrand  = document.getElementById('action-modal-brand');
+        const actionModalTitle2 = document.getElementById('action-modal-title2');
+        const actionModalNote   = document.getElementById('action-modal-note');
+        const actionModalConfirm= document.getElementById('action-modal-confirm');
+        const actionModalCancel = document.getElementById('action-modal-cancel');
+        const actionModalChannels = document.getElementById('action-modal-channels');
+          
+        let pendingAction = null;
+          
+        // channel chip toggle
+        actionModalChannels?.addEventListener('click', (e) => {
+          const chip = e.target.closest('.notif-channel');
+          if (chip) chip.classList.toggle('active');
+        });
+          
+        // per-script actions live inside the Script section (#script-actions strip)
+        document.getElementById('script-actions')?.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          const action = btn.dataset.action;
+          pendingAction = { label: action, target: ACT_TARGET[action], scope: 'script' };
+          actionModalTitle.textContent = `${action} script ini?`;
+          const leadMap = {
+            'Setujui':        'Script akan ditandai disetujui. Kreator akan menerima notifikasi.',
+            'Minta revisi':   'Kreator akan diminta merevisi script. Pesan kamu akan dikirim via channel yang dipilih.',
+            'Tolak':          'Script akan ditandai ditolak. Status final untuk script ini.',
+            'Tandai selesai': 'Brief ditandai selesai. Video dianggap deliverable final.',
+            'Kembalikan ke draft': 'Status dikembalikan ke draft. Kreator bisa edit script & video lagi.',
+            'Buka kembali':   'Brief dibuka kembali untuk review.'
+          };
+          actionModalLead.textContent = leadMap[action] || 'Aksi akan dikirim ke kreator.';
+          actionModalCreator.textContent = brief.creator;
+          actionModalBrand.textContent = brief.brand;
+          actionModalTitle2.textContent = brief.title;
+          actionModalNote.value = '';
+          actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
+          actionModal.classList.add('show');
+        });
+          
+        // per-video actions live inside each video row in #video-list (when expanded)
+        const VIDEO_ACT_TARGET = { approve: 'paid', revision: 'pending', reject: 'rejected' };
+        const VIDEO_ACT_LABEL  = { approve: 'Setujui', revision: 'Minta revisi', reject: 'Tolak' };
+        document.getElementById('video-list')?.addEventListener('click', (e) => {
+          // 1. tool clicks (Buka video / Salin link) — handle BEFORE video actions
+          const toolLink = e.target.closest('[data-link-url]');
+          if (toolLink) {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = toolLink.dataset.linkUrl;
+            if (toolLink.dataset.tool === 'copy') {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(
+                  () => showToast('Link disalin ke clipboard.'),
+                  () => showToast('Link: ' + url)
+                );
+              } else {
+                showToast('Link: ' + url);
+              }
+            } else {
+              // default tool: open in new tab (simulated)
+              showToast(`Membuka video di tab baru (simulasi): ${url}`);
+            }
+            return;
+          }
+          // 2. video action buttons (Setujui/Revisi/Tolak)
+          const btn = e.target.closest('[data-video-action]');
+          if (!btn) return;
+          const act = btn.dataset.videoAction;
+          const vTitle = btn.dataset.videoId;
+          pendingAction = { label: VIDEO_ACT_LABEL[act], target: VIDEO_ACT_TARGET[act], scope: 'video', videoTitle: vTitle };
+          actionModalTitle.textContent = `${VIDEO_ACT_LABEL[act]} video "${vTitle}"?`;
+          const leadMap = {
+            'Setujui':       'Video akan ditandai disetujui. Fee masuk antrian bayar (lihat section Status fee di bawah).',
+            'Minta revisi':  'Kreator akan diminta merevisi video ini saja. Video lain tidak terpengaruh.',
+            'Tolak':         'Video ditandai ditolak. Video lain di brief ini tidak terpengaruh.'
+          };
+          actionModalLead.textContent = leadMap[VIDEO_ACT_LABEL[act]] || 'Aksi akan dikirim ke kreator.';
+          actionModalCreator.textContent = brief.creator;
+          actionModalBrand.textContent = brief.brand;
+          actionModalTitle2.textContent = vTitle;
+          actionModalNote.value = '';
+          actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
+          actionModal.classList.add('show');
+        });
+          
+        actionModalCancel?.addEventListener('click', () => actionModal.classList.remove('show'));
+        actionModal?.addEventListener('click', (e) => { if (e.target === actionModal) actionModal.classList.remove('show'); });
+        actionModalConfirm?.addEventListener('click', () => {
+          if (!pendingAction) return;
+          const note = actionModalNote.value.trim();
+          const channels = [...actionModalChannels.querySelectorAll('.notif-channel.active')].map(c => c.dataset.channel);
+          const scope    = pendingAction.scope;
+          const target   = pendingAction.target;
+          const label    = pendingAction.label;
+          const vTitle   = pendingAction.videoTitle;
+          let targetTxt;
+          if (scope === 'video') {
+            // update video in-memory only (prototype); re-render the video list
+            const v = brief.videos.find(vid => vid.title === vTitle);
+            if (v) v.status = target;
+            targetTxt = `video "${vTitle}"`;
+          } else {
+            saveScriptStatus(target);
+            currentStatus = target;
+            targetTxt = 'script';
+          }
+          actionModal.classList.remove('show');
+          const channelsTxt = channels.length ? channels.join(' & ') : 'tanpa notifikasi';
+          showToast(`Aksi "${label}" → ${targetTxt} · notifikasi via ${channelsTxt}${note ? ' (dengan pesan)' : ''}.`);
+          // re-render affected sections (script strip, video list, fee status)
+          setTimeout(() => {
+            if (scope === 'script') {
+              statusPill.innerHTML = statusBadge(currentStatus);
+              renderScriptStrip(currentStatus);
+              renderScriptBox(currentStatus);
+              const metaEl = document.getElementById('script-section-meta');
+              if (metaEl) metaEl.textContent = `${hasScript ? 'tersimpan' : 'belum ada'} · status ${STATUS_LABEL[currentStatus] || currentStatus}`;
+            }
+            renderVideoList();
+            renderFeeStatus();
+          }, 100);
+          pendingAction = null;
+        });
+          
+        function renderScriptBox(currentSt) {
+          const box = document.getElementById('script-box');
+          if (!box) return;
+          box.classList.remove('is-approved', 'is-rejected', 'is-pending');
+          box.classList.add(scriptStateClass(currentSt));
+        }
+          
+        function renderScriptStrip(currentSt) {
+          const strip = document.getElementById('script-actions');
+          if (!strip) return;
+          const newActions = STATUS_BTN[currentSt] || STATUS_BTN.review;
+          strip.innerHTML = newActions.map(a =>
+            `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${a} script</button>`
+          ).join('');
+        }
+          
+        function renderVideoList() {
+          const list = document.getElementById('video-list');
+          if (!list) return;
+          // preserve expanded state of the toggle button
+          const wasOpen = document.getElementById('video-toggle')?.getAttribute('aria-expanded') === 'true';
+          list.innerHTML = brief.videos.length
+            ? brief.videos.map(v => {
+                const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
+                const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
+                const stBoxCls = videoStateClass(v.status);
+                return `
+          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
+            <div class="vi-top">
+              <div class="v-info">
+                <strong>${escapeHtml(v.title)}</strong>
+                <small>${escapeHtml(v.date)}</small>
+              </div>
+              <span class="v-fee">${fmtRp(v.fee)}</span>
+              <span class="vi-status status ${stCls}">${stLabel}</span>
+            </div>
+            <div class="vi-actions">
+              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
+              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
+              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
+            </div>
+            <div class="vi-toolbar">
+              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
+              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
+            </div>
+          </div>`;
+              }).join('')
+            : '';
+          if (wasOpen) list.removeAttribute('hidden');
+          else list.setAttribute('hidden', '');
+        }
+          
+        function renderFeeStatus() {
+          const list = document.getElementById('fee-status-list');
+          if (!list) return;
+          const paid = brief.videos.filter(v => v.status === 'paid');
+          const total = paid.reduce((s, v) => s + v.fee, 0);
+          const metaEl = document.querySelector('#fee-status-list')?.parentElement?.querySelector('.meta');
+          if (metaEl) metaEl.textContent = `${paid.length} video · total ${fmtRp(total)}`;
+          list.innerHTML = paid.length
+            ? paid.map(v => `
+          <div class="fee-item" data-video-row="${escapeHtml(v.title)}">
+            <div class="fee-item-info">
+              <strong>${escapeHtml(v.title)}</strong>
+              <small>${escapeHtml(v.date)} · ${escapeHtml(v.link)}</small>
+            </div>
+            <span class="fee-amount">${fmtRp(v.fee)}</span>
+            <span class="status paid">Lunas</span>
+          </div>`).join('')
+            : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
+        }
+            }
     })();
   </script>
 </body>

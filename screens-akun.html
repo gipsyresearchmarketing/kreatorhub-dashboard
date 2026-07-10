@@ -269,6 +269,18 @@
       bankNameEl.value = A.session.bankName || '';
       bankAccountEl.value = A.session.bankAccount || '';
 
+      // prefill nomor WA dari Supabase profiles.phone (sumber yang dibaca admin); fallback session.wa
+      if (A.sb && A.session.userId) {
+        A.sb.from('profiles').select('phone').eq('id', A.session.userId).single()
+          .then(function (res) {
+            if (res && res.data && res.data.phone) {
+              waEl.value = res.data.phone;
+              updateContactStatus();
+            }
+          })
+          .catch(function () {});
+      }
+
       function updateContactStatus() {
         const namaOk = namaEl.value.trim().length >= 2;
         const waOk = waEl.value.trim().length > 0;
@@ -324,6 +336,14 @@
           localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session));
           A.showToast('Perubahan disimpan.');
           document.getElementById('save-status').textContent = 'Tersimpan · ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          // sync nomor WA ke Supabase profiles supaya admin bisa kirim notifikasi
+          if (A.sb && A.session.userId) {
+            A.sb.from('profiles').update({ phone: wa }).eq('id', A.session.userId)
+              .then(function (res) {
+                if (res && res.error) A.showToast('Nomor tersimpan lokal, tapi gagal sync ke server: ' + res.error.message, 'error');
+              })
+              .catch(function () {});
+          }
           // update topbar + identitas block
           document.getElementById('session-name').textContent = nama;
           document.getElementById('foto-name').textContent = nama;

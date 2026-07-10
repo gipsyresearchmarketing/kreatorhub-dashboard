@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   role text not null check (role in ('kreator', 'admin')) default 'kreator',
   display_name text,
   avatar text,
+  phone text,             -- nomor WhatsApp kreator (buat notifikasi manual wa.me)
   created_at timestamptz default now()
 );
 

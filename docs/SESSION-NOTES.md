@@ -857,3 +857,79 @@ cd "/Users/bagas/Documents/Website content creator"
 ---
 
 End of session 8.
+
+---
+
+# SESSION 9 (2026-07-11) — Brief modal, deploy Vercel, notif WhatsApp
+
+> Sesi panjang lanjutan: fee panel polish → modal brief → deploy Vercel → notifikasi WhatsApp. Semua ter-commit & ter-push (auto-deploy GH Pages + Vercel).
+
+## Commits sesi ini (urut)
+| Commit | Isi |
+|---|---|
+| `7716f32` | fix(kreator): status taxonomy revisi/selesai + greeting (sisa sesi 7) |
+| `2fbe124` | feat(admin): fee panel wire ke Supabase + auto-create payment saat approve (+ SESSION 8 notes) |
+| `fa16950` | fix(kreator): payments field snake_case + coerce numeric (anti-NaN di Bayaran + ROAS) |
+| `fce5427` | feat(admin): dropdown fee scope tampilkan semua kreator terdaftar + 4 brand tetap |
+| `2784b9a` | feat(admin): modal form "Brief baru" (ganti prompt) + field fee & assign PIC |
+| `75f6bf4` | chore(deploy): index.html root redirect + reset-password link path-relative |
+| `629eb53` | chore: nomor WA admin di login (08977270062) + clean URLs Vercel |
+| `3fba7e4` | feat: notifikasi WhatsApp manual (wa.me) untuk approve konten + brief baru |
+
+## A. Fee panel → Supabase (commit 2fbe124, fa16950, fce5427)
+- **Akar masalah**: tabel `payments` nggak pernah di-INSERT. Approve cuma update progress + insert history. Fix: `recordDecision` approve → **upsert payments** (`id: pay-<progressId>`, `fee: DEFAULT_FEE=300000`, status pending, `ignoreDuplicates`).
+- `screens-admin1.html` IIFE #1: `FEE_DATA`/`BRIEFS` di-build dari `A.data.payments`/`A.data.briefs` (bukan scrape DOM); `renderFeeRow` bangun `<tr>` dari data; hook `adminapp:ready`+`data-changed`. Fee **editable semua row** (klik sel → prompt) + modal "Tandai bayar" persist via `updatePayment`.
+- Fix bug: duplikat `renderFeeTable` dihapus; `formatRp` ditambah lokal di IIFE #2 (sebelumnya ReferenceError).
+- **fa16950**: Supabase balikin payments snake_case + numeric bisa string. `screens-bayaran.html` (kreator) render `p.video_title/submitted_at/paid_at` + format tanggal + `Number(fee)`. `screens-creator.html` normalisasi payments (coerce adSpend/grossRevenue → cegah "Rp NaN" di ROAS).
+- **fce5427**: `refreshScopeSelects` → Per Kreator dari semua `profiles` role=kreator, Per Brand dari `FIXED_BRANDS` (4 brand), union dgn yang ada di FEE_DATA.
+
+## B. Modal "Brief baru" (commit 2784b9a) — SCOPE DI-REVERT
+- **Penting**: awalnya dibangun besar (fee→payment via brief_id, filter visibility per-kreator, dropdown brief di upload, guard brief-detail). Bagas bilang "jadi aneh, cuma minta modal-nya aja" → **semua di-revert kecuali modal**.
+- Yang FINAL (ter-commit): tombol "Brief baru" (biru, kanan atas panel briefs, `screens-admin1.html:625`) buka **modal `#brief-modal`** di tengah: nama brief, brand (select), fee (number), deadline (text), assign PIC (select: "Terbuka" + kreator dari profiles), catatan/meta. `createBrief` terima `fee`+`assignedTo`. Tabel briefs tampilkan kolom **Fee + Kreator dituju**.
+- **Status field brief**: `assigned_to` & `fee` cuma **informasional** sekarang — visibility restriction & fee→payment SUDAH DI-REVERT. Payment tetap pakai `DEFAULT_FEE=300000`. Kalau nanti mau fee brief nyambung ke payment / batasi visibility, lihat plan lama (udah pernah dibangun, tinggal re-apply).
+
+## C. Deploy Vercel (commit 75f6bf4, 629eb53)
+- **LIVE di 2 tempat**: GH Pages (lama) + **Vercel**: `https://dashboard-content-creator-gipsy-gro-five.vercel.app`
+- Setup Vercel: Import repo → Framework Preset **Other**, Build Command kosong, Output `.`. Auto-deploy tiap push ke `main`.
+- Prep: tambah `index.html` root (redirect ke screens-login.html) biar root URL nggak 404. Fix `screens-admin-settings.html` reset-password `redirectTo` jadi path-relative (`new URL('screens-login.html', location.href)`) biar jalan di root (Vercel) + subfolder (GH Pages).
+- `vercel.json`: `{ "cleanUrls": true, "trailingSlash": false }` (URL tanpa .html di Vercel).
+- Nomor WA admin di login (`screens-login.html` "Lupa sandi?" + "klik di sini") → `628977270062`.
+- URL Vercel bisa dipendekin: Vercel → Project → Settings → General → Project Name. Custom domain via Settings → Domains.
+
+## D. Notifikasi WhatsApp manual — Jalur A (commit 3fba7e4)
+- Metode dipilih Bagas: **manual wa.me (gratis)**, admin klik → WA kebuka + pesan terisi → admin tap Send. (Jalur B = otomatis via provider Fonnte/Wablas + Supabase Edge Function + biaya — belum, future.)
+- `profiles.phone` kolom baru. `screens-akun.html`: nomor WA kreator disimpan/di-load ke Supabase `profiles.phone` (bukan cuma localStorage) supaya admin bisa baca (RLS `profiles self update` + `admin read all`).
+- `screens-admin1.html`: helper `toWaNumber(raw)` (08.../+62... → 62...) + modal `#wa-notif-modal` (pakai `<a target=_blank>` biar nggak keblok popup). Trigger: setelah **approve konten** (`handleDecision`) + setelah **bikin brief ke PIC** (`wireNewBriefButton`). Kreator belum isi nomor → toast.
+
+## ⚠️ SQL yang HARUS dijalanin Bagas (belum tentu udah)
+Di Supabase → SQL Editor:
+```sql
+-- buat modal brief (fee + assign PIC)  — supabase/add-brief-columns.sql
+alter table public.briefs   add column if not exists fee numeric;
+alter table public.briefs   add column if not exists assigned_to text;
+-- buat notif WhatsApp  — supabase/add-phone-column.sql
+alter table public.profiles add column if not exists phone text;
+```
+Kalau belum dijalanin: "Buat brief" error + nomor WA kreator nggak kesimpen.
+
+## Akun test (tetap)
+- Admin: `marketinggipsyresearch@gmail.com` / `kreator123`
+- Kreator: `kreator@gmail.com` / `kreator123`
+
+## Verifikasi tool sesi ini
+Nggak ada Node. Pakai **`jsc`** (`/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc`) + `new Function(src)` buat syntax check, + stub DOM harness buat smoke test render (payments→rows, briefs table Fee/PIC, modal createBrief payload, toWaNumber). Pola: extract `<script>` block via sed, eval di jsc dengan stub `document`/`window`/`localStorage`, dispatch `adminapp:ready`, inspeksi output.
+
+## Trap yang keulang 2×
+Edit `old_string` yang mengandung header fungsi (mis. `function renderQueueTable(A) {` atau `function escapeHtml(s) {`) di akhir, tapi `new_string` nggak nyertain → header kehapus, body jadi orphan → SyntaxError. **Selalu cek**: kalau replace block, pastikan header fungsi setelahnya nggak ke-makan.
+
+## Next kalau lanjut
+- Jalanin 2 SQL migrasi di atas (kalau belum).
+- (Opsional) Jalur B WhatsApp otomatis: provider Fonnte/Wablas + Supabase Edge Function + `profiles.phone`.
+- (Opsional) Re-apply fee brief→payment + visibility restriction (udah pernah dibangun, di-revert atas permintaan).
+- (Opsional) Rapiin URL Vercel (project name / custom domain).
+- `screens-admin-brief-detail.html` / `screens-reports.html` masih ada static BRIEFS dict (belum full Supabase).
+
+---
+
+End of session 9.
+

@@ -269,6 +269,27 @@
       document.getElementById('stat-total-fee').textContent = fmtRp.format(totalFee);
       document.getElementById('stat-total-fee-meta').textContent = `dari ${payments.length} video`;
 
+      // stat tile diklik → ke halaman/list terkait
+      [
+        ['stat-brief',     'screens-brief.html'],
+        ['stat-progress',  'screens-progres.html'],
+        ['stat-review',    'screens-progres.html?status=review'],
+        ['stat-approved',  'screens-progres.html?status=approved'],
+        ['stat-total-fee', 'screens-bayaran.html']
+      ].forEach(function (pair) {
+        const el = document.getElementById(pair[0]);
+        const tile = el ? el.closest('.stat-tile') : null;
+        if (!tile) return;
+        const go = function () { window.location.href = pair[1]; };
+        tile.style.cursor = 'pointer';
+        tile.setAttribute('role', 'link');
+        tile.setAttribute('tabindex', '0');
+        tile.addEventListener('click', go);
+        tile.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
+      });
+
       // status breakdown (filterable by period)
       const STATUS_LABELS = {
         draft:    'Draft',

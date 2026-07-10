@@ -225,6 +225,13 @@
       });
 
       renderProgress();
+
+      // deep-link dari stat tile: ?status=review / ?status=approved → aktifkan filter yang cocok
+      const urlStatus = new URLSearchParams(location.search).get('status');
+      if (urlStatus && /^[a-z]+$/.test(urlStatus)) {
+        const pill = statusFilterEl.querySelector('.filter-pill[data-status="' + urlStatus + '"]');
+        if (pill) pill.click();
+      }
     });
   </script>
 </body>

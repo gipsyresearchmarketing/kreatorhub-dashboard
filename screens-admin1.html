@@ -1367,6 +1367,15 @@
         });
       });
 
+      // aktifkan panel by name + sync sidebar active + scroll top (dipakai stat card)
+      function activateAdminPanel(panelName) {
+        if (!panelName) return;
+        document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === panelName));
+        const navId = Object.keys(sidePanelMap).find(k => sidePanelMap[k] === panelName);
+        if (navId) document.querySelectorAll('.side-nav a').forEach(x => x.classList.toggle('active', x.dataset.odId === navId));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
       // "Ekspor laporan" button
       const exportBtn = document.querySelector('[data-od-id="btn-export"]');
       if (exportBtn) {
@@ -2090,38 +2099,34 @@
         statDetailModal.classList.add('show');
       }
 
-      // click handler for all stat cards with data-stat → navigate to dedicated reports page
-      // Using both mousedown (fast response) and click (fallback)
+      // stat card diklik → switch ke panel terkait (bukan navigate ke Laporan detail yang kosong)
+      const STAT_PANEL = {
+        'kreator-aktif': 'creators',
+        'menunggu-review': 'queue',
+        'disetujui-minggu': 'queue',
+        'brief-aktif': 'briefs',
+        'disetujui': 'queue',
+        'revisi-diminta': 'queue',
+        'ditolak': 'queue',
+        'pendapatan-dibayarkan': 'fee',
+        'fee-total': 'fee',
+        'fee-sudah-dibayar': 'fee',
+        'fee-menunggu-approval': 'fee',
+        'fee-rata-rata': 'fee'
+      };
       document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
-        const go = () => {
-          const target = 'screens-reports.html#' + card.dataset.stat;
-          window.location.href = target;
-        };
-        card.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          go();
-        });
-        card.addEventListener('mousedown', (e) => {
-          if (e.button === 0) {  // only main button
-            e.preventDefault();
-            go();
-          }
-        });
-        // make it visually clear it's a link
-        card.style.cursor = 'pointer';
-        card.setAttribute('role', 'link');
-        card.setAttribute('tabindex', '0');
-        card.setAttribute('aria-label', 'Lihat rincian ' + (card.querySelector('.stat-label')?.textContent || card.dataset.stat));
-      });
-      // also support keyboard (Enter / Space)
-      document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
+        card.onclick = null;  // matiin navigasi inline lama ke screens-reports.html
+        const panel = STAT_PANEL[card.dataset.stat];
+        if (!panel) return;
+        const go = () => activateAdminPanel(panel);
+        card.addEventListener('click', (e) => { e.preventDefault(); go(); });
         card.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            window.location.href = 'screens-reports.html#' + card.dataset.stat;
-          }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
         });
+        card.style.cursor = 'pointer';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', 'Buka ' + (card.querySelector('.stat-label')?.textContent || panel));
       });
 
       // ---- laporan: eksport + period change (simulated) ----

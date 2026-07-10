@@ -277,9 +277,9 @@
         const counts = {
           draft:    progIn.filter(p => p.status === 'draft').length,
           review:   progIn.filter(p => p.status === 'review').length,
-          revision: progIn.filter(p => p.status === 'revision').length,
+          revision: progIn.filter(p => p.status === 'revisi').length,
           approved: histIn.filter(h => h.status === 'approved').length,
-          selesaid:   [...progIn, ...histIn].filter(x => x.status === 'selesaid').length,
+          selesaid:   [...progIn, ...histIn].filter(x => x.status === 'selesai').length,
           rejected: histIn.filter(h => h.status === 'rejected').length
         };
         const total = counts.draft + counts.review + counts.revision + counts.approved + counts.selesaid + counts.rejected;

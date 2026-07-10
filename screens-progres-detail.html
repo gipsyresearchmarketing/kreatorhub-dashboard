@@ -222,9 +222,9 @@
       }
 
       function feedbackSelesaiCard(item) {
-        const label = item.status === 'selesaid' ? 'Selesai' : 'Disetujui';
+        const label = item.status === 'selesai' ? 'Selesai' : 'Disetujui';
         return `
-          <div class="card detail-feedback selesaid" style="margin-bottom: var(--gap-lg);" data-od-id="detail-feedback-done">
+          <div class="card detail-feedback selesai" style="margin-bottom: var(--gap-lg);" data-od-id="detail-feedback-done">
             <h3>✓ ${label}</h3>
             <div class="meta-author">
               <span>📅 Update · <strong>${escapeHtml(item.meta || item.when || '—')}</strong></span>
@@ -291,7 +291,7 @@
           const hWords = h.title.toLowerCase().split(/\s+/);
           return itemWords.some(w => hWords.includes(w));
         });
-        relevantHistory = candidates.find(h => h.status === 'rejected' || h.status === 'revision')
+        relevantHistory = candidates.find(h => h.status === 'rejected' || h.status === 'revisi')
                        || candidates.find(h => h.status === 'approved');
       }
 
@@ -304,9 +304,9 @@
       // feedback card tergantung status
       if (item.status === 'rejected' || (relevantHistory && relevantHistory.status === 'rejected' && !fromHistory)) {
         sections.push(feedbackRejectionCard(relevantHistory));
-      } else if (item.status === 'revision' || (relevantHistory && relevantHistory.status === 'revision' && !fromHistory)) {
+      } else if (item.status === 'revisi' || (relevantHistory && relevantHistory.status === 'revisi' && !fromHistory)) {
         sections.push(feedbackRevisionCard(relevantHistory));
-      } else if (item.status === 'selesaid' || item.status === 'approved' || (relevantHistory && relevantHistory.status === 'approved' && !fromHistory && !fromHistory)) {
+      } else if (item.status === 'selesai' || item.status === 'approved' || (relevantHistory && relevantHistory.status === 'approved' && !fromHistory && !fromHistory)) {
         // Untuk selesaid / approved dari progress atau via history: tampilkan info finalisasi
         sections.push(feedbackSelesaiCard(item));
       }

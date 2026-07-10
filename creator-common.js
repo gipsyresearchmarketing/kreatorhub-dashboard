@@ -70,18 +70,19 @@
 
   // ---- greeting/lead fallback per username (kalau belum ada di profile) ----
   const DATA = {
-    'testing123': { greeting: 'Hai, Tester. Welcome back!', lead: 'Anda login sebagai akun testing. Coba-coba semua fitur.' },
-    'sasa.id':    { greeting: 'Hai, Sasa, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
-    'dimas.h':    { greeting: 'Hai, Dimas, welcome back!',  lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
-    'rangga.p':   { greeting: 'Hai, Rangga, welcome back!', lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
-    'maya.n':     { greeting: 'Hai, Maya, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
-    'aulia.t':    { greeting: 'Hai, Aulia, welcome back!',  lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' }
+    'kreator':    { greeting: 'Hai, Kreator, welcome back!', lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'testing123': { greeting: 'Hai, Tester. Welcome back!',  lead: 'Anda login sebagai akun testing. Coba-coba semua fitur.' },
+    'sasa.id':    { greeting: 'Hai, Sasa, welcome back!',    lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'dimas.h':    { greeting: 'Hai, Dimas, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'rangga.p':   { greeting: 'Hai, Rangga, welcome back!',  lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'maya.n':     { greeting: 'Hai, Maya, welcome back!',    lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'aulia.t':    { greeting: 'Hai, Aulia, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' }
   };
 
   // ---- data cache (di-populate oleh refresh()) ----
   const data = {
-    greeting: (DATA[session.username] || DATA['sasa.id']).greeting,
-    lead:     (DATA[session.username] || DATA['sasa.id']).lead,
+    greeting: (DATA[session.username] || DATA['kreator']).greeting,
+    lead:     (DATA[session.username] || DATA['kreator']).lead,
     briefs:   [],
     progress: [],
     history:  [],

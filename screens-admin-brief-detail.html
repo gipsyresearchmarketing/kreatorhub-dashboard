@@ -858,9 +858,26 @@
           selesai:  ['Buka kembali']
         };
           
-        // pull script from localStorage (shared with kreator side)
+        // pull script: primary dari Supabase (sync dari kreator side), fallback ke localStorage
         function loadScript() {
           try {
+            // 1) Supabase: cari script kreator yang assigned ke brief ini
+            const A = window.AdminApp;
+            const scripts = (A && A.data && A.data.scripts) || [];
+            const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
+            const targetKreator = sbBrief && sbBrief.assigned_to;
+            let row = null;
+            if (targetKreator) {
+              row = scripts.find(s => s.brief_id === briefId && s.kreator === targetKreator);
+            }
+            if (!row) {
+              // Fallback: ambil script pertama untuk brief ini (kalau assigned_to null = terbuka)
+              row = scripts.find(s => s.brief_id === briefId);
+            }
+            if (row) {
+              return { status: row.status || 'draft', script: row.script || '' };
+            }
+            // 2) Legacy localStorage
             const raw = localStorage.getItem('kreatorhub.brief-state.' + briefId);
             if (!raw) return null;
             return JSON.parse(raw);

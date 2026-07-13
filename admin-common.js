@@ -87,23 +87,26 @@
   };
 
   async function refresh() {
-    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').order('updated_at', { ascending: false }),
       sb.from('history').select('*').order('reviewed_at', { ascending: false }),
       sb.from('payments').select('*').order('submitted_at', { ascending: false }),
-      sb.from('profiles').select('*').order('username')
+      sb.from('profiles').select('*').order('username'),
+      sb.from('brief_scripts').select('*')
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
     if (historyRes.error)  console.error('[refresh] history', historyRes.error);
     if (paymentsRes.error) console.error('[refresh] payments', paymentsRes.error);
     if (profilesRes.error) console.error('[refresh] profiles', profilesRes.error);
+    if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
     data.briefs   = briefsRes.data   || [];
     data.progress = progressRes.data || [];
     data.history  = historyRes.data  || [];
     data.payments = paymentsRes.data || [];
     data.profiles = profilesRes.data || [];
+    data.scripts  = scriptsRes.data  || [];
     console.log('[admin-common] progress rows fetched:', data.progress.length, data.progress);
     return data;
   }

@@ -26,17 +26,10 @@
 (async function () {
   'use strict';
 
-  const SESSION_KEY = 'kreatorhub.session';
   const DEFAULT_FEE = 300000;   // nominal fee default per video di-approve (editable di fee panel)
-  function getSession() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
-  }
-  const session = getSession();
-  if (!session || !session.userId || !session.username) {
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-    window.location.replace('screens-login.html');
-    return;
-  }
+
+  // ---- session: single source of truth = Supabase Auth + profiles table ----
+  // Tidak pakai localStorage mirror. sb.auth manage token, profiles simpan role/username/displayName.
 
   function waitForSb() {
     return new Promise((resolve, reject) => {
@@ -60,22 +53,30 @@
 
   // Verifikasi session Supabase valid
   const { data: { user }, error: authErr } = await sb.auth.getUser();
-  if (authErr || !user || user.id !== session.userId) {
+  if (authErr || !user) {
     console.warn('[admin-common] Supabase session invalid → logout');
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
     window.location.replace('screens-login.html');
     return;
   }
 
   // Pastikan role admin (cocok dengan profiles.role)
   const { data: profile, error: profErr } = await sb.from('profiles')
-    .select('id, username, role, display_name, avatar').eq('id', session.userId).single();
+    .select('id, username, role, display_name, avatar').eq('id', user.id).single();
   if (profErr || !profile || profile.role !== 'admin') {
     console.warn('[admin-common] bukan admin, redirect ke login');
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
     window.location.replace('screens-login.html');
     return;
   }
+
+  // Build session object dari Supabase (single source of truth)
+  const session = {
+    userId: user.id,
+    username: profile.username,
+    role: profile.role,
+    displayName: profile.display_name || profile.username,
+    avatar: profile.avatar || null,
+    userEmail: user.email
+  };
 
   // ---- data cache (populated by refresh()) ----
   const data = {
@@ -361,13 +362,12 @@
   async function handleSignOut(e) {
     if (e) e.preventDefault();
     try { await sb.auth.signOut(); } catch (_) {}
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+    // Supabase Auth auto-clear session token; ga perlu localStorage
     window.location.href = 'screens-login.html';
   }
 
   // ---- expose API ----
   const A = {
-    SESSION_KEY,
     sb,
     session: { ...session, role: 'admin', displayName: profile.display_name || session.displayName },
     profile,

@@ -116,7 +116,7 @@
         revisi: 'Perlu revisi', approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
       };
       function getBriefStateSummary(id) {
-        // Primary: Supabase cache (data.scripts sudah ke-populate di refresh())
+        // Single source of truth: Supabase cache (data.scripts dari refresh())
         try {
           const row = (A.data.scripts || []).find(s => s.brief_id === id);
           if (row) {
@@ -126,18 +126,7 @@
             };
           }
         } catch (_) {}
-        // Fallback: localStorage per-(kreator, brief)
-        try {
-          const me = A.session && A.session.username;
-          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
-          const raw = localStorage.getItem(key);
-          if (!raw) return { hasScript: false, status: null };
-          const d = JSON.parse(raw);
-          return {
-            hasScript: !!(d.script && d.script.trim().length > 0),
-            status: d.status || 'draft'
-          };
-        } catch (_) { return { hasScript: false, status: null }; }
+        return { hasScript: false, status: null };
       }
       function renderBriefs(filterBrand) {
         briefListEl.innerHTML = '';

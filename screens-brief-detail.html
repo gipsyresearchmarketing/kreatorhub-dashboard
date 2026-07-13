@@ -115,36 +115,17 @@
       }
 
       function loadState(id) {
-        // Primary: Supabase (sinkron antar device) via A.loadScript.
-        // Fallback: localStorage (offline / race sebelum refresh selesai).
+        // Single source of truth: Supabase (brief_scripts table) via A.data.scripts
         if (A.loadScript) {
-          // Kembalikan promise-like object { script, status } synchronous dari cache
-          // (data.scripts sudah ter-populate oleh refresh() di creator-common).
           try {
             const row = (A.data.scripts || []).find(s => s.brief_id === id);
             if (row) return { script: row.script || '', status: row.status || 'draft' };
           } catch (_) {}
         }
-        // Fallback ke localStorage per-(kreator, brief)
-        try {
-          const me = A.session && A.session.username;
-          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
-          const raw = localStorage.getItem(key);
-          if (!raw) return { status: 'draft', script: '' };
-          const data = JSON.parse(raw);
-          return Object.assign({ status: 'draft', script: '' }, data);
-        } catch (_) {
-          return { status: 'draft', script: '' };
-        }
+        return { status: 'draft', script: '' };
       }
       async function persistState(id, state) {
-        // 1) Always mirror to localStorage sebagai backup offline
-        try {
-          const me = A.session && A.session.username;
-          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
-          localStorage.setItem(key, JSON.stringify(state));
-        } catch (_) {}
-        // 2) Primary: sync ke Supabase
+        // Single source of truth: Supabase
         if (A.saveScript) {
           try {
             await A.saveScript(id, { script: state.script, status: state.status });

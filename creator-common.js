@@ -22,18 +22,9 @@
 (async function () {
   'use strict';
 
-  // ---- session ----
-  const SESSION_KEY = 'kreatorhub.session';
-  function getSession() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
-  }
-  const session = getSession();
-  if (!session || !session.userId || !session.username) {
-    // Tidak ada session yang valid → balik ke login
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-    window.location.replace('screens-login.html');
-    return;
-  }
+  // ---- session: single source of truth = Supabase Auth (sb.auth) ----
+  // Tidak pakai localStorage mirror lagi. Supabase manage session persistence di sb.auth.
+  // Kita cuma butuh: userId (sb.auth.user.id), username/role/displayName (dari profiles table).
 
   // Tunggu Supabase client siap
   function waitForSb() {
@@ -58,12 +49,31 @@
 
   // Verifikasi session Supabase valid (token belum expired)
   const { data: { user }, error: authErr } = await sb.auth.getUser();
-  if (authErr || !user || user.id !== session.userId) {
+  if (authErr || !user) {
     console.warn('[creator-common] Supabase session invalid/expired → logout');
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
     window.location.replace('screens-login.html');
     return;
   }
+
+  // Lookup profile kreator dari Supabase (single source of truth)
+  const { data: profile, error: profErr } = await sb.from('profiles')
+    .select('id, username, role, display_name, avatar')
+    .eq('id', user.id)
+    .single();
+  if (profErr || !profile) {
+    console.warn('[creator-common] profile tidak ditemukan → logout');
+    window.location.replace('screens-login.html');
+    return;
+  }
+  // Build session object dari Supabase (ganti sumber dari localStorage)
+  const session = {
+    userId: user.id,
+    username: profile.username,
+    role: profile.role,
+    displayName: profile.display_name || profile.username,
+    avatar: profile.avatar || null,
+    userEmail: user.email
+  };
 
   // ---- brand list (semua kreator punya akses ke semua brand) ----
   const ALL_BRANDS = ['Jamuzen', 'CalmadeAI', 'Conventio', 'Gipsy Research'];
@@ -199,7 +209,7 @@
   async function handleSignOut(e) {
     if (e) e.preventDefault();
     try { await sb.auth.signOut(); } catch (_) {}
-    try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+    // Supabase Auth auto-clear session token; ga perlu localStorage lagi
     window.location.href = 'screens-login.html';
   }
   function wireSignOut() {
@@ -222,7 +232,6 @@
 
   // ---- expose API ----
   const A = {
-    SESSION_KEY,
     sb,
     session,
     userBrands: ALL_BRANDS,

@@ -1198,3 +1198,423 @@ Plus query manual untuk 5 admin baru (insert/update profile role=admin untuk agu
 ---
 
 End of session 11.
+
+---
+
+# SESSION 12 (2026-07-13) — Debug spree + restructure + auto-notif
+
+> Sesi panjang. Banyak bug ditemukan + di-fix satu per satu. Plus restructure
+> menu upload + tambah script queue + auto-WA notif realtime.
+
+## TL;DR — apa yang ditambah/diubah
+
+| Topik | Commit | Status |
+|---|---|---|
+| Fix `creator-common.js` syntax error (Payment_proofs section) | `6c6c8eb` | ✅ |
+| Filter visibility stat-brief di dashboard kreator | `6c6c8eb` | ✅ |
+| SQL helper verify realtime publication | `6c6c8eb` | ✅ |
+| Hapus "Mira R." hardcoded di 4 admin HTML, pake session.displayName | `e7b733e` | ✅ |
+| RLS policy admin update brief_scripts (fix auto-update quorum) | `e7b733e` | ✅ |
+| Hapus menu "Kirim link video", inline upload di brief-detail | `4b6ac06` | ✅ |
+| Ganti inline video player jadi link akses (lebih simpel) | `539dfd4` | ✅ |
+| Video approval pakai quorum 3/5 (sama pattern script) | `f9040c2` | ✅ |
+| Fix `render()` ReferenceError (di-replace dgn `renderBriefDetail(brief)`) | `80375a3` | ✅ |
+| Persist email + rekening + bank_name ke profiles | `ac8ef3a` | ✅ |
+| Dropdown bank Indonesia + e-wallet (GoPay/OVO/DANA/ShopeePay/LinkAja) | `43f675c` | ✅ |
+| Hapus Jenius/Sakuku/iSaku/DOKU/PayPal dari e-wallet | `d808868` | ✅ |
+| Fix extra `}` yang nutup addEventListener prematurely | `3a6abee` | ✅ |
+| Fee modal: metode transfer dinamis dari profiles.bank_name | `463217a` | ✅ |
+| Fix updateProgress auto-create payment + backfill cherly | `1113213` | ✅ |
+| Fee priority (fields.fee > briefs.fee > 300000) | `08c6f25` | ✅ |
+| Trigger notif WhatsApp setelah tandai fee lunas (Jalur A manual) | `aca8920` | ✅ |
+| Hapus duplicate phone marketing + defensive empty string | `eb58917` | ✅ |
+| Tambah script submissions di Antrian review dgn tab filter | `ed98f08` | ✅ |
+| Auto-popup modal WA notif saat video approved via realtime | `880ced5` | ✅ |
+| Progres page kosong setelah upload — pake updated_at, bukan parse meta | `bd06173` | ✅ |
+| Include link bukti transfer di pesan WA notif fee paid | `7762b68` | ✅ |
+
+---
+
+## A. Bug fixes (kronologis)
+
+### 1. `creator-common.js` SyntaxError — `6c6c8eb`
+
+**Symptom:** Kreator login → halaman statis (greeting hardcoded "Hai, Sasa"), sidebar/buttons ga interactive, brief list kosong.
+
+**Root cause:** Commit `8c38938` (payment proofs + realtime) salah tempatin closing `}` + duplicate `console.error` di akhir block. Async IIFE parse SyntaxError → script abort → `creatorapp:ready` never dispatched → semua halaman kreator cuma render HTML default.
+
+**Fix:** Hapus orphan `}` + duplicate console.error.
+
+### 2. Dashboard stat-brief inkonsistensi — `6c6c8eb`
+
+**Symptom:** Dashboard stat tile "Brief aktif" nunjukin 4, tapi Brief & script cuma nampilin 1.
+
+**Root cause:** `screens-creator.html:265` set `stat-brief = briefs.length` tanpa apply visibility filter (sama kayak di `screens-brief.html:136`).
+
+**Fix:** Tambah `visibleBriefs` (filtered by `assigned_to === me || null`) + pake di stat tile.
+
+### 3. Hardcoded "Mira R." di 4 admin pages — `e7b733e`
+
+**Symptom:** Login admin apapun (putri, marketing, agung, etc.) → topnav nunjukin "Mira R." / `mira@gipsyresearch.id` / avatar "MR".
+
+**Root cause:** HTML default ada hardcoded "Mira R." di 4 admin HTML files (admin1, brief-detail, settings, reports). JS cuma update `.profile-dropdown .profile-name`, ga update trigger button.
+
+**Fix:**
+- Ganti hardcoded default dengan ID dinamis (`profile-trigger-meta`, `profile-dropdown-name`, `login-as-meta`, `profile-card-avatar`, dll)
+- Tambah `hydrateProfile()` central di `admin-common.js` (jalan setelah `adminapp:ready` + setiap `adminapp:data-changed`)
+- Hapus duplicate hydrate di page-level IIFE
+
+### 4. RLS policy admin update brief_scripts — `e7b733e`
+
+**Symptom:** Auto-update `brief_scripts.status` saat quorum 3/5 gagal silently.
+
+**Root cause:** `brief_scripts` cuma punya policy `kreator self update`. Admin ga punya UPDATE policy → RLS deny admin write.
+
+**Fix:** `supabase/add-admin-script-update-policy.sql` — DROP + CREATE policy "brief_scripts admin update" + "brief_scripts admin delete".
+
+### 5. `render()` ReferenceError — `80375a3`
+
+**Symptom:** Vote script/video quorum tercapai → toast "Vote gagal: render is not defined" (= "vote render gagal"). Refresh manual baru keliatan.
+
+**Root cause:** Code panggil `render()` (undefined). Function name bener `renderBriefDetail(brief)`. JS throw ReferenceError → masuk catch → toast error. State DB tetep ke-update karena udah `await`-ed sebelum render().
+
+**Fix:** Ganti semua `render()` di vote handlers / data-changed listener / re-render call site → `renderBriefDetail(brief)`. 4 call site total.
+
+### 6. Email + rekening ga kesimpan — `ac8ef3a`
+
+**Symptom:** Kreator isi email + bank + rekening di menu Akun → "Tersimpan" tampil, tapi refresh → semua kosong lagi. Bayaran iklan nunjukin "Belum ada rekening".
+
+**Root cause:** Schema `profiles` cuma punya `phone`. Ga ada kolom `email`/`bank_name`/`bank_account`. JS save handler cuma mirror ke `A.session` (in-memory). Comment bohong "sb.auth handle session persistence" — itu cuma token auth, bukan profile data.
+
+**Fix:**
+- `supabase/add-profile-contact-bank-columns.sql` — ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email, bank_name, bank_account
+- `creator-common.js`: profile SELECT include kolom baru, session populate, tambah `saveProfile(fields)` helper
+- `screens-akun.html`: save handler panggil `A.saveProfile()` instead of mirror-only
+
+### 7. UpdateProgress ga auto-create payment — `1113213`
+
+**Symptom:** Video approved via quorum 3/5 → progress.status jadi 'approved' tapi payment row ga muncul di Fee panel.
+
+**Root cause:** Logic auto-create payment cuma di `recordDecision()` (single-admin flow lama). `updateProgress()` (vote quorum flow) ga ada logic itu.
+
+**Fix:** `updateProgress()` sekarang detect `fields.status === 'approved' || 'selesai'` → upsert payment row (id deterministik `pay-<progressId>` + `ignoreDuplicates: true` biar aman re-vote).
+
+### 8. Fee priority — `08c6f25`
+
+**Symptom:** Backfill payment cherly pake `DEFAULT_FEE=300000` padahal harusnya 10.000. Asal-asalan.
+
+**Fix:**
+- Manual SQL: UPDATE cherly's payment fee=10000
+- `updateProgress()` fee priority: `fields.fee` > `briefs.fee` > 300000 fallback
+
+### 9. Toast "Notifikasi dikirim" bohong — `aca8920`
+
+**Symptom:** Klik "Tandai sudah dibayar" → toast "Notifikasi dikirim lewat WhatsApp" tapi actually ga kirim apa-apa.
+
+**Root cause:** Fee modal confirm handler cuma `updatePayment()` + toast misleading. Ga panggil `openWaNotif()` (wa.me helper). Pattern WA notif udah ada di approve konten (line 3148) tapi ga apply ke fee paid.
+
+**Fix:** Fee confirm handler sekarang:
+- Lookup creator profile
+- Compose message dengan bank info
+- Panggil `openWaNotif(name, phone, msg)` → modal wa.me kebuka
+- Kreator belum isi WA → toast warning
+- Email-only channel → ga buka wa modal
+
+### 10. Duplicate phone marketing = cherly — `eb58917`
+
+**Symptom:** Klik "Buka WhatsApp" buat cherly → link ke `628984579094` (ternyata nomor marketing juga!)
+
+**Data:**
+- cherly: `phone = "08984579094"` → normalize → `628984579094`
+- marketing: `phone = "628984579094"`
+- Result: WA bakal ke chat admin sendiri, bukan cherly
+
+**Fix:**
+- Clear `marketing.phone` jadi empty string via REST PATCH
+- `toWaNumber()` defensive: empty string treated as null
+
+### 11. Progres page kosong setelah upload — `bd06173`
+
+**Symptom:** Upload video dari brief-detail → success, tapi halaman Progres kosong. Hint "gunakan halaman Progres" misleading karena Progres emang ga nampilin apa-apa.
+
+**Root cause:** `screens-progres.html:136` period filter pake `parseDaysAgo(p.meta)`. Parser cuma match "baru"/"kemarin"/"X jam"/"X hari". Default meta `"Terkirim untuk review"` atau notes bebas (`"silakan di riview"`) → `Infinity` → filtered out.
+
+**Fix:** Ganti pake `updated_at` (timestamp asli): `new Date(p.updated_at).getTime() >= cutoffMs`. Reliable, ga bergantung format text.
+
+---
+
+## B. Restructure
+
+### Menu upload di-merge ke Brief & script — `4b6ac06`
+
+**Sebelum:** Sidebar 6 menu termasuk "Kirim link video" → `screens-upload.html` (form upload terpisah).
+
+**Sesudah:** Hapus menu + hapus file. Workflow baru:
+- Kreator buka brief → tulis script → submit review
+- Admin approve script (quorum 3/5) → brief_scripts.status = 'approved'
+- Kreator balik ke brief-detail → "Upload video" section enabled (ganti dari lock notice)
+- Form inline: brand + judul pre-filled dari brief, link/file video, optional thumbnail
+- Submit → INSERT progress row dengan `brief_id` link
+
+**Disabled state:** Sebelum script approved → tampil lock notice "Tunggu script di-approve admin".
+
+**Schema:** `progress.brief_id` udah ada di schema.sql, baru dipake pertama kali.
+
+### Video player di admin simplified — `539dfd4`
+
+- Inline iframe/video player (16:9) di tiap video row — dihapus, terlalu besar
+- Sekarang cuma link akses video (`<a href="..." target="_blank">`), 1 line, compact
+- Click → buka di tab baru
+
+### Video approval pakai quorum 3/5 — `f9040c2`
+
+Pattern sama dengan script (sesi 11). Schema `approvals.target_type` udah support `'video'`. Tambah:
+- `admin-common.js`: `updateProgress(id, fields)` helper — setara updateScript tapi untuk progress
+- `screens-admin-brief-detail.html`: video row sekarang punya vote counter + Setujui/Tolak buttons (bukan Setujui/Revisi/Tolak)
+- Handler: castVote('video', progressId, decision) → cek quorum → finalDecision → updateProgress → status 'approved'/'rejected'
+- Cleanup dead code: `videoItemsHtml`, `renderVideoList` (jadi no-op)
+
+### Bank dropdown + e-wallet — `43f675c` + `d808868`
+
+Input bank_name jadi `<select>` dropdown dengan 16 bank Indonesia (BCA, BRI, BNI, Mandiri, dll) + 5 e-wallet (GoPay, OVO, DANA, ShopeePay, LinkAja). Jenius/Sakuku/iSaku/DOKU/PayPal diapus (jarang dipake).
+
+Label input rekening → "Nomor rekening / HP" (e-wallet pake nomor HP). Placeholder: `"mis. 1234567890 atau 081234567890"`.
+
+Prefill logic: kalau saved bank ga ada di list → synthetic option `"<value> (saved)"`.
+
+### Fee modal: metode transfer dinamis — `463217a`
+
+Ganti hardcoded `"Transfer bank · BCA"` jadi `<span id="fee-modal-method">—</span>`. `openFeeModal(row)` lookup `A.data.profiles.find(p => p.username === pay.creator)`, format `"DANA · 082134121321"`. Kalau kreator belum isi → merah italic "Belum diisi kreator — tambahin di menu Akun".
+
+### Script queue dengan tab filter — `ed98f08`
+
+Antrian review admin sebelumnya cuma show video (progress). Sekarang gabung video + script, dengan tab filter pills di toolbar:
+- **Semua** (default)
+- **Video** — cuma video submissions
+- **Script** — cuma script submissions (brief_scripts dengan status 'review'/'revisi')
+
+Tiap row ada type badge ("Video" / "Script"). Script row click → "Buka brief →" link ke `screens-admin-brief-detail.html` (di sana ada vote system script dengan quorum 3/5). Script row preview: 60 char pertama script di meta column.
+
+---
+
+## C. Auto-notif WhatsApp (partial auto)
+
+### Trigger realtime saat video approved — `880ced5`
+
+**Flow:**
+```
+1. Admin vote ke-3 → updateProgress() → status='approved' di DB
+2. Realtime broadcast ke semua admin tab (Supabase postgres_changes)
+3. admin-common.js listener detect transition status →
+   dispatch 'adminapp:data-changed' event dengan type='video-approved'
+4. screens-admin1.html listener → auto-popup modal wa.notif
+5. Admin klik "Buka WhatsApp" → admin tap Send → kreator dapet
+```
+
+**Partial auto limitation:** Butuh tab admin yang aktif. Kalo ga ada tab admin → notif ke-skip. (Untuk full auto butuh Fonnte/Wablas + Supabase Edge Function, future enhancement.)
+
+**Edge case handled:**
+- Kreator belum isi nomor WA → toast warning, modal ga muncul
+- Debounce: tag modal dengan `progressId` di dataset biar duplicate events di-skip
+
+### Include link bukti transfer di WA notif — `7762b68`
+
+Fee paid WA notif sebelumnya cuma mention "fee ditransfer" tanpa bukti. Kreator ga bisa verify.
+
+Fix: setelah `updatePayment()` success, panggil `A.getProofs(id)` → kalo ada, generate signed URL via `A.getProofDownloadUrl(filePath, 3600)` (1 jam expired) → append ke pesan WA.
+
+```
+Halo cherly, fee kamu untuk video "cherly 2" (Rp 10.000) udah 
+ditransfer ya ke DANA · 082134121321.
+
+Bukti transfer: https://bbzminpiwjnlubwvgmgk.supabase.co/...
+
+Thanks!
+```
+
+---
+
+## D. Database state (live, end of sesi 12)
+
+**Profiles (10):**
+| username | role | phone | bank_name | bank_account |
+|---|---|---|---|---|
+| admingipsyresearch | admin | null | - | - |
+| agung | admin | null | - | - |
+| bagas | admin | null | - | - |
+| cherly | kreator | 08984579094 | DANA | 082134121321 |
+| kreator | kreator | +628123456789 | - | - |
+| marketinggipsyresearch | admin | "" (cleared) | - | - |
+| petra | admin | null | - | - |
+| pipit | kreator | null | - | - |
+| praja | admin | null | - | - |
+| putri | admin | null | - | - |
+
+**Briefs (7):** 3 brief cherly (fee 10000), 1 brief cherly draft (fee null), 1 brief pipit (fee null), 2 brief kreator (fee 10000/50000).
+
+**brief_scripts (3):**
+| brief_id | kreator | status |
+|---|---|---|
+| brief-jamuzen-mrja1ax6 | cherly | approved (3 vote) |
+| brief-gipsy-research-mrj9cg3p | cherly | draft |
+| brief-gipsy-research-mritmxul | pipit | selesai |
+
+**Payments (3):**
+| id | kreator | video_title | fee | status |
+|---|---|---|---|---|
+| pay-p-1783952170613-42rt | cherly | cherly 2 | 10000 | paid |
+| pay-p-1783957160834-ygwr | cherly | cherly 3 | 10000 | paid |
+| pay-p-1783696882645-jiku | kreator | testing 1 | 10000 | paid |
+
+**Progress (3):**
+| id | kreator | brief_id | title | status |
+|---|---|---|---|---|
+| p-1783957160834-ygwr | cherly | brief-conventio-mrjdmbmh | cherly 3 | review |
+| p-1783952170613-42rt | cherly | brief-jamuzen-mrja1ax6 | cherly 2 | approved |
+| p-1783696882645-jiku | kreator | null | testing 1 | approved |
+
+**Approvals (6 votes):**
+- brief-jamuzen-mrja1ax6: bagas, petra, putri (3 approve → quorum → status approved)
+- brief-gipsy-research-mritmxul: marketing, petra, putri (3 approve → quorum → status selesai)
+
+---
+
+## E. File inventory (end of sesi 12)
+
+### New SQL files
+- `supabase/add-admin-script-update-policy.sql` — admin update/delete brief_scripts
+- `supabase/add-profile-contact-bank-columns.sql` — email, bank_name, bank_account di profiles
+- `supabase/verify-and-enable-realtime.sql` — helper verify publication + re-enable
+
+### Modified files
+- `creator-common.js` — fix syntax error, add saveProfile/uploadFile/submitProgress, greeting pipit/cherly
+- `admin-common.js` — fix syntax, add hydrateProfile, add updateProgress, auto-notif subscription
+- `screens-creator.html` — stat-brief visibility filter, hapus "Kirim link video" menu
+- `screens-akun.html` — fix brace, bank dropdown, saveProfile integration, console.log debug
+- `screens-brief-detail.html` — inline upload section, hapus "Kirim link video" menu
+- `screens-brief.html` — hapus menu
+- `screens-bayaran.html` — hapus menu, hapus unused references
+- `screens-progres.html` — pake updated_at instead of parseDaysAgo
+- `screens-progres-detail.html` — hapus menu
+- `screens-riwayat.html` — hapus menu
+- `screens-script.html` — hapus menu
+- `screens-admin1.html` — hydrate profile, transfer method dynamic, fee confirm WA, auto-notif, script queue tab, bukti URL
+- `screens-admin-brief-detail.html` — renderBriefDetail fix, hapus menu, script & video vote UI, dynamic render
+- `screens-admin-settings.html` — hydrate profile, hapus menu
+- `screens-reports.html` — hydrate profile, update copy, hapus "Kirim link video" reference
+
+### Deleted files
+- `screens-upload.html` — digabung ke inline upload di brief-detail
+
+---
+
+## F. Akun & password (live, end of sesi 12)
+
+| Email | Password | Role | UUID |
+|---|---|---|---|
+| marketinggipsyresearch@gmail.com | kreator123 | admin | 21c17028-1f42-42fc-afbe-e5c6923296df |
+| kreator@gmail.com | kreator123 | kreator | 742de4d7-71a2-4ddd-a532-4a541d645a7c |
+| cherly@gmail.com | cherly123 | kreator | ed948e8f-8b8e-4993-96c7-1539110f767b |
+| pipit@gmail.com | **Pipit123** (capital P!) | kreator | 300f138d-af3b-4674-80bb-38afb3141191 |
+
+5 admin baru: agung/petra/putri/bagas/praja (semua `kreator123`, role=admin)
+
+Marketing.phone udah di-clear (was 628984579094 — duplicate dari cherly). Kalo perlu di-restore, manual update via Supabase Dashboard.
+
+---
+
+## G. Next steps (kalau lanjut sesi 13)
+
+**Test plan** (yang Bagas bilang "besok saya coba"):
+1. Hard refresh (`Cmd+Shift+R`)
+2. Login admin (putri / marketing) → Fee kreator
+3. Row cherly "cherly 2 / cherly 3" harusnya **Rp 10.000** (bukan 300 — itu cache lama)
+4. Klik row → fee modal
+5. **Metode transfer:** "DANA · 082134121321" (dinamis dari profile)
+6. Upload bukti transfer (file image/PDF)
+7. Pilih channel "WhatsApp" → klik "Tandai sudah dibayar"
+8. Modal wa.notif muncul dengan **link bukti** (signed URL 1 jam)
+9. Klik "Buka WhatsApp" → admin tap Send → kreator dapet notif + link bukti
+
+**Edge case yang masih perlu dicek:**
+- Test auto-notif realtime: 2 tab browser (1 admin, 1 kreator), admin vote quorum → modal WA auto-popup di tab admin
+- Test script queue: buka Antrian review → tab "Script" → ada script dari cherly
+- Test progress page: upload dari brief → buka Progres → video baru keliatan (bukan kosong lagi)
+
+**Possible improvements (out of scope sesi 12):**
+- Full auto-notif via Fonnte/Wablas (Jalur B) — bukan priority karena ada partial auto
+- Role-based scope (Putri cuma fee, 4 admin lain cuma review) — sesi 11 backlog
+- Hapus legacy `kreatorhub.brief-state.*` & `kreatorhub.script-drafts.*` di localStorage user
+- Shorten Vercel URL atau custom domain
+
+---
+
+## H. Bug & lesson sesi 12
+
+1. **Hardcoded default = silent bug**: `DEFAULT_FEE=300000` di `updateProgress` ke-backfill ke payment tanpa nanya nominal asli → field yang harusnya 10.000 jadi 300.000. **Lesson:** always check existing data sebelum pakai default.
+2. **Comment bohong > ga ada comment**: `// sb.auth handle session persistence` (di saveProfile lama) bohong — sb.auth cuma handle token, bukan profile. Lebih baik ga ada comment daripada misleading. **Lesson:** verify behavior before documenting.
+3. **Toast misleading = silent failure**: `Notifikasi dikirim ke WhatsApp` toast tapi actually ga kirim → user ga sadar ada bug. **Lesson:** toast should reflect actual state. Atau tambah defensive check sebelum toast.
+4. **Same number, different prefix = same destination**: cherly `08984579094` dan marketing `628984579094` → setelah normalize jadi `628984579094` (SAMA). **Lesson:** validasi unique phone di profile kalau bisa.
+5. **parseDaysAgo(p.meta) is fragile**: text parser ga match arbitrary strings. **Lesson:** pake real timestamp (updated_at) instead of parsing text.
+6. **Extra `}` di-edit tanpa cek full structure**: menyebabkan `creatorapp:ready` callback ke-close early → save handler di luar scope → throw ReferenceError. **Lesson:** always check brace balance setelah Edit tool, especially untuk nested IIFE.
+7. **Filter visibility perlu apply di SEMUA tempat yang nampilin count**: stat-brief di dashboard vs brief list — inkonsisten. **Lesson:** extract shared filter helper atau component.
+
+---
+
+## I. Commit graph sesi 12
+
+```
+6c6c8eb  fix(kreator): syntax error di creator-common.js → creatorapp:ready ga fire
+         (created supabase/verify-and-enable-realtime.sql, screens-creator.html stat-brief filter)
+   ↓
+e7b733e  fix(admin): profile UI pake session + RLS policy buat auto-update script
+         (admin-common.js hydrateProfile, 4 admin HTML, add-admin-script-update-policy.sql)
+   ↓
+4b6ac06  refactor(kreator): merge upload video ke Brief & script page
+         (deleted screens-upload.html, inline upload di brief-detail)
+   ↓
+539dfd4  refactor(admin): ganti inline player jadi akses link aja
+         (compact link instead of iframe/video)
+   ↓
+f9040c2  feat(admin): video approval pakai quorum 3/5 (sama seperti script)
+         (admin-common.js updateProgress, video vote UI)
+   ↓
+80375a3  fix(admin): replace render() dgn renderBriefDetail(brief) — ReferenceError
+   ↓
+ac8ef3a  fix(kreator): persist email + rekening + bank_name ke profiles
+         (screens-akun.html, creator-common.js, add-profile-contact-bank-columns.sql)
+   ↓
+43f675c  feat(kreator): ganti input bank jadi dropdown bank Indonesia + e-wallet
+   ↓
+d808868  refactor(kreator): rapihin list e-wallet (hapus Jenius/Sakuku/iSaku/DOKU/PayPal)
+   ↓
+3a6abee  fix(kreator): hapus extra `}` yang nutup addEventListener prematurely
+   ↓
+17bda32  fix(kreator): wrap prefill di try/catch — biar error ga block save handler
+   ↓
+99dff6a  debug(kreator): tambah console.log di save handler
+   ↓
+463217a  feat(admin): metode transfer di fee modal dinamis dari profiles
+   ↓
+1113213  fix(admin): updateProgress auto-create payment + backfill cherly
+   ↓
+08c6f25  fix(admin): fee priority (fields.fee > briefs.fee > 300000)
+   ↓
+aca8920  fix(admin): trigger notif WhatsApp setelah tandai fee lunas
+   ↓
+eb58917  fix(admin): hapus duplicate phone marketing + defensive empty string
+   ↓
+ed98f08  feat(admin): tambah script submissions di Antrian review dengan tab filter
+   ↓
+880ced5  feat(admin): auto-popup modal WA notif saat video approved via realtime
+   ↓
+bd06173  fix(kreator): Progres page kosong setelah upload — pake updated_at, bukan parse meta
+   ↓
+7762b68  fix(admin): include link bukti transfer di pesan WA notif fee paid
+```
+
+Total: 18 commits, 21 files changed (incl. 3 new SQL), 1 file deleted (screens-upload.html), ~400+ lines added/changed.
+
+---
+
+End of session 12.

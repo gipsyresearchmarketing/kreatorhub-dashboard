@@ -234,6 +234,9 @@
 
       // stat tiles
       const briefs = A.data.briefs;
+      // Visibility per kreator (sama kayak screens-brief.html): cuma brief assigned_to=me atau null
+      const me = A.session && A.session.username;
+      const visibleBriefs = (briefs || []).filter(b => !b.assigned_to || b.assigned_to === me);
       const progress = A.data.progress;
       const history = A.data.history;
       // Normalisasi payments: Supabase kasih snake_case + numeric bisa string + ad_spend/gross_revenue null.
@@ -262,7 +265,7 @@
       const totalFee = payments.reduce((s, p) => s + p.fee, 0);
       const fmtRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
-      document.getElementById('stat-brief').textContent = briefs.length;
+      document.getElementById('stat-brief').textContent = visibleBriefs.length;
       document.getElementById('stat-progress').textContent = progress.length;
       document.getElementById('stat-review').textContent = waitingReview;
       document.getElementById('stat-approved').textContent = approved;

@@ -86,7 +86,9 @@
     'dimas.h':    { greeting: 'Hai, Dimas, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
     'rangga.p':   { greeting: 'Hai, Rangga, welcome back!',  lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
     'maya.n':     { greeting: 'Hai, Maya, welcome back!',    lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
-    'aulia.t':    { greeting: 'Hai, Aulia, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' }
+    'aulia.t':    { greeting: 'Hai, Aulia, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'pipit':      { greeting: 'Hai, Pipit, welcome back!',   lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' },
+    'cherly':     { greeting: 'Hai, Cherly, welcome back!',  lead: 'Berikut ringkasan kerjaan kamu. Cek detail di menu sebelah kiri.' }
   };
 
   // ---- data cache (di-populate oleh refresh()) ----
@@ -334,8 +336,6 @@
     });
   } catch (e) {
     console.error('[realtime] payment_proofs subscription error:', e);
-  }
-    console.error('[realtime] brief_scripts subscription error:', e);
   }
 
   // Beri tahu halaman: data sudah siap

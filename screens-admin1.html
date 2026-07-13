@@ -359,6 +359,39 @@
     .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
 
     .brand-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--muted); }
+
+    /* brand cell: clickable (filter by brand), chevron muncul sebagai hint */
+    .brand-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 4px 3px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .brand-cell:hover,
+    .brand-cell:focus-visible {
+      background: var(--accent-soft);
+      outline: none;
+    }
+    .brand-cell .brand-chevron {
+      width: 12px;
+      height: 12px;
+      color: var(--muted);
+      opacity: 0.5;
+      transition: opacity 0.12s ease, transform 0.15s ease, color 0.12s ease;
+    }
+    .brand-cell:hover .brand-chevron,
+    .brand-cell:focus-visible .brand-chevron {
+      opacity: 1;
+      color: var(--accent);
+      transform: translateX(2px);
+    }
+    .brand-cell.is-active {
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 50%, transparent);
+    }
     .brand-count { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 2px; letter-spacing: 0.02em; }
     .brand-count::before { content: '· '; color: var(--muted); opacity: 0.6; }
     .row-title { display: flex; align-items: center; gap: 10px; }
@@ -1277,6 +1310,24 @@
         const q = briefSearch.value.toLowerCase();
         document.querySelectorAll('#briefs-table tbody tr').forEach(row => {
           row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+        });
+      });
+
+      // Klik cell brand → filter tabel brief by brand itu (toggle kalau sama)
+      const briefsTbody = document.querySelector('#briefs-table tbody');
+      let brandFilter = '';
+      briefsTbody?.addEventListener('click', (e) => {
+        const cell = e.target.closest('.brand-cell');
+        if (!cell) return;
+        const brand = cell.dataset.brand || '';
+        brandFilter = (brandFilter === brand) ? '' : brand;
+        document.querySelectorAll('#briefs-table tbody tr').forEach(row => {
+          const rowBrand = (row.querySelector('.brand-cell')?.dataset.brand || '').toLowerCase();
+          row.style.display = (!brandFilter || rowBrand === brandFilter.toLowerCase()) ? '' : 'none';
+        });
+        // Tandai cell yang aktif dengan ring
+        document.querySelectorAll('#briefs-table .brand-cell').forEach(c => {
+          c.classList.toggle('is-active', (c.dataset.brand || '') === brandFilter);
         });
       });
 
@@ -2820,7 +2871,12 @@
             <small style="display: block; color: var(--muted); font-size: 11px; margin-top: 2px;">${escapeHtml(b.meta || '')}</small>
           </a>
         </td>
-        <td><span class="brand-tag">${brandTag(b.brand)}</span></td>
+        <td>
+          <span class="brand-cell" data-brand="${escapeHtml(b.brand)}" title="Klik untuk filter brief by brand ini" role="button" tabindex="0">
+            <span class="brand-tag">${brandTag(b.brand)}</span>
+            <svg class="brand-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </span>
+        </td>
         <td>${picCell}</td>
         <td class="num-col">${feeCell}</td>
         <td>${statusCell}</td>

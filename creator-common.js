@@ -247,6 +247,54 @@
   wireSignOut();
   wireUserInfoClick();
 
+  // ---- realtime subscription: brief_scripts ----
+  // Dengerin perubahan script untuk kreator ini (INSERT/UPDATE/DELETE).
+  // Filter server-side: kreator = session.username.
+  // Begitu ada perubahan dari admin side (yang update via AdminApp.updateScript),
+  // cache lokal di-update dan event di-dispatch supaya halaman re-render.
+  try {
+    const channel = sb.channel('brief_scripts_' + session.username)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'brief_scripts',
+          filter: 'kreator=eq.' + session.username
+        },
+        async (payload) => {
+          // Update local cache
+          if (!Array.isArray(data.scripts)) data.scripts = [];
+          if (payload.eventType === 'DELETE') {
+            const idx = data.scripts.findIndex(s => s.brief_id === payload.old.brief_id);
+            if (idx >= 0) data.scripts.splice(idx, 1);
+          } else {
+            // INSERT or UPDATE
+            const row = payload.new;
+            const idx = data.scripts.findIndex(s => s.brief_id === row.brief_id);
+            if (idx >= 0) data.scripts[idx] = row;
+            else data.scripts.push(row);
+          }
+          // Dispatch event supaya halaman re-render
+          document.dispatchEvent(new CustomEvent('creatorapp:data-changed', {
+            detail: { type: 'script', briefId: (payload.new || payload.old).brief_id, source: 'realtime' }
+          }));
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') console.log('[realtime] brief_scripts subscribed');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('[realtime] brief_scripts status:', status);
+        }
+      });
+    // Cleanup saat page unload
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(channel); } catch (_) {}
+    });
+  } catch (e) {
+    console.warn('[realtime] brief_scripts subscription gagal:', e.message);
+  }
+
   // Beri tahu halaman: data sudah siap
   document.dispatchEvent(new CustomEvent('creatorapp:ready', { detail: { data } }));
 })();

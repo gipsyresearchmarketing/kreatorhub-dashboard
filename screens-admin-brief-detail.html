@@ -355,6 +355,18 @@
     .script-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
     .script-actions .btn { padding: 5px 12px; font-size: 12px; }
 
+    /* vote counter: bar + counts */
+    .vote-counter { width: 100%; }
+    .vote-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--fg-soft); gap: 2px; }
+    .vote-bar-approve { background: var(--success); transition: width 0.3s ease; }
+    .vote-bar-reject  { background: var(--danger);  transition: width 0.3s ease; }
+    .vote-counts { display: flex; gap: 14px; margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+    .vote-counts .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .vote-counts .dot-approve { background: var(--success); }
+    .vote-counts .dot-reject { background: var(--danger); }
+    .vote-counts strong { color: var(--fg); }
+    .vote-final { margin-top: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+
     /* video item with inline actions (in video section, expanded list) */
     .video-item {
       padding: 12px 13px; border-bottom: 1px solid var(--border);
@@ -1080,11 +1092,48 @@
           </div>`).join('')
           : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
           
+        // Script vote UI (multi-admin quorum 3/5) — replaces old single-admin action buttons
+        const A0 = window.AdminApp;
+        const scriptKey = briefId; // target_id untuk approvals.script
+        const sc = A0 && A0.voteCounts ? A0.voteCounts('script', scriptKey) : { approve: 0, reject: 0, voters: [] };
+        const myScriptVote = A0 && A0.myVote ? A0.myVote('script', scriptKey) : null;
+        const scriptLocked = A0 && A0.quorumReached ? A0.quorumReached(sc) : false;
+        const scriptFinal = A0 && A0.finalDecision ? A0.finalDecision(sc) : null;
+        const scriptCounterHtml = `
+          <div class="vote-counter" id="script-vote-counter">
+            <div class="vote-bar">
+              <span class="vote-bar-approve" style="width: ${(sc.approve / A0.TOTAL_ADMINS) * 100}%"></span>
+              <span class="vote-bar-reject"  style="width: ${(sc.reject  / A0.TOTAL_ADMINS) * 100}%"></span>
+            </div>
+            <div class="vote-counts">
+              <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${sc.approve}/${A0.TOTAL_ADMINS}</strong></span>
+              <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${sc.reject}/${A0.TOTAL_ADMINS}</strong></span>
+            </div>
+            ${scriptLocked ? `<div class="vote-final" style="color: ${scriptFinal === 'approved' ? 'var(--success)' : 'var(--danger)'};">Quorum tercapai → <strong>${scriptFinal === 'approved' ? 'DISETUJUI' : 'DITOLAK'}</strong> (locked)</div>` : ''}
+          </div>`;
+        const myVoteHint = myScriptVote
+          ? `<span class="meta" style="margin-left: 10px;">· vote kamu: <strong style="color: ${myScriptVote === 'approve' ? 'var(--success)' : 'var(--danger)'};">${myScriptVote === 'approve' ? 'Setujui' : 'Tolak'}</strong> (klik tombol lain untuk ganti)</span>`
+          : `<span class="meta" style="margin-left: 10px;">· kamu belum vote</span>`;
+        const scriptActionsHtml = `
+          <div class="script-actions" id="script-actions">
+            ${scriptCounterHtml}
+            <div class="vote-buttons" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <button type="button" class="btn ${myScriptVote === 'approve' ? 'btn-success-soft' : 'btn-secondary'}" data-vote-script="approve">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4L19 6"/></svg>
+                Setujui script
+              </button>
+              <button type="button" class="btn ${myScriptVote === 'reject' ? 'btn-danger-soft' : 'btn-secondary'}" data-vote-script="reject">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg>
+                Tolak script
+              </button>
+              ${myVoteHint}
+            </div>
+          </div>`;
         const scriptBlock = (hasScript
           ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
              <small class="meta" style="display: block; margin-top: 6px;">Disinkron ke cloud dari Supabase. <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
           : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script. Kreator belum submit untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Minta kreator untuk submit script via mode kreator.</small></div>`) +
-          `<div class="script-actions" id="script-actions">${scriptActionsStrip}</div>`;
+          scriptActionsHtml;
           
         const videosListHtml = brief.videos.length
           ? brief.videos.map(v => {
@@ -1266,28 +1315,45 @@
           if (chip) chip.classList.toggle('active');
         });
           
-        // per-script actions live inside the Script section (#script-actions strip)
-        document.getElementById('script-actions')?.addEventListener('click', (e) => {
-          const btn = e.target.closest('[data-action]');
+        // per-script actions: vote (multi-admin quorum 3/5)
+        document.getElementById('script-actions')?.addEventListener('click', async (e) => {
+          const btn = e.target.closest('[data-vote-script]');
           if (!btn) return;
-          const action = btn.dataset.action;
-          pendingAction = { label: action, target: ACT_TARGET[action], scope: 'script' };
-          actionModalTitle.textContent = `${action} script ini?`;
-          const leadMap = {
-            'Setujui':        'Script akan ditandai disetujui. Kreator akan menerima notifikasi.',
-            'Minta revisi':   'Kreator akan diminta merevisi script. Pesan kamu akan dikirim via channel yang dipilih.',
-            'Tolak':          'Script akan ditandai ditolak. Status final untuk script ini.',
-            'Tandai selesai': 'Brief ditandai selesai. Video dianggap deliverable final.',
-            'Kembalikan ke draft': 'Status dikembalikan ke draft. Kreator bisa edit script & video lagi.',
-            'Buka kembali':   'Brief dibuka kembali untuk review.'
-          };
-          actionModalLead.textContent = leadMap[action] || 'Aksi akan dikirim ke kreator.';
-          actionModalCreator.textContent = brief.creator;
-          actionModalBrand.textContent = brief.brand;
-          actionModalTitle2.textContent = brief.title;
-          actionModalNote.value = '';
-          actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
-          actionModal.classList.add('show');
+          const decision = btn.dataset.voteScript; // 'approve' or 'reject'
+          const A = window.AdminApp;
+          if (!A || !A.castVote) {
+            showToast('AdminApp belum siap. Coba lagi.');
+            return;
+          }
+          btn.disabled = true;
+          try {
+            await A.castVote('script', briefId, decision);
+            // Cek quorum → kalau tercapai, update status brief_scripts
+            const counts = A.voteCounts('script', briefId);
+            const final = A.finalDecision(counts);
+            if (final && A.updateScript) {
+              const sbBrief = A.data.briefs.find(b => b.id === briefId);
+              const creator = sbBrief && sbBrief.assigned_to;
+              if (creator) await A.updateScript(briefId, creator, { status: final });
+            }
+            const myV = A.myVote('script', briefId);
+            showToast(`Vote "${myV === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
+            render();
+          } catch (err) {
+            showToast('Vote gagal: ' + err.message);
+            btn.disabled = false;
+          }
+        });
+
+        // Listener: re-render saat ada data-changed dari tab lain (realtime)
+        document.addEventListener('adminapp:data-changed', (e) => {
+          if (e.detail && e.detail.type === 'vote' && e.detail.targetType === 'script' && e.detail.targetId === briefId) {
+            // Update counter & button state tanpa re-render full
+            const counter = document.getElementById('script-vote-counter');
+            if (counter) renderScriptVoteCounter();
+            // Re-render full untuk sync button state
+            render();
+          }
         });
           
         // per-video actions live inside each video row in #video-list (when expanded)

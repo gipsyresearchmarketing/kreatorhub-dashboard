@@ -83,17 +83,19 @@
     progress: [],
     history:  [],
     payments: [],
-    profiles: []
+    profiles: [],
+    approvals: []
   };
 
   async function refresh() {
-    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes, approvalsRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').order('updated_at', { ascending: false }),
       sb.from('history').select('*').order('reviewed_at', { ascending: false }),
       sb.from('payments').select('*').order('submitted_at', { ascending: false }),
       sb.from('profiles').select('*').order('username'),
-      sb.from('brief_scripts').select('*')
+      sb.from('brief_scripts').select('*'),
+      sb.from('approvals').select('*')
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
@@ -101,14 +103,65 @@
     if (paymentsRes.error) console.error('[refresh] payments', paymentsRes.error);
     if (profilesRes.error) console.error('[refresh] profiles', profilesRes.error);
     if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
-    data.briefs   = briefsRes.data   || [];
-    data.progress = progressRes.data || [];
-    data.history  = historyRes.data  || [];
-    data.payments = paymentsRes.data || [];
-    data.profiles = profilesRes.data || [];
-    data.scripts  = scriptsRes.data  || [];
+    if (approvalsRes.error) console.error('[refresh] approvals', approvalsRes.error);
+    data.briefs    = briefsRes.data    || [];
+    data.progress  = progressRes.data  || [];
+    data.history   = historyRes.data   || [];
+    data.payments  = paymentsRes.data  || [];
+    data.profiles  = profilesRes.data  || [];
+    data.scripts   = scriptsRes.data   || [];
+    data.approvals = approvalsRes.data || [];
     console.log('[admin-common] progress rows fetched:', data.progress.length, data.progress);
     return data;
+  }
+
+  // ---- approvals (multi-admin quorum 3/5) ----
+  // Quorum untuk script & video: 3/5 admin harus vote approve (atau reject) untuk status final berubah.
+  // Fee: single-admin (tidak pakai quorum), tetap pakai updatePayment.
+  const APPROVAL_QUORUM = 3;
+  const TOTAL_ADMINS = 5;
+
+  function voteCounts(targetType, targetId) {
+    const rows = (data.approvals || []).filter(a => a.target_type === targetType && a.target_id === targetId);
+    const counts = { approve: 0, reject: 0, voters: [] };
+    rows.forEach(r => {
+      if (r.decision === 'approve') counts.approve++;
+      else if (r.decision === 'reject') counts.reject++;
+      counts.voters.push(r.admin_username);
+    });
+    return counts;
+  }
+  function myVote(targetType, targetId) {
+    if (!session || !session.username) return null;
+    const row = (data.approvals || []).find(a =>
+      a.target_type === targetType && a.target_id === targetId && a.admin_username === session.username
+    );
+    return row ? row.decision : null;
+  }
+  async function castVote(targetType, targetId, decision, comment) {
+    if (!session || !session.username) throw new Error('Session admin tidak ditemukan');
+    const payload = {
+      target_type: targetType,
+      target_id: targetId,
+      admin_username: session.username,
+      decision,
+      comment: comment || null
+    };
+    const res = await sb.from('approvals').upsert(payload, { onConflict: 'target_type,target_id,admin_username' }).select();
+    if (res.error) throw new Error('Vote gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'vote', targetType, targetId }
+    }));
+    return res.data[0];
+  }
+  function quorumReached(counts) {
+    return counts.approve >= APPROVAL_QUORUM || counts.reject >= APPROVAL_QUORUM;
+  }
+  function finalDecision(counts) {
+    if (counts.approve >= APPROVAL_QUORUM) return 'approved';
+    if (counts.reject >= APPROVAL_QUORUM) return 'rejected';
+    return null;
   }
 
   // ---- action: approve / reject / revision ----
@@ -270,6 +323,13 @@
     updateScript,
     updateBrief,
     updatePayment,
+    castVote,
+    voteCounts,
+    myVote,
+    quorumReached,
+    finalDecision,
+    APPROVAL_QUORUM,
+    TOTAL_ADMINS,
     showToast,
     handleSignOut
   };
@@ -283,11 +343,39 @@
       progress: data.progress.length,
       history: data.history.length,
       payments: data.payments.length,
-      profiles: data.profiles.length
+      profiles: data.profiles.length,
+      approvals: data.approvals.length
     });
   } catch (e) {
     console.error('[admin-common] refresh gagal', e);
     showToast('Gagal memuat data. Refresh halaman untuk coba lagi.', 'error');
+  }
+
+  // ---- realtime subscription: approvals ----
+  // Semua admin di-broadcast perubahan approvals (insert/update/delete).
+  // Trigger re-fetch + dispatch event supaya UI counter update live.
+  try {
+    const channel = sb.channel('approvals_admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'approvals' },
+        async (payload) => {
+          console.log('[admin-realtime] approval change:', payload.eventType, payload.new || payload.old);
+          await refresh();
+          const ev = payload.new || payload.old;
+          document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+            detail: { type: 'vote', targetType: ev.target_type, targetId: ev.target_id, source: 'realtime' }
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('[admin-realtime] approvals status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(channel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[admin-realtime] approvals subscription error:', e);
   }
 
   document.dispatchEvent(new CustomEvent('adminapp:ready', { detail: { data } }));

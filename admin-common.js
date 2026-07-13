@@ -322,6 +322,31 @@
       updated_at: new Date().toISOString()
     }, fields)).eq('id', id);
     if (updRes.error) throw new Error('Update progress gagal: ' + updRes.error.message);
+
+    // Auto-create payment row kalau status final 'approved'/'selesai'
+    // (sama pattern dengan recordDecision di single-admin flow, tapi dipanggil
+    // setelah vote quorum updateProgress). Tanpa ini, payment ga muncul
+    // di Fee panel setelah video di-approve via multi-admin vote.
+    if (fields && (fields.status === 'approved' || fields.status === 'selesai')) {
+      // Ambil progress row buat dapet kreator/title/brand
+      const item = data.progress.find(p => p.id === id);
+      if (item) {
+        const payId = 'pay-' + id;
+        const fee = fields.fee != null ? Number(fields.fee) : 300000;
+        const payRes = await sb.from('payments').upsert({
+          id: payId,
+          kreator: item.kreator,
+          video_title: item.title,
+          brand: item.brand,
+          fee,
+          status: 'pending'
+        }, { onConflict: 'id', ignoreDuplicates: true });
+        if (payRes.error) {
+          console.warn('[updateProgress] payment auto-create gagal', payRes.error);
+        }
+      }
+    }
+
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
       detail: { type: 'progress-update', id, fields }

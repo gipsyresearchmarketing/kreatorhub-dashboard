@@ -2869,7 +2869,7 @@
       if (!tbody) return;
       const items = (A.data.progress || []);
       if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada progres dari kreator. Kreator perlu submit dari menu "Kirim link video".</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada progres dari kreator. Kreator perlu upload dari halaman Brief & script (setelah script di-approve admin).</td></tr>`;
         return;
       }
       tbody.innerHTML = items.map(item => {

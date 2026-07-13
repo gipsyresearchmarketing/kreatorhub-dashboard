@@ -43,10 +43,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
         Brief &amp; script
       </a>
-      <a href="screens-upload.html" data-od-id="nav-upload">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M14 10l-4 4M12 4v12"/><circle cx="12" cy="12" r="9"/></svg>
-        Kirim link video
-      </a>
       <a href="screens-progres.html" data-od-id="nav-progres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h19h16M8 15l3-4 3 3 5-7"/></svg>
         Progres
@@ -261,9 +257,7 @@
                  "Tandai siap review" untuk submit. */ ''}
           </div>
 
-          <div class="detail-actions">
-            <a class="btn btn-secondary" href="screens-brief.html">← Balik ke daftar brief</a>
-          </div>
+          ${renderUploadCard(brief, state.status)}
         `;
 
         // populate textarea
@@ -324,6 +318,14 @@
             render();
           });
         }
+
+        // Wire upload form (kalau enabled setelah script approved)
+        const uploadForm = document.getElementById('brief-upload-form');
+        const uploadSubmit = document.getElementById('brief-btn-submit');
+        const uploadDraft = document.getElementById('brief-btn-draft');
+        if (uploadForm) uploadForm.addEventListener('submit', (e) => { e.preventDefault(); handleBriefUpload('review'); });
+        if (uploadSubmit) uploadSubmit.addEventListener('click', (e) => { e.preventDefault(); handleBriefUpload('review'); });
+        if (uploadDraft) uploadDraft.addEventListener('click', (e) => { e.preventDefault(); handleBriefUpload('draft'); });
       }
 
       render();
@@ -351,6 +353,142 @@
           refreshFromCloud();
         }
       });
+
+      // ---- upload card: video + thumbnail, linked ke brief via progress.brief_id ----
+      function renderUploadCard(brief, scriptStatus) {
+        const canUpload = scriptStatus === 'approved' || scriptStatus === 'selesai';
+        // Cek apakah sudah ada progress row untuk brief ini (kreator ini)
+        const existing = (A.data.progress || []).find(p =>
+          p.brief_id === brief.id && p.kreator === A.session.username
+        );
+        if (existing) {
+          // Sudah pernah upload → tampilin status, bukan form
+          return `
+            <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
+              <div class="section-title">
+                <h2 class="h2">Video kamu</h2>
+                <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
+              </div>
+              <div class="field">
+                <label>Judul</label>
+                <div class="form-readonly">${escapeHtml(existing.title || brief.title)}</div>
+              </div>
+              ${existing.video_url ? `<div class="field"><label>Link video</label><div class="form-readonly"><a href="${escapeHtml(existing.video_url)}" target="_blank" rel="noopener" style="color: var(--accent);">${escapeHtml(existing.video_url)}</a></div></div>` : ''}
+              <span class="field-hint">Untuk revisi / upload ulang, hubungi admin atau gunakan halaman Progres.</span>
+            </div>`;
+        }
+        return `
+          <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
+            <div class="section-title">
+              <h2 class="h2">Upload video</h2>
+              <span class="meta">${canUpload ? 'Script sudah di-approve — siap upload' : 'Menunggu script di-approve admin'}</span>
+            </div>
+            ${!canUpload ? `
+              <div class="brief-status-locked">
+                <span>🔒</span>
+                <div>
+                  <strong>Upload terkunci</strong> — script belum di-approve admin (status: <em>${escapeHtml(STATUS_LABEL[scriptStatus] || scriptStatus || 'draft')}</em>).
+                  Tunggu admin approve script di sini, baru kamu bisa upload video.
+                </div>
+              </div>
+            ` : `
+              <form id="brief-upload-form">
+                <div class="field">
+                  <label for="brief-vid-link">Link video <small style="color: var(--muted); font-weight: 400;">(YouTube / TikTok / drive)</small></label>
+                  <input type="url" class="input" id="brief-vid-link" placeholder="https://…" />
+                  <span class="field-hint">Atau upload file di bawah — pilih salah satu.</span>
+                </div>
+                <div class="field">
+                  <label for="brief-vid-file">File video <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                  <input type="file" class="input" id="brief-vid-file" accept="video/mp4,video/quicktime,video/webm" />
+                  <span class="field-hint">Format .mp4/.mov/.webm — maks 200MB.</span>
+                </div>
+                <div class="field">
+                  <label for="brief-vid-thumb">Thumbnail <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                  <input type="file" class="input" id="brief-vid-thumb" accept="image/png,image/jpeg,image/webp" />
+                </div>
+                <div class="field">
+                  <label for="brief-vid-title">Judul untuk admin</label>
+                  <input type="text" class="input" id="brief-vid-title" value="${escapeHtml(brief.title)}" />
+                </div>
+                <div class="field">
+                  <label for="brief-vid-notes">Catatan untuk admin <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                  <textarea class="textarea" id="brief-vid-notes" rows="2" placeholder="Hal yang perlu admin perhatikan?"></textarea>
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 14px;">
+                  <input type="checkbox" id="brief-vid-ready" />
+                  Saya siap kirim untuk review admin sekarang.
+                </label>
+                <div style="display: flex; gap: 8px;">
+                  <button type="submit" class="btn btn-primary" id="brief-btn-submit">Kirim untuk review</button>
+                  <button type="button" class="btn btn-secondary" id="brief-btn-draft">Simpan draft</button>
+                </div>
+              </form>
+            `}
+          </div>`;
+      }
+
+      // Wire upload form (kalau ada setelah render)
+      async function handleBriefUpload(status) {
+        const linkEl = document.getElementById('brief-vid-link');
+        const fileEl = document.getElementById('brief-vid-file');
+        const thumbEl = document.getElementById('brief-vid-thumb');
+        const titleEl = document.getElementById('brief-vid-title');
+        const notesEl = document.getElementById('brief-vid-notes');
+        const submitBtn = document.getElementById('brief-btn-submit');
+        const draftBtn = document.getElementById('brief-btn-draft');
+        if (!linkEl || !titleEl) return;
+
+        const link = linkEl.value.trim();
+        const file = fileEl.files[0];
+        const thumb = thumbEl.files[0];
+        const title = titleEl.value.trim();
+        const notes = notesEl ? notesEl.value.trim() : '';
+
+        if (!link && !file) {
+          A.showToast('Lengkapi link video atau upload file.', 'error');
+          return;
+        }
+        if (title.length < 3) {
+          A.showToast('Judul minimal 3 karakter.', 'error');
+          return;
+        }
+        if (link && !/^https?:\/\/.+\..+/.test(link)) {
+          A.showToast('Link video tidak valid.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true; draftBtn.disabled = true;
+        const origLabel = submitBtn.textContent;
+        try {
+          let storagePath = null, thumbPath = null;
+          if (file) {
+            submitBtn.innerHTML = '<span class="spinner"></span> Upload video…';
+            storagePath = await A.uploadFile(file, 'videos');
+          }
+          if (thumb) {
+            submitBtn.innerHTML = '<span class="spinner"></span> Upload thumbnail…';
+            thumbPath = await A.uploadFile(thumb, 'thumbnails');
+          }
+          submitBtn.innerHTML = '<span class="spinner"></span> Simpan ke database…';
+          await A.submitProgress({
+            title,
+            brand: brief.brand,
+            status,
+            meta: notes || (status === 'review' ? 'Terkirim untuk review' : 'Draft'),
+            video_url: link || null,
+            video_storage_path: storagePath,
+            thumbnail_path: thumbPath,
+            brief_id: brief.id
+          });
+          A.showToast(status === 'review' ? 'Terkirim untuk review admin ✓' : 'Draft tersimpan.', 'success');
+          render();
+        } catch (err) {
+          A.showToast('Upload gagal: ' + err.message, 'error');
+          submitBtn.disabled = false; draftBtn.disabled = false;
+          submitBtn.textContent = origLabel;
+        }
+      }
     });
   </script>
 </body>

@@ -232,6 +232,38 @@
     toastEl._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
   }
 
+  // ---- upload helpers (dipakai oleh brief-detail + legacy screens-upload) ----
+  // Upload file ke Supabase Storage dengan path "{username}/{timestamp}-{filename}"
+  // supaya RLS kreator self-upload jalan (policy baca folder pertama = username).
+  async function uploadFile(file, bucket) {
+    if (!file) return null;
+    const me = session.username;
+    const ts = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${me}/${ts}-${safeName}`;
+    const { error } = await sb.storage.from(bucket).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined
+    });
+    if (error) throw new Error('Upload ' + bucket + ' gagal: ' + error.message);
+    return path;
+  }
+
+  // Submit progress row baru. Payload: { title, brand, status, video_url?, video_storage_path?, thumbnail_path?, brief_id?, meta? }
+  async function submitProgress(payload) {
+    if (!session || !session.username) throw new Error('Session kreator tidak ditemukan');
+    const newId = 'p-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    const insertRes = await sb.from('progress').insert(Object.assign({
+      id: newId,
+      kreator: session.username,
+      updated_at: new Date().toISOString()
+    }, payload));
+    if (insertRes.error) throw new Error('Gagal simpan progress: ' + insertRes.error.message);
+    await refresh();
+    return newId;
+  }
+
   // ---- expose API ----
   const A = {
     sb,
@@ -242,6 +274,8 @@
     setStatusOverride,
     loadScript,
     saveScript,
+    uploadFile,
+    submitProgress,
     getProofs: (paymentId) => (data.paymentProofs || []).filter(p => p.payment_id === paymentId),
     getProofDownloadUrl: async (filePath, expiresIn) => {
       const opts = expiresIn || 3600;

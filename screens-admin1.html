@@ -392,6 +392,35 @@
       background: var(--accent-soft);
       box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 50%, transparent);
     }
+
+    /* pic-cell: clickable (open assign modal), chevron hint */
+    .pic-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 4px 3px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .pic-cell:hover,
+    .pic-cell:focus-visible {
+      background: var(--accent-soft);
+      outline: none;
+    }
+    .pic-cell .pic-chevron {
+      width: 12px;
+      height: 12px;
+      color: var(--muted);
+      opacity: 0.5;
+      transition: opacity 0.12s ease, transform 0.15s ease, color 0.12s ease;
+    }
+    .pic-cell:hover .pic-chevron,
+    .pic-cell:focus-visible .pic-chevron {
+      opacity: 1;
+      color: var(--accent);
+      transform: translateX(2px);
+    }
     .brand-count { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 2px; letter-spacing: 0.02em; }
     .brand-count::before { content: '· '; color: var(--muted); opacity: 0.6; }
     .row-title { display: flex; align-items: center; gap: 10px; }
@@ -2851,9 +2880,10 @@
       }
       tbody.innerHTML = items.map(b => {
         const picProfile = b.assigned_to ? profileByUsername(b.assigned_to, A.data.profiles) : null;
-        const picCell = b.assigned_to
+        const picText = b.assigned_to
           ? escapeHtml(picProfile ? (picProfile.display_name || picProfile.username) : b.assigned_to)
           : '<span style="color: var(--muted);">Terbuka</span>';
+        const picCell = `<span class="pic-cell" data-pic="${escapeHtml(b.assigned_to || '')}" title="Klik untuk ganti kreator" role="button" tabindex="0">${picText}<svg class="pic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>`;
         const feeCell = (b.fee != null && b.fee !== '') ? formatRp(b.fee) : '—';
         // Status: dari brief_scripts kalau ada, fallback ke "Aktif" (brief baru, belum ada script)
         const script = scriptFor(b);
@@ -3157,18 +3187,26 @@
         modal.classList.add('show');
       }
 
-      // Klik cell "Kreator dituju" (kolom ke-3) di tiap row → buka modal assign
+      // Klik cell "Kreator dituju" (kolom ke-3) atau chevron-nya → buka modal assign
       tbody.addEventListener('click', (e) => {
-        const target = e.target.closest('td');
-        if (!target) return;
-        const row = target.closest('tr[data-brief-id]');
+        const picCell = e.target.closest('.pic-cell');
+        if (!picCell) return;
+        const row = picCell.closest('tr[data-brief-id]');
         if (!row) return;
-        // cells index: 0=judul link, 1=brand, 2=PIC, 3=fee, 4=status, 5=deadline
-        const cells = row.querySelectorAll('td');
-        if (target !== cells[2]) return;
         e.preventDefault();
         e.stopPropagation();
         openModal(row.dataset.briefId);
+      });
+      // Keyboard support (Enter/Space) di pic-cell
+      tbody.addEventListener('keydown', (e) => {
+        const picCell = e.target.closest('.pic-cell');
+        if (!picCell) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          const row = picCell.closest('tr[data-brief-id]');
+          if (!row) return;
+          e.preventDefault();
+          openModal(row.dataset.briefId);
+        }
       });
 
       btnCancel?.addEventListener('click', closeModal);

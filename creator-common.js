@@ -263,6 +263,7 @@
           filter: 'kreator=eq.' + session.username
         },
         async (payload) => {
+          console.log('[realtime] script change received:', payload.eventType, payload.new || payload.old);
           // Update local cache
           if (!Array.isArray(data.scripts)) data.scripts = [];
           if (payload.eventType === 'DELETE') {
@@ -281,18 +282,15 @@
           }));
         }
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') console.log('[realtime] brief_scripts subscribed');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.warn('[realtime] brief_scripts status:', status);
-        }
+      .subscribe((status, err) => {
+        console.log('[realtime] brief_scripts status:', status, err || '');
       });
     // Cleanup saat page unload
     window.addEventListener('beforeunload', () => {
       try { sb.removeChannel(channel); } catch (_) {}
     });
   } catch (e) {
-    console.warn('[realtime] brief_scripts subscription gagal:', e.message);
+    console.error('[realtime] brief_scripts subscription error:', e);
   }
 
   // Beri tahu halaman: data sudah siap

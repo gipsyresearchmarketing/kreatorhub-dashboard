@@ -624,15 +624,7 @@
       const statusPill = document.getElementById('brief-status-pill');
       const contentEl  = document.getElementById('content-area');
 
-      // ---- auth guard: butuh session role admin ----
-      (function guardAdmin() {
-        try {
-          const raw = localStorage.getItem('kreatorhub.session');
-          if (!raw) { window.location.replace('screens-login.html'); return; }
-          const s = JSON.parse(raw);
-          if (!s || s.role !== 'admin') { window.location.replace('screens-login.html'); return; }
-        } catch (_) { window.location.replace('screens-login.html'); return; }
-      })();
+      // Auth guard di-handle oleh admin-common.js (sb.auth.getSession + profile check)
 
       function showToast(msg) {
         const t = document.getElementById('toast');
@@ -913,10 +905,9 @@
           selesai:  ['Buka kembali']
         };
           
-        // pull script: primary dari Supabase (sync dari kreator side), fallback ke localStorage
+        // pull script: single source of truth = Supabase (brief_scripts table)
         function loadScript() {
           try {
-            // 1) Supabase: cari script kreator yang assigned ke brief ini
             const A = window.AdminApp;
             const scripts = (A && A.data && A.data.scripts) || [];
             const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
@@ -926,27 +917,16 @@
               row = scripts.find(s => s.brief_id === briefId && s.kreator === targetKreator);
             }
             if (!row) {
-              // Fallback: ambil script pertama untuk brief ini (kalau assigned_to null = terbuka)
+              // Brief terbuka (assigned_to null) → ambil script pertama
               row = scripts.find(s => s.brief_id === briefId);
             }
-            if (row) {
-              return { status: row.status || 'draft', script: row.script || '' };
-            }
-            // 2) Legacy localStorage
-            const raw = localStorage.getItem('kreatorhub.brief-state.' + briefId);
-            if (!raw) return null;
-            return JSON.parse(raw);
+            if (row) return { status: row.status || 'draft', script: row.script || '' };
+            return null;
           } catch (_) { return null; }
         }
         function saveScriptStatus(status) {
-          try {
-            const key = 'kreatorhub.brief-state.' + briefId;
-            const raw = localStorage.getItem(key);
-            const data = raw ? JSON.parse(raw) : { status: 'draft', script: '' };
-            data.status = status;
-            data.lastAdminUpdate = new Date().toISOString();
-            localStorage.setItem(key, JSON.stringify(data));
-          } catch (_) {}
+          // Single source of truth = Supabase. Update via AdminApp.updateScript.
+          // Fungsi ini no-op (backward-compat dengan handler vote system yang udah sync).
         }
 
         // ---- render ----
@@ -1395,7 +1375,7 @@
                 showToast('Sync script gagal: ' + err.message);
               }
             }
-            saveScriptStatus(target); // localStorage backup
+            // saveScriptStatus(target) removed — Supabase udah update via updateScript di atas
             currentStatus = target;
             targetTxt = 'script';
           }

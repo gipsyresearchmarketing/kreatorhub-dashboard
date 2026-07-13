@@ -670,15 +670,7 @@
 
   <script>
     (function () {
-      // ---- auth guard: butuh session role admin ----
-      (function guardAdmin() {
-        try {
-          const raw = localStorage.getItem('kreatorhub.session');
-          if (!raw) { window.location.replace('screens-login.html'); return; }
-          const s = JSON.parse(raw);
-          if (!s || s.role !== 'admin') { window.location.replace('screens-login.html'); return; }
-        } catch (_) { window.location.replace('screens-login.html'); return; }
-      })();
+      // Auth guard di-handle oleh admin-common.js (sb.auth.getSession + profile check)
 
       function showToast(msg) {
         const t = document.getElementById('toast');

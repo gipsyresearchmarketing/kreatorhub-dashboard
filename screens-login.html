@@ -246,9 +246,7 @@
       toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2400);
     }
 
-    var SESSION_KEY = 'kreatorhub.session';
-    function saveSession(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (_) {} }
-    function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (_) {} }
+    // Session disimpan oleh Supabase Auth (sb.auth) — ga perlu localStorage mirror.
 
     // toggle lihat/sembunyikan password
     var pwToggle = document.getElementById('pw-toggle');
@@ -290,16 +288,6 @@
       welcomeLink.textContent = role === 'admin' ? 'Buka dasbor admin →' : 'Buka dasbor kreator →';
       welcomeLink.setAttribute('href', target);
 
-      saveSession({
-        userId: profile.id,
-        username: username,
-        role: role,
-        displayName: displayName,
-        avatar: avatar,
-        photo: profile.avatar || null,
-        target: target,
-        loggedInAt: Date.now()
-      });
     }
 
     function waitForSb() {
@@ -389,7 +377,7 @@
 
     btnSwitch.addEventListener('click', function () {
       showToast('Pilih akun baru di bawah, lalu klik Masuk.', 'success');
-      clearSession();
+      // clearSession removed (Supabase handles logout)
       showLoginView();
       userEl.value = '';
       passEl.value = '';
@@ -400,7 +388,7 @@
         var sb = await waitForSb();
         await sb.auth.signOut();
       } catch (_) {}
-      clearSession();
+      // clearSession removed (Supabase handles logout)
       showToast('Anda sudah keluar. Sampai jumpa!', 'success');
       userEl.value = '';
       passEl.value = '';

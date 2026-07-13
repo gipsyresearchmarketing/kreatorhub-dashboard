@@ -1398,27 +1398,19 @@
         reject:   { title: 'Tolak video ini?', desc: 'Beri alasan agar kreator paham. Status ditolak permanen untuk take ini.', btn: 'Tolak &amp; kirim', status: 'rejected', label: 'Ditolak' },
       };
 
-      // ---- auth guard: butuh session role admin ----
-      (function guardAdmin() {
-        try {
-          const raw = localStorage.getItem('kreatorhub.session');
-          if (!raw) { window.location.replace('screens-login.html'); return; }
-          const s = JSON.parse(raw);
-          if (!s || s.role !== 'admin') { window.location.replace('screens-login.html'); return; }
-        } catch (_) { window.location.replace('screens-login.html'); return; }
-      })();
+      // Auth guard di-handle oleh admin-common.js (sb.auth.getSession + profile check)
 
-      // Hydrate display name/email dari session kalau ada (kalau tidak match dengan default yang ada)
+      // Hydrate display name/email dari AdminApp.session (single source of truth = Supabase)
       try {
-        const _s = JSON.parse(localStorage.getItem('kreatorhub.session') || 'null');
-        if (_s && (_s.displayName || _s.email)) {
-          if (_s.displayName && _s.displayName !== 'Mira R.') {
+        const _s = window.AdminApp && window.AdminApp.session;
+        if (_s && (_s.displayName || _s.userEmail)) {
+          if (_s.displayName) {
             const _n = document.querySelector('.profile-dropdown .profile-name');
             if (_n) _n.textContent = _s.displayName;
           }
-          if (_s.email && _s.email !== 'mira@gipsygroup.id') {
+          if (_s.userEmail) {
             const _e = document.querySelector('.profile-dropdown .profile-email');
-            if (_e) _e.textContent = _s.email;
+            if (_e) _e.textContent = _s.userEmail;
           }
         }
       } catch (_) {}

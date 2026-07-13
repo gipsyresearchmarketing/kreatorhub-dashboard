@@ -242,14 +242,15 @@
             </div>
 
             <div class="field">
-              <label for="status-select">Ubah status</label>
-              <select id="status-select" class="select" ${hasScript ? '' : 'disabled'}>
-                ${STATUS_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
-              </select>
+              <label>Status script</label>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span>
+                <span class="meta" style="font-family: var(--font-mono); font-size: 11px;">
+                  · diatur oleh admin
+                </span>
+              </div>
               <span class="field-hint">
-                ${hasScript
-                  ? 'Pilih status baru lalu klik Simpan status di bawah.'
-                  : 'Dropdown terkunci — script masih kosong. Tulis script dulu untuk membuka opsi status.'}
+                Status hanya bisa diubah oleh admin. Kamu bisa nulis script lalu klik "Tandai siap review" di bawah untuk menyerahkannya.
               </span>
             </div>
 
@@ -287,13 +288,7 @@
         // populate textarea
         const ta = document.getElementById('script-text');
         ta.value = state.script || '';
-        // preselect status
-        const sel = document.getElementById('status-select');
-        if (STATUS_OPTIONS.some(o => o.value === state.status)) {
-          sel.value = state.status;
-        } else {
-          sel.value = 'draft';
-        }
+        // Status display only — kreator tidak bisa pilih status (kunci dari admin)
 
         // wire events (guarded — kalau element gak ada karena disabled state, skip)
         ta.addEventListener('input', () => {
@@ -329,17 +324,9 @@
           }
         });
 
-        document.getElementById('btn-save-status').addEventListener('click', async () => {
-          const newStatus = sel.value;
-          state.status = newStatus;
-          try {
-            await persistState(briefId, state);
-            A.showToast('Status diperbarui → ' + (STATUS_LABEL[newStatus] || newStatus));
-          } catch (err) {
-            A.showToast('Gagal: ' + err.message, 'error');
-          }
-          render();
-        });
+        // btn-save-status: DIHAPUS — kreator tidak boleh ubah status sendiri,
+        // itu domain admin. Status cuma bisa berubah via "Tandai siap review" di bawah
+        // (otomatis set ke 'review'), atau via admin action (Setujui/Minta revisi/Tolak).
 
         const ctaBtn = document.getElementById('btn-submit-review');
         if (ctaBtn && !ctaBtn.disabled && state.status !== 'review' && state.status !== 'revisi' && !isKreatorFinal) {

@@ -440,5 +440,32 @@
     console.error('[admin-realtime] approvals subscription error:', e);
   }
 
+  // ---- realtime subscription: payment_proofs ----
+  try {
+    const proofsChannel = sb.channel('payment_proofs_admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_proofs' },
+        async (payload) => {
+          console.log('[admin-realtime] proof change:', payload.eventType, payload.new || payload.old);
+          await refresh();
+          const ev = payload.new || payload.old;
+          if (ev) {
+            document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+              detail: { type: payload.eventType === 'DELETE' ? 'proof-delete' : 'proof-upload', paymentId: ev.payment_id, source: 'realtime' }
+            }));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[admin-realtime] payment_proofs status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(proofsChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[admin-realtime] payment_proofs subscription error:', e);
+  }
+
   document.dispatchEvent(new CustomEvent('adminapp:ready', { detail: { data } }));
 })();

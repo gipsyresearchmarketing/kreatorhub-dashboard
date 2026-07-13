@@ -1200,6 +1200,17 @@
         </div>
       </div>
 
+      <!-- Upload bukti transfer -->
+      <div class="field">
+        <label>Bukti transfer (opsional, bisa upload multiple)</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="file" id="fee-modal-file" accept="image/*,application/pdf" style="flex: 1; font-size: 12px;" />
+          <button type="button" class="btn btn-secondary" id="fee-modal-upload-btn" style="flex-shrink: 0;">Upload</button>
+        </div>
+        <input type="text" id="fee-modal-proof-note" placeholder="Catatan (opsional, mis. 'BCA a.n. Pipit')" style="width: 100%; margin-top: 6px; padding: 6px 10px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--fg);" />
+        <div id="fee-modal-proofs-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+
       <label>Metode notifikasi ke kreator</label>
       <div class="notif-channels" id="fee-notif-channels">
         <button type="button" class="notif-channel active" data-channel="email">
@@ -2631,6 +2642,12 @@
         feeModalNote.value = '';
         currentFeeChannel = 'email';
         feeChannelBtns.forEach(b => b.classList.toggle('active', b.dataset.channel === 'email'));
+        // Reset file input
+        const fileInput = document.getElementById('fee-modal-file');
+        const noteInput = document.getElementById('fee-modal-proof-note');
+        if (fileInput) fileInput.value = '';
+        if (noteInput) noteInput.value = '';
+        renderFeeProofs(id);
         feeModal.classList.add('show');
       }
       function closeFeeModal() { feeModal.classList.remove('show'); currentFeePayment = null; }
@@ -2640,6 +2657,92 @@
         feeChannelBtns.forEach(x => x.classList.toggle('active', x === b));
         currentFeeChannel = b.dataset.channel;
       }));
+
+      // Render list bukti transfer di fee modal
+      function renderFeeProofs(paymentId) {
+        const list = document.getElementById('fee-modal-proofs-list');
+        if (!list) return;
+        const A = window.AdminApp;
+        const proofs = A && A.getProofs ? A.getProofs(paymentId) : [];
+        if (!proofs.length) {
+          list.innerHTML = '<div class="meta" style="padding: 8px 0; font-size: 11px;">Belum ada bukti transfer di-upload.</div>';
+          return;
+        }
+        list.innerHTML = proofs.map(p => `
+          <div class="proof-item" data-proof-id="${escapeHtml(p.id)}" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width: 16px; height: 16px; color: var(--accent); flex-shrink: 0;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.file_name)}</div>
+              <div style="font-size: 10px; color: var(--muted); font-family: var(--font-mono);">${escapeHtml(p.uploaded_by)} · ${new Date(p.created_at).toLocaleString('id-ID')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
+            </div>
+            <button type="button" class="btn btn-ghost proof-download" data-path="${escapeHtml(p.file_path)}" style="padding: 4px 8px; font-size: 11px;">Lihat</button>
+            <button type="button" class="btn btn-ghost proof-delete" data-proof-id="${escapeHtml(p.id)}" style="padding: 4px 8px; font-size: 11px; color: var(--danger);">Hapus</button>
+          </div>
+        `).join('');
+      }
+
+      // Upload handler
+      document.getElementById('fee-modal-upload-btn')?.addEventListener('click', async () => {
+        const A = window.AdminApp;
+        if (!A || !A.uploadPaymentProof) { showToast('Data belum siap.', 'error'); return; }
+        if (!currentFeePayment) return;
+        const fileInput = document.getElementById('fee-modal-file');
+        const noteInput = document.getElementById('fee-modal-proof-note');
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        if (!file) { showToast('Pilih file dulu.', 'error'); return; }
+        const btn = document.getElementById('fee-modal-upload-btn');
+        btn.disabled = true; btn.textContent = 'Upload…';
+        try {
+          await A.uploadPaymentProof(currentFeePayment.id, file, noteInput && noteInput.value.trim());
+          if (fileInput) fileInput.value = '';
+          if (noteInput) noteInput.value = '';
+          renderFeeProofs(currentFeePayment.id);
+          showToast('Bukti transfer terupload ✓');
+        } catch (err) {
+          showToast('Upload gagal: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false; btn.textContent = 'Upload';
+        }
+      });
+
+      // Download + delete proof di fee modal (event delegation)
+      document.getElementById('fee-modal-proofs-list')?.addEventListener('click', async (e) => {
+        const dl = e.target.closest('.proof-download');
+        if (dl) {
+          e.preventDefault();
+          const A = window.AdminApp;
+          if (!A || !A.getProofDownloadUrl) return;
+          try {
+            const url = await A.getProofDownloadUrl(dl.dataset.path, 3600);
+            window.open(url, '_blank');
+          } catch (err) {
+            showToast('Gagal buat link: ' + err.message, 'error');
+          }
+          return;
+        }
+        const del = e.target.closest('.proof-delete');
+        if (del) {
+          e.preventDefault();
+          if (!confirm('Hapus bukti transfer ini?')) return;
+          const A = window.AdminApp;
+          if (!A || !A.deletePaymentProof) return;
+          try {
+            await A.deletePaymentProof(del.dataset.proofId);
+            renderFeeProofs(currentFeePayment.id);
+            showToast('Bukti dihapus');
+          } catch (err) {
+            showToast('Hapus gagal: ' + err.message, 'error');
+          }
+        }
+      });
+
+      // Realtime: re-render proofs di fee modal saat ada data-changed
+      document.addEventListener('adminapp:data-changed', (e) => {
+        if (!e.detail) return;
+        if ((e.detail.type === 'proof-upload' || e.detail.type === 'proof-delete') && currentFeePayment) {
+          renderFeeProofs(currentFeePayment.id);
+        }
+      });
 
       feeModalConfirm?.addEventListener('click', async () => {
         if (!currentFeePayment) return;

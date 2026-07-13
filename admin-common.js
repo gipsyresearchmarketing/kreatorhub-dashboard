@@ -202,6 +202,15 @@
       detail: { type: 'brief-delete', id }
     }));
   }
+  async function updateBrief(id, fields) {
+    const updRes = await sb.from('briefs').update(fields).eq('id', id);
+    if (updRes.error) throw new Error('Update brief gagal: ' + updRes.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'brief-update', id, fields }
+    }));
+    return updRes.data;
+  }
 
   // ---- action: payment ----
   async function updatePayment(id, fields) {
@@ -245,6 +254,7 @@
     requestRevision,
     createBrief,
     deleteBrief,
+    updateBrief,
     updatePayment,
     showToast,
     handleSignOut

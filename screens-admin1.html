@@ -272,6 +272,27 @@
       transform: translateY(1px);
     }
 
+    /* brief table: kolom PIC clickable (klik → modal assign ulang) */
+    #briefs-table tbody tr { cursor: default; }
+    #briefs-table tbody tr td:nth-child(3) {
+      cursor: pointer;
+      position: relative;
+      transition: background 0.12s ease;
+    }
+    #briefs-table tbody tr td:nth-child(3):hover {
+      background: color-mix(in oklch, var(--accent) 6%, transparent);
+    }
+    #briefs-table tbody tr td:nth-child(3):hover::after {
+      content: '↻';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 14px;
+      opacity: 0.65;
+    }
+
     /* profile dropdown (topnav) */
     .profile-menu { position: relative; }
     .profile-trigger {
@@ -978,6 +999,41 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="nb-cancel">Batal</button>
         <button class="btn btn-primary" id="nb-save">Buat brief</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- assign kreator modal (reassign PIC untuk brief yang sudah ada) -->
+  <div class="modal-backdrop" id="assign-modal" data-od-id="assign-modal">
+    <div class="modal" style="max-width: 480px;">
+      <h3>Assign ulang kreator</h3>
+      <p class="lead">Pindahkan brief ini ke kreator lain, atau biarkan terbuka biar kreator pilih sendiri.</p>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">Brief</span>
+          <strong id="assign-brief-title">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">Brand</span>
+          <span id="assign-brief-brand">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">PIC sekarang</span>
+          <span id="assign-brief-current">—</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="assign-pic">Assign ke kreator</label>
+        <select class="filter-select" id="assign-pic" style="width: 100%;">
+          <option value="">— Terbuka (kreator pilih sendiri) —</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="assign-cancel">Batal</button>
+        <button class="btn btn-primary" id="assign-save">Simpan</button>
       </div>
     </div>
   </div>
@@ -2973,6 +3029,91 @@
       });
     }
 
+    function wireAssignModal(A) {
+      const modal   = document.getElementById('assign-modal');
+      const tbody   = document.querySelector('#briefs-table tbody');
+      if (!modal || !tbody) return;
+      if (modal.dataset.wired) return;
+      modal.dataset.wired = '1';
+
+      const elPic     = document.getElementById('assign-pic');
+      const elTitle   = document.getElementById('assign-brief-title');
+      const elBrand   = document.getElementById('assign-brief-brand');
+      const elCurrent = document.getElementById('assign-brief-current');
+      const btnCancel = document.getElementById('assign-cancel');
+      const btnSave   = document.getElementById('assign-save');
+
+      let activeBriefId = null;
+
+      function closeModal() { modal.classList.remove('show'); activeBriefId = null; }
+
+      function openModal(briefId) {
+        const brief = (A.data.briefs || []).find(b => b.id === briefId);
+        if (!brief) return;
+        activeBriefId = briefId;
+        elTitle.textContent = brief.title || '(tanpa judul)';
+        elBrand.textContent = brief.brand || '—';
+        const currentProfile = brief.assigned_to
+          ? (A.data.profiles || []).find(p => p.username === brief.assigned_to)
+          : null;
+        elCurrent.textContent = brief.assigned_to
+          ? (currentProfile ? (currentProfile.display_name || currentProfile.username) : brief.assigned_to)
+          : 'Terbuka';
+        // populate dropdown kreator
+        const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        elPic.innerHTML = '<option value="">— Terbuka (kreator pilih sendiri) —</option>';
+        kreators.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.username;
+          o.textContent = p.display_name || p.username;
+          if (p.username === brief.assigned_to) o.selected = true;
+          elPic.appendChild(o);
+        });
+        modal.classList.add('show');
+      }
+
+      // Klik cell "Kreator dituju" (kolom ke-3) di tiap row → buka modal assign
+      tbody.addEventListener('click', (e) => {
+        const target = e.target.closest('td');
+        if (!target) return;
+        const row = target.closest('tr[data-brief-id]');
+        if (!row) return;
+        // cells index: 0=judul link, 1=brand, 2=PIC, 3=fee, 4=status, 5=deadline
+        const cells = row.querySelectorAll('td');
+        if (target !== cells[2]) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openModal(row.dataset.briefId);
+      });
+
+      btnCancel?.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+      });
+
+      btnSave?.addEventListener('click', async () => {
+        if (!activeBriefId) return;
+        const newPic = elPic.value || null;
+        btnSave.disabled = true;
+        const orig = btnSave.textContent;
+        btnSave.textContent = 'Menyimpan…';
+        try {
+          await A.updateBrief(activeBriefId, { assigned_to: newPic });
+          const picLabel = newPic
+            ? ((A.data.profiles || []).find(p => p.username === newPic)?.display_name || newPic)
+            : 'Terbuka';
+          A.showToast('Brief di-assign ke ' + picLabel + ' ✓');
+          closeModal();
+        } catch (err) {
+          A.showToast('Gagal: ' + err.message, 'error');
+        } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = orig;
+        }
+      });
+    }
+
     // Hook ke event ready + changes
     document.addEventListener('adminapp:ready', (e) => {
       const A = window.AdminApp;
@@ -2983,6 +3124,7 @@
       renderTopStats(A);
       renderMetricsStats(A);
       wireNewBriefButton(A);
+      wireAssignModal(A);
     });
     document.addEventListener('adminapp:data-changed', (e) => {
       const A = window.AdminApp;

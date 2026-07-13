@@ -512,6 +512,41 @@
     </div>
   </div>
 
+  <!-- assign kreator modal (reassign PIC untuk brief ini) -->
+  <div class="modal-backdrop" id="assign-modal" data-od-id="assign-modal">
+    <div class="modal" style="max-width: 480px;">
+      <h3>Assign ulang kreator</h3>
+      <p class="lead">Pindahkan brief ini ke kreator lain, atau biarkan terbuka biar kreator pilih sendiri.</p>
+
+      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">Brief</span>
+          <strong id="assign-brief-title">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">Brand</span>
+          <span id="assign-brief-brand">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: var(--muted);">PIC sekarang</span>
+          <span id="assign-brief-current">—</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="assign-pic">Assign ke kreator</label>
+        <select class="filter-select" id="assign-pic" style="width: 100%;">
+          <option value="">— Terbuka (kreator pilih sendiri) —</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="assign-cancel">Batal</button>
+        <button class="btn btn-primary" id="assign-save">Simpan</button>
+      </div>
+    </div>
+  </div>
+
   <!-- logout confirmation modal -->
   <div class="modal-backdrop" id="logout-modal">
     <div class="modal" style="max-width: 420px;">
@@ -528,6 +563,12 @@
 
   <script>
     (function () {
+      // ---- element refs (dipakai di banyak tempat; declare sekali di scope IIFE) ----
+      const pageTitle = document.getElementById('page-title');
+      const pageLead  = document.getElementById('page-lead');
+      const statusPill = document.getElementById('brief-status-pill');
+      const contentEl  = document.getElementById('content-area');
+
       // ---- auth guard: butuh session role admin ----
       (function guardAdmin() {
         try {
@@ -707,6 +748,7 @@
           brand: sbBrief ? (sbBrief.brand || '—') : (BRIEFS[briefId] && BRIEFS[briefId].brand) || '—',
           deadline: sbBrief ? (sbBrief.deadline || '—') : (BRIEFS[briefId] && BRIEFS[briefId].deadline) || '—',
           requirement: sbBrief ? (sbBrief.meta || '') : (BRIEFS[briefId] && BRIEFS[briefId].requirement) || '',
+          assigned_to: sbBrief ? sbBrief.assigned_to : (BRIEFS[briefId] && BRIEFS[briefId].assigned_to) || null,
           sb_id: sbBrief ? sbBrief.id : null,
           videos: dynamicVideos,
           timeline: dynamicTimeline
@@ -1048,8 +1090,32 @@
             </div>
           </div>
         `).join('');
-          
+
+        // Lookup display_name kreator dari username (kalau ada) — biar yang tampil di section
+        // "Kreator dituju" adalah nama lengkap, bukan username.
+        const profilesList = (window.AdminApp && window.AdminApp.data && window.AdminApp.data.profiles) || [];
+        const picProfile = brief.assigned_to ? profilesList.find(p => p.username === brief.assigned_to) : null;
+        const picLabelHtml = brief.assigned_to
+          ? `${escapeHtml((picProfile && (picProfile.display_name || picProfile.username)) || brief.assigned_to)} <small class="meta" style="margin-left: 6px;">@${escapeHtml(brief.assigned_to)}</small>`
+          : `<span style="color: var(--muted); font-weight: 400;">Terbuka — kreator pilih sendiri</span>`;
+
         contentEl.innerHTML = `
+          <!-- 0. Kreator dituju (dengan tombol assign ulang) -->
+          <div class="card" data-od-id="brief-pic-card">
+            <div class="row-between" style="flex-wrap: wrap; gap: 12px;">
+              <div style="min-width: 0;">
+                <span class="meta" style="display: block; margin-bottom: 6px;">KREATOR DITUJU</span>
+                <div id="detail-pic-info" style="font-size: 15px; font-weight: 500; line-height: 1.4;">
+                  ${picLabelHtml}
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-reassign-pic" style="flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>
+                Assign ulang kreator
+              </button>
+            </div>
+          </div>
+
           <!-- 1. Brief info -->
           <div class="card">
             <div class="row-between" style="margin-bottom: 12px;">
@@ -1322,7 +1388,111 @@
           </div>`).join('')
             : '<p class="meta" style="padding: 8px 0;">Belum ada video disetujui — fee akan muncul di sini setelah admin setujui video.</p>';
         }
-            }
+
+      // ---- assign ulang kreator (brief-detail) ----
+      // Dipasang sekali di document dengan event delegation, jadi ga perlu re-attach tiap render.
+      (function wireAssignModalDetail() {
+        const modal   = document.getElementById('assign-modal');
+        if (!modal || modal.dataset.wired) return;
+        modal.dataset.wired = '1';
+
+        const elPic     = document.getElementById('assign-pic');
+        const elTitle   = document.getElementById('assign-brief-title');
+        const elBrand   = document.getElementById('assign-brief-brand');
+        const elCurrent = document.getElementById('assign-brief-current');
+        const btnCancel = document.getElementById('assign-cancel');
+        const btnSave   = document.getElementById('assign-save');
+        const detailPicInfo = () => document.getElementById('detail-pic-info');
+
+        let activeBriefTitle = null;
+        let activeBriefBrand = null;
+
+        function closeModal() {
+          modal.classList.remove('show');
+        }
+
+        function refreshDetailPicInfo(newPic) {
+          const A = window.AdminApp;
+          const profiles = (A && A.data && A.data.profiles) || [];
+          const node = detailPicInfo();
+          if (!node) return;
+          if (!newPic) {
+            node.innerHTML = '<span style="color: var(--muted); font-weight: 400;">Terbuka — kreator pilih sendiri</span>';
+            return;
+          }
+          const prof = profiles.find(p => p.username === newPic);
+          const name = prof ? (prof.display_name || prof.username) : newPic;
+          node.innerHTML = `${escapeHtml(name)} <small class="meta" style="margin-left: 6px;">@${escapeHtml(newPic)}</small>`;
+        }
+
+        function openModal() {
+          const A = window.AdminApp;
+          if (!A) return;
+          const brief = BRIEFS[briefId];
+          if (!brief) return;
+          activeBriefTitle = brief.title || '—';
+          activeBriefBrand = brief.brand || '—';
+          elTitle.textContent = activeBriefTitle;
+          elBrand.textContent = activeBriefBrand;
+          const profiles = (A.data && A.data.profiles) || [];
+          const curProf = brief.assigned_to ? profiles.find(p => p.username === brief.assigned_to) : null;
+          elCurrent.textContent = brief.assigned_to
+            ? (curProf ? (curProf.display_name || curProf.username) : brief.assigned_to)
+            : 'Terbuka';
+          // populate dropdown kreator
+          const kreators = profiles.filter(p => p.role === 'kreator');
+          elPic.innerHTML = '<option value="">— Terbuka (kreator pilih sendiri) —</option>';
+          kreators.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.username;
+            o.textContent = p.display_name || p.username;
+            if (p.username === brief.assigned_to) o.selected = true;
+            elPic.appendChild(o);
+          });
+          modal.classList.add('show');
+        }
+
+        // Event delegation: klik tombol "Assign ulang kreator" di mana pun muncul (di-render ulang tiap kali content refresh)
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('#btn-reassign-pic');
+          if (!btn) return;
+          e.preventDefault();
+          openModal();
+        });
+
+        btnCancel?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+        });
+
+        btnSave?.addEventListener('click', async () => {
+          const A = window.AdminApp;
+          if (!A) return;
+          // BRIEFS di-index pakai URL param key (mis. "b-1"), tapi Supabase butuh sb_id UUID.
+          // Pakai sb_id untuk write; index BRIEFS tetap pakai URL param key.
+          const sbId = (BRIEFS[briefId] && BRIEFS[briefId].sb_id) || briefId;
+          const newPic = elPic.value || null;
+          btnSave.disabled = true;
+          const orig = btnSave.textContent;
+          btnSave.textContent = 'Menyimpan…';
+          try {
+            await A.updateBrief(sbId, { assigned_to: newPic });
+            if (BRIEFS[briefId]) BRIEFS[briefId].assigned_to = newPic;
+            refreshDetailPicInfo(newPic);
+            const picLabel = newPic
+              ? ((A.data.profiles || []).find(p => p.username === newPic)?.display_name || newPic)
+              : 'Terbuka';
+            showToast('Brief di-assign ke ' + picLabel + ' ✓');
+            closeModal();
+          } catch (err) {
+            showToast('Gagal: ' + err.message);
+          } finally {
+            btnSave.disabled = false;
+            btnSave.textContent = orig;
+          }
+        });
+      })();
     })();
   </script>
 </body>

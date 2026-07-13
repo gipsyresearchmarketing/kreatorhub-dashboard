@@ -359,6 +359,30 @@
       }
 
       render();
+
+      // ---- auto-refresh kalau tab kembali aktif atau ada perubahan dari tab/admin lain ----
+      // Admin update script status di Supabase → kreator side perlu re-fetch supaya keliatan.
+      async function refreshFromCloud() {
+        try {
+          await A.refresh();
+          const fresh = loadState(briefId);
+          // Hanya update state kalau tidak ada perubahan belum disimpan (scriptDirty = false)
+          if (!scriptDirty) {
+            state = fresh;
+            render();
+          }
+        } catch (_) { /* offline, skip */ }
+      }
+      window.addEventListener('focus', refreshFromCloud);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshFromCloud();
+      });
+      // Listener dari creator-common.js (mis. saveScript selesai)
+      document.addEventListener('creatorapp:data-changed', (e) => {
+        if (e.detail && e.detail.type === 'script' && e.detail.briefId === briefId) {
+          refreshFromCloud();
+        }
+      });
     });
   </script>
 </body>

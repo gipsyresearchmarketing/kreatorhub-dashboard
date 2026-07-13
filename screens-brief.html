@@ -117,7 +117,10 @@
       };
       function getBriefStateSummary(id) {
         try {
-          const raw = localStorage.getItem('kreatorhub.brief-state.' + id);
+          // Key per-kreator: biar script pipit ga bocor ke cherly di localStorage yang sama
+          const me = A.session && A.session.username;
+          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
+          const raw = localStorage.getItem(key);
           if (!raw) return { hasScript: false, status: null };
           const d = JSON.parse(raw);
           return {
@@ -128,7 +131,10 @@
       }
       function renderBriefs(filterBrand) {
         briefListEl.innerHTML = '';
-        let briefs = A.data.briefs;
+        // Filter visibility per kreator: hanya brief yang assigned_to = username kreator
+        // ATAU belum di-assign (terbuka). Kreator lain tidak boleh lihat.
+        const me = A.session && A.session.username;
+        let briefs = (A.data.briefs || []).filter(b => !b.assigned_to || b.assigned_to === me);
         if (filterBrand && filterBrand !== 'all') briefs = briefs.filter(b => b.brand === filterBrand);
         document.getElementById('brief-count').textContent = briefs.length + ' brief · ' + (filterBrand && filterBrand !== 'all' ? filterBrand : 'semua brand');
         if (!briefs.length) {

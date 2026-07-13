@@ -116,7 +116,10 @@
 
       function loadState(id) {
         try {
-          const raw = localStorage.getItem('kreatorhub.brief-state.' + id);
+          // Key per-kreator: biar script pipit ga bocor ke cherly di localStorage yang sama
+          const me = A.session && A.session.username;
+          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
+          const raw = localStorage.getItem(key);
           if (!raw) return { status: 'draft', script: '' };
           const data = JSON.parse(raw);
           return Object.assign({ status: 'draft', script: '' }, data);
@@ -125,7 +128,11 @@
         }
       }
       function saveState(id, state) {
-        try { localStorage.setItem('kreatorhub.brief-state.' + id, JSON.stringify(state)); } catch (_) {}
+        try {
+          const me = A.session && A.session.username;
+          const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
+          localStorage.setItem(key, JSON.stringify(state));
+        } catch (_) {}
       }
 
       if (!briefId) {
@@ -269,10 +276,12 @@
         // wire events (guarded — kalau element gak ada karena disabled state, skip)
         ta.addEventListener('input', () => {
           scriptDirty = true;
+          // Update state.script live (jangan tunggu save) — biar pas save handler baca,
+          // yang diambil adalah teks terbaru. JANGAN panggil render() di sini, karena
+          // render() replace innerHTML dan ngehilangin teks yang lagi diketik.
+          state.script = ta.value;
           const meta = document.getElementById('script-meta');
           if (meta) meta.textContent = '● ada perubahan belum disimpan';
-          // re-evaluate status dropdown locked state when script changes
-          render();
         });
 
         document.getElementById('btn-save-script').addEventListener('click', () => {

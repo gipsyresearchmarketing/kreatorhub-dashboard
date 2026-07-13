@@ -150,8 +150,8 @@
             await A.saveScript(id, { script: state.script, status: state.status });
             return { ok: true, source: 'supabase' };
           } catch (err) {
-            console.warn('[persistState] supabase save gagal, fallback ke localStorage:', err.message);
-            return { ok: true, source: 'local', error: err.message };
+            console.error('[persistState] supabase save gagal:', err);
+            return { ok: false, source: 'local', error: err.message || String(err) };
           }
         }
         return { ok: true, source: 'local' };
@@ -314,7 +314,13 @@
           btn.disabled = true; btn.textContent = 'Menyimpan…';
           try {
             const res = await persistState(briefId, state);
-            A.showToast(res.source === 'supabase' ? 'Script tersinkron ke cloud ✓' : 'Script tersimpan di lokal (offline).');
+            if (res.source === 'supabase') {
+              A.showToast('Script tersinkron ke cloud ✓');
+            } else if (res.source === 'local' && res.error) {
+              A.showToast('Supabase error: ' + res.error + ' (fallback lokal)', 'error');
+            } else {
+              A.showToast('Script tersimpan di lokal (offline).');
+            }
           } catch (err) {
             A.showToast('Gagal: ' + err.message, 'error');
           } finally {

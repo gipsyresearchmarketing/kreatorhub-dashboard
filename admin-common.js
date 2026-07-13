@@ -84,18 +84,20 @@
     history:  [],
     payments: [],
     profiles: [],
-    approvals: []
+    approvals: [],
+    paymentProofs: []
   };
 
   async function refresh() {
-    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes, approvalsRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes, approvalsRes, proofsRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').order('updated_at', { ascending: false }),
       sb.from('history').select('*').order('reviewed_at', { ascending: false }),
       sb.from('payments').select('*').order('submitted_at', { ascending: false }),
       sb.from('profiles').select('*').order('username'),
       sb.from('brief_scripts').select('*'),
-      sb.from('approvals').select('*')
+      sb.from('approvals').select('*'),
+      sb.from('payment_proofs').select('*').order('created_at', { ascending: false })
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
@@ -104,13 +106,15 @@
     if (profilesRes.error) console.error('[refresh] profiles', profilesRes.error);
     if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
     if (approvalsRes.error) console.error('[refresh] approvals', approvalsRes.error);
-    data.briefs    = briefsRes.data    || [];
-    data.progress  = progressRes.data  || [];
-    data.history   = historyRes.data   || [];
-    data.payments  = paymentsRes.data  || [];
-    data.profiles  = profilesRes.data  || [];
-    data.scripts   = scriptsRes.data   || [];
-    data.approvals = approvalsRes.data || [];
+    if (proofsRes.error)   console.error('[refresh] payment_proofs', proofsRes.error);
+    data.briefs       = briefsRes.data       || [];
+    data.progress     = progressRes.data     || [];
+    data.history      = historyRes.data      || [];
+    data.payments     = paymentsRes.data     || [];
+    data.profiles     = profilesRes.data     || [];
+    data.scripts      = scriptsRes.data      || [];
+    data.approvals    = approvalsRes.data    || [];
+    data.paymentProofs = proofsRes.data      || [];
     console.log('[admin-common] progress rows fetched:', data.progress.length, data.progress);
     return data;
   }
@@ -162,6 +166,60 @@
     if (counts.approve >= APPROVAL_QUORUM) return 'approved';
     if (counts.reject >= APPROVAL_QUORUM) return 'rejected';
     return null;
+  }
+
+  // ---- payment proofs (upload bukti transfer) ----
+  // Path convention: "{payment_id}/{uuid}.{ext}"
+  function getProofs(paymentId) {
+    return (data.paymentProofs || []).filter(p => p.payment_id === paymentId);
+  }
+  async function uploadPaymentProof(paymentId, file, note) {
+    if (!session || !session.username) throw new Error('Session admin tidak ditemukan');
+    if (!file) throw new Error('File wajib diisi');
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const filePath = `${paymentId}/${crypto.randomUUID()}.${ext}`;
+    // Upload ke Storage
+    const upRes = await sb.storage.from('payment-proofs').upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || 'application/octet-stream'
+    });
+    if (upRes.error) throw new Error('Upload gagal: ' + upRes.error.message);
+    // Insert metadata row
+    const ins = await sb.from('payment_proofs').insert({
+      payment_id: paymentId,
+      file_path: filePath,
+      file_name: file.name,
+      mime_type: file.type || null,
+      file_size: file.size || null,
+      note: note || null,
+      uploaded_by: session.username
+    }).select();
+    if (ins.error) {
+      // Rollback file upload
+      try { await sb.storage.from('payment-proofs').remove([filePath]); } catch (_) {}
+      throw new Error('Simpan metadata gagal: ' + ins.error.message);
+    }
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'proof-upload', paymentId } }));
+    return ins.data[0];
+  }
+  async function deletePaymentProof(proofId) {
+    const proof = (data.paymentProofs || []).find(p => p.id === proofId);
+    if (!proof) return;
+    const remRes = await sb.storage.from('payment-proofs').remove([proof.file_path]);
+    if (remRes.error) throw new Error('Hapus file gagal: ' + remRes.error.message);
+    const delRes = await sb.from('payment_proofs').delete().eq('id', proofId);
+    if (delRes.error) throw new Error('Hapus metadata gagal: ' + delRes.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'proof-delete', paymentId: proof.payment_id } }));
+  }
+  // Get signed download URL (valid 1 jam)
+  async function getProofDownloadUrl(filePath, expiresIn) {
+    const opts = expiresIn ? { expiresIn } : { expiresIn: 3600 };
+    const res = await sb.storage.from('payment-proofs').createSignedUrl(filePath, opts.expiresIn);
+    if (res.error) throw new Error('Buat link download gagal: ' + res.error.message);
+    return res.signedUrl;
   }
 
   // ---- action: approve / reject / revision ----
@@ -330,6 +388,10 @@
     finalDecision,
     APPROVAL_QUORUM,
     TOTAL_ADMINS,
+    getProofs,
+    uploadPaymentProof,
+    deletePaymentProof,
+    getProofDownloadUrl,
     showToast,
     handleSignOut
   };

@@ -92,21 +92,55 @@
   // ---- refresh: fetch semua data kreator dari Supabase ----
   async function refresh() {
     const me = session.username;
-    const [briefsRes, progressRes, historyRes, paymentsRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, scriptsRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').eq('kreator', me).order('updated_at', { ascending: false }),
       sb.from('history').select('*').eq('kreator', me).order('reviewed_at', { ascending: false }),
-      sb.from('payments').select('*').eq('kreator', me).order('submitted_at', { ascending: false })
+      sb.from('payments').select('*').eq('kreator', me).order('submitted_at', { ascending: false }),
+      sb.from('brief_scripts').select('*').eq('kreator', me)
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
     if (historyRes.error)  console.error('[refresh] history', historyRes.error);
     if (paymentsRes.error) console.error('[refresh] payments', paymentsRes.error);
+    if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
     data.briefs   = briefsRes.data   || [];
     data.progress = progressRes.data || [];
     data.history  = historyRes.data  || [];
     data.payments = paymentsRes.data || [];
+    data.scripts  = scriptsRes.data  || [];
     return data;
+  }
+
+  // ---- script per-kreator per-brief (Supabase) ----
+  // Tabel public.brief_scripts: unique(brief_id, kreator) — upsert by composite key.
+  // localStorage tetap jadi fallback kalau Supabase error/offline, tapi primary adalah Supabase.
+  async function loadScript(briefId) {
+    if (!data.scripts) await refresh();
+    const row = (data.scripts || []).find(s => s.brief_id === briefId);
+    return row ? { script: row.script || '', status: row.status || 'draft' } : { script: '', status: 'draft' };
+  }
+
+  async function saveScript(briefId, fields) {
+    const me = session.username;
+    const payload = {
+      brief_id: briefId,
+      kreator: me,
+      script: fields.script || '',
+      status: fields.status || 'draft'
+    };
+    const res = await sb.from('brief_scripts').upsert(payload, { onConflict: 'brief_id,kreator' }).select();
+    if (res.error) {
+      console.error('[saveScript]', res.error);
+      throw new Error('Simpan script gagal: ' + res.error.message);
+    }
+    // Update local cache supaya subsequent loadScript ga perlu refetch
+    if (!Array.isArray(data.scripts)) data.scripts = [];
+    const idx = data.scripts.findIndex(s => s.brief_id === briefId);
+    if (idx >= 0) data.scripts[idx] = res.data[0];
+    else data.scripts.push(res.data[0]);
+    document.dispatchEvent(new CustomEvent('creatorapp:data-changed', { detail: { type: 'script', briefId } }));
+    return res.data[0];
   }
 
   // ---- mutators ----
@@ -192,6 +226,8 @@
     data,
     refresh,
     setStatusOverride,
+    loadScript,
+    saveScript,
     renderTopbar,
     wireSignOut,
     handleSignOut,

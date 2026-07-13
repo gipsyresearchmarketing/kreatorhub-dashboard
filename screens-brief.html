@@ -116,8 +116,18 @@
         revisi: 'Perlu revisi', approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
       };
       function getBriefStateSummary(id) {
+        // Primary: Supabase cache (data.scripts sudah ke-populate di refresh())
         try {
-          // Key per-kreator: biar script pipit ga bocor ke cherly di localStorage yang sama
+          const row = (A.data.scripts || []).find(s => s.brief_id === id);
+          if (row) {
+            return {
+              hasScript: !!(row.script && row.script.trim().length > 0),
+              status: row.status || 'draft'
+            };
+          }
+        } catch (_) {}
+        // Fallback: localStorage per-(kreator, brief)
+        try {
           const me = A.session && A.session.username;
           const key = 'kreatorhub.brief-state.' + (me || '_anon') + '.' + id;
           const raw = localStorage.getItem(key);

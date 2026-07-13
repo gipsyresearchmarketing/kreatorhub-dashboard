@@ -332,7 +332,15 @@
       const item = data.progress.find(p => p.id === id);
       if (item) {
         const payId = 'pay-' + id;
-        const fee = fields.fee != null ? Number(fields.fee) : 300000;
+        // Fee priority:
+        // 1) fields.fee (admin override pas vote) → 2) briefs.fee (kalo brief
+        // punya nominal) → 3) DEFAULT_FEE=300000 fallback
+        let fee = 300000;
+        if (fields.fee != null) fee = Number(fields.fee);
+        else if (item.brief_id) {
+          const sb = data.briefs.find(b => b.id === item.brief_id);
+          if (sb && sb.fee != null) fee = Number(sb.fee);
+        }
         const payRes = await sb.from('payments').upsert({
           id: payId,
           kreator: item.kreator,

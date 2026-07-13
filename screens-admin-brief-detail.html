@@ -1003,37 +1003,7 @@
         const scriptActionsStrip = actions.map(a =>
           `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${a} script</button>`
         ).join('');
-          
-        // video items: rendered inside the Video section (Section 3) when expanded,
-        // each row carries its own per-video action buttons (Setujui/Revisi/Tolak) dengan semantic color
-        const videoItemsHtml = brief.videos.length
-          ? brief.videos.map(v => {
-              const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
-              const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
-              const stBoxCls = videoStateClass(v.status);
-              return `
-          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-            <div class="vi-top">
-              <div class="v-info">
-                <strong>${escapeHtml(v.title)}</strong>
-                <small>${escapeHtml(v.date)}</small>
-              </div>
-              <span class="v-fee">${fmtRp(v.fee)}</span>
-              <span class="vi-status status ${stCls}">${stLabel}</span>
-            </div>
-            <div class="vi-actions">
-              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
-            </div>
-            <div class="vi-toolbar">
-              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-            </div>
-          </div>`;
-            }).join('')
-          : '<p class="meta">Belum ada video untuk diberi aksi.</p>';
-          
+
         const paidVideos = brief.videos.filter(v => v.status === 'paid');
         const feeTotalPaid = paidVideos.reduce((s, v) => s + v.fee, 0);
         const feeStatusHtml = paidVideos.length
@@ -1093,12 +1063,34 @@
           
         const videosListHtml = brief.videos.length
           ? brief.videos.map(v => {
-              const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
-              const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
-              const stBoxCls = videoStateClass(v.status);
+              const A0 = window.AdminApp;
+              const vc = A0 && A0.voteCounts ? A0.voteCounts('video', v.progress_id) : { approve: 0, reject: 0, voters: [] };
+              const myV = A0 && A0.myVote ? A0.myVote('video', v.progress_id) : null;
+              const locked = A0 && A0.quorumReached ? A0.quorumReached(vc) : false;
+              const finalDec = A0 && A0.finalDecision ? A0.finalDecision(vc) : null;
+              // Status display: kalau locked pakai finalDec, kalau belum pakai v.status (pending)
+              const effectiveStatus = locked ? (finalDec === 'approved' ? 'paid' : finalDec) : v.status;
+              const stLabel = effectiveStatus === 'paid' ? 'Disetujui' : effectiveStatus === 'rejected' ? 'Ditolak' : effectiveStatus === 'pending' ? 'Menunggu' : effectiveStatus;
+              const stCls   = effectiveStatus === 'paid' ? 'approved' : effectiveStatus === 'rejected' ? 'rejected' : 'pending';
+              const stBoxCls = videoStateClass(effectiveStatus);
               const linkDisplay = (v.link && v.link !== '—') ? v.link : '(belum ada link)';
+              const videoVoteCounterHtml = `
+                <div class="vote-counter">
+                  <div class="vote-bar">
+                    <span class="vote-bar-approve" style="width: ${(vc.approve / A0.TOTAL_ADMINS) * 100}%"></span>
+                    <span class="vote-bar-reject"  style="width: ${(vc.reject / A0.TOTAL_ADMINS) * 100}%"></span>
+                  </div>
+                  <div class="vote-counts">
+                    <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${vc.approve}/${A0.TOTAL_ADMINS}</strong></span>
+                    <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${vc.reject}/${A0.TOTAL_ADMINS}</strong></span>
+                  </div>
+                  ${locked ? `<div class="vote-final" style="color: ${finalDec === 'approved' ? 'var(--success)' : 'var(--danger)'};">Quorum tercapai → <strong>${finalDec === 'approved' ? 'DISETUJUI' : 'DITOLAK'}</strong> (locked)</div>` : ''}
+                </div>`;
+              const myVoteHint = myV
+                ? `<span class="meta" style="margin-left: 10px;">· vote kamu: <strong style="color: ${myV === 'approve' ? 'var(--success)' : 'var(--danger)'};">${myV === 'approve' ? 'Setujui' : 'Tolak'}</strong> (klik tombol lain untuk ganti)</span>`
+                : `<span class="meta" style="margin-left: 10px;">· kamu belum vote</span>`;
               return `
-          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
+          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}" data-progress-id="${escapeHtml(v.progress_id || '')}">
             <div class="vi-top">
               <div class="v-info">
                 <strong>${escapeHtml(v.title)}</strong>
@@ -1107,10 +1099,11 @@
               </div>
               <span class="vi-status status ${stCls}">${stLabel}</span>
             </div>
+            ${videoVoteCounterHtml}
             <div class="vi-actions">
-              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
+              <button type="button" class="btn ${myV === 'approve' ? 'btn-success-soft' : 'btn-secondary'}" data-vote-video="approve" data-progress-id="${escapeHtml(v.progress_id || '')}">Setujui</button>
+              <button type="button" class="btn ${myV === 'reject' ? 'btn-danger-soft' : 'btn-secondary'}" data-vote-video="reject" data-progress-id="${escapeHtml(v.progress_id || '')}">Tolak</button>
+              ${myVoteHint}
             </div>
           </div>`;
             }).join('')
@@ -1277,31 +1270,45 @@
             // Re-render full untuk sync button state
             render();
           }
+          if (e.detail && e.detail.type === 'vote' && e.detail.targetType === 'video') {
+            // Re-render full supaya video list ke-update (counter, status badge, myVote button state)
+            render();
+          }
         });
           
-        // per-video actions live inside each video row in #video-list (when expanded)
-        const VIDEO_ACT_TARGET = { approve: 'paid', revision: 'pending', reject: 'rejected' };
-        const VIDEO_ACT_LABEL  = { approve: 'Setujui', revision: 'Minta revisi', reject: 'Tolak' };
-        document.getElementById('video-list')?.addEventListener('click', (e) => {
-          // video action buttons (Setujui/Revisi/Tolak)
-          const btn = e.target.closest('[data-video-action]');
+        // per-video actions: vote (multi-admin quorum 3/5) — sama pattern dengan script
+        document.getElementById('video-list')?.addEventListener('click', async (e) => {
+          const btn = e.target.closest('[data-vote-video]');
           if (!btn) return;
-          const act = btn.dataset.videoAction;
-          const vTitle = btn.dataset.videoId;
-          pendingAction = { label: VIDEO_ACT_LABEL[act], target: VIDEO_ACT_TARGET[act], scope: 'video', videoTitle: vTitle };
-          actionModalTitle.textContent = `${VIDEO_ACT_LABEL[act]} video "${vTitle}"?`;
-          const leadMap = {
-            'Setujui':       'Video akan ditandai disetujui. Fee masuk antrian bayar (lihat section Status fee di bawah).',
-            'Minta revisi':  'Kreator akan diminta merevisi video ini saja. Video lain tidak terpengaruh.',
-            'Tolak':         'Video ditandai ditolak. Video lain di brief ini tidak terpengaruh.'
-          };
-          actionModalLead.textContent = leadMap[VIDEO_ACT_LABEL[act]] || 'Aksi akan dikirim ke kreator.';
-          actionModalCreator.textContent = brief.creator;
-          actionModalBrand.textContent = brief.brand;
-          actionModalTitle2.textContent = vTitle;
-          actionModalNote.value = '';
-          actionModalChannels.querySelectorAll('.notif-channel').forEach(c => c.classList.add('active'));
-          actionModal.classList.add('show');
+          const A = window.AdminApp;
+          if (!A || !A.castVote) {
+            showToast('AdminApp belum siap. Coba lagi.');
+            return;
+          }
+          const decision = btn.dataset.voteVideo; // 'approve' or 'reject'
+          const progressId = btn.dataset.progressId;
+          if (!progressId) {
+            showToast('Progress ID tidak ditemukan.');
+            return;
+          }
+          btn.disabled = true;
+          try {
+            await A.castVote('video', progressId, decision);
+            const counts = A.voteCounts('video', progressId);
+            const final = A.finalDecision(counts);
+            if (final && A.updateProgress) {
+              // Map final decision → progress.status
+              const newStatus = final === 'approved' ? 'approved' : 'rejected';
+              await A.updateProgress(progressId, { status: newStatus });
+              showToast(`Quorum tercapai — video ditandai ${newStatus}.`);
+            } else {
+              showToast(`Vote "${decision === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
+            }
+            render();
+          } catch (err) {
+            showToast('Vote gagal: ' + err.message);
+            btn.disabled = false;
+          }
         });
           
         actionModalCancel?.addEventListener('click', () => actionModal.classList.remove('show'));
@@ -1313,15 +1320,10 @@
           const scope    = pendingAction.scope;
           const target   = pendingAction.target;
           const label    = pendingAction.label;
-          const vTitle   = pendingAction.videoTitle;
           let targetTxt;
-          if (scope === 'video') {
-            // update video in-memory only (prototype); re-render the video list
-            const v = brief.videos.find(vid => vid.title === vTitle);
-            if (v) v.status = target;
-            targetTxt = `video "${vTitle}"`;
-          } else {
-            // Script action — sinkron ke Supabase biar kreator side liat perubahan
+          // Video actions udah pakai vote (multi-admin quorum) — ga lewat modal ini.
+          // Modal cuma handle script actions.
+          if (scope === 'script') {
             const A = window.AdminApp;
             const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
             const scriptKreator = sbBrief && sbBrief.assigned_to;
@@ -1371,39 +1373,8 @@
         }
           
         function renderVideoList() {
-          const list = document.getElementById('video-list');
-          if (!list) return;
-          // preserve expanded state of the toggle button
-          const wasOpen = document.getElementById('video-toggle')?.getAttribute('aria-expanded') === 'true';
-          list.innerHTML = brief.videos.length
-            ? brief.videos.map(v => {
-                const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
-                const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
-                const stBoxCls = videoStateClass(v.status);
-                return `
-          <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-            <div class="vi-top">
-              <div class="v-info">
-                <strong>${escapeHtml(v.title)}</strong>
-                <small>${escapeHtml(v.date)}</small>
-              </div>
-              <span class="v-fee">${fmtRp(v.fee)}</span>
-              <span class="vi-status status ${stCls}">${stLabel}</span>
-            </div>
-            <div class="vi-actions">
-              <button class="btn btn-success-soft" data-video-action="approve" data-video-id="${escapeHtml(v.title)}">Setujui</button>
-              <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
-              <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
-            </div>
-            <div class="vi-toolbar">
-              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-            </div>
-          </div>`;
-              }).join('')
-            : '';
-          if (wasOpen) list.removeAttribute('hidden');
-          else list.setAttribute('hidden', '');
+          // Deprecated: pakai full render() aja. Tetep ada sebagai no-op biar call site lama ga break.
+          render();
         }
           
         function renderFeeStatus() {

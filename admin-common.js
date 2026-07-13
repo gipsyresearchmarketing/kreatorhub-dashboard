@@ -317,6 +317,18 @@
       detail: { type: 'brief-delete', id }
     }));
   }
+  async function updateProgress(id, fields) {
+    const updRes = await sb.from('progress').update(Object.assign({
+      updated_at: new Date().toISOString()
+    }, fields)).eq('id', id);
+    if (updRes.error) throw new Error('Update progress gagal: ' + updRes.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'progress-update', id, fields }
+    }));
+    return updRes.data;
+  }
+
   async function updateScript(briefId, kreator, fields) {
     // brief_scripts: unique(brief_id, kreator) — update by composite key
     const updRes = await sb.from('brief_scripts').update(fields)
@@ -379,6 +391,7 @@
     createBrief,
     deleteBrief,
     updateScript,
+    updateProgress,
     updateBrief,
     updatePayment,
     castVote,

@@ -107,6 +107,16 @@
     .btn-reassign-pic:hover .btn-arrow {
       transform: translateX(3px);
     }
+    /* Chevron icon — kasih hint "dropdown" lewat animasi rotate pas hover */
+    .btn-reassign-pic .btn-chevron {
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+      transition: transform 0.2s ease;
+    }
+    .btn-reassign-pic:hover .btn-chevron {
+      transform: rotate(180deg);
+    }
 
     /* brief-pic-card hover (kasih hint "editable") */
     .brief-pic-card {
@@ -1159,7 +1169,7 @@
               <button type="button" class="btn btn-reassign-pic" id="btn-reassign-pic" style="flex-shrink: 0;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>
                 Assign ulang kreator
-                <span class="btn-arrow" aria-hidden="true">→</span>
+                <svg class="btn-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
               </button>
             </div>
           </div>

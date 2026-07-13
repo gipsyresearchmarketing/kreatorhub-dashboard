@@ -290,22 +290,26 @@
       // Prefill dari A.session (single source of truth = Supabase profiles).
       // creator-common.js udah populate session.{displayName, phone, email, bankName, bankAccount}
       // dari profiles table pas page load — jadi ga perlu refetch manual lagi.
-      namaEl.value = A.session.displayName || '';
-      waEl.value = A.session.phone || '';
-      emailEl.value = A.session.email || '';
-      // Set select value — kalau saved value ga ada di list, tambahin option synthetic
-      const savedBank = A.session.bankName || '';
-      if (savedBank) {
-        const exists = Array.from(bankNameEl.options).some(o => o.value === savedBank);
-        if (!exists) {
-          const opt = document.createElement('option');
-          opt.value = savedBank;
-          opt.textContent = savedBank + ' (saved)';
-          bankNameEl.appendChild(opt);
+      try {
+        namaEl.value = A.session.displayName || '';
+        waEl.value = A.session.phone || '';
+        emailEl.value = A.session.email || '';
+        // Set select value — kalau saved value ga ada di list, tambahin option synthetic
+        const savedBank = A.session.bankName || '';
+        if (savedBank) {
+          const exists = Array.from(bankNameEl.options).some(o => o.value === savedBank);
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = savedBank;
+            opt.textContent = savedBank + ' (saved)';
+            bankNameEl.appendChild(opt);
+          }
         }
+        bankNameEl.value = savedBank;
+        bankAccountEl.value = A.session.bankAccount || '';
+      } catch (e) {
+        console.error('[prefill] error:', e);
       }
-      bankNameEl.value = savedBank;
-      bankAccountEl.value = A.session.bankAccount || '';
       }
 
       function updateContactStatus() {

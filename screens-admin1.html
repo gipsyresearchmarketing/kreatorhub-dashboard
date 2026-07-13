@@ -681,6 +681,11 @@
             <option value="revision">Revisi</option>
             <option value="draft">Draft</option>
           </select>
+          <div class="filter-pills" id="queue-type-filter" style="display: flex; gap: 4px; padding: 2px; background: var(--fg-soft); border-radius: 999px; margin-left: 8px;">
+            <button type="button" class="filter-pill active" data-type="" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Semua</button>
+            <button type="button" class="filter-pill" data-type="video" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Video</button>
+            <button type="button" class="filter-pill" data-type="script" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Script</button>
+          </div>
         </div>
 
         <div class="card" style="padding: 0; overflow: hidden;">
@@ -1348,6 +1353,21 @@
       }
       queueSearch.addEventListener('input', applyFilter);
       filterStatus.addEventListener('change', applyFilter);
+
+      // Type filter (Semua / Video / Script) — toggle pill, re-render table
+      const queueTypeFilter = document.getElementById('queue-type-filter');
+      queueTypeFilter?.addEventListener('click', (e) => {
+        const pill = e.target.closest('.filter-pill');
+        if (!pill) return;
+        queueTypeFilter.querySelectorAll('.filter-pill').forEach(p => {
+          p.classList.toggle('active', p === pill);
+          p.style.background = p === pill ? 'var(--surface)' : 'transparent';
+          p.style.color = p === pill ? 'var(--fg)' : 'var(--muted)';
+          p.style.fontWeight = p === pill ? '500' : '400';
+        });
+        const A = window.AdminApp;
+        if (A) renderQueueTable(A);
+      });
 
       const briefSearch = document.getElementById('brief-search');
       briefSearch.addEventListener('input', () => {
@@ -2913,32 +2933,102 @@
     function renderQueueTable(A) {
       const tbody = document.querySelector('#queue-table tbody');
       if (!tbody) return;
-      const items = (A.data.progress || []);
+      // Tipe filter (Semua / Video / Script) — baca dari pill yang aktif
+      const typeFilter = document.querySelector('#queue-type-filter .filter-pill.active')?.dataset.type || '';
+
+      // Build unified items array: video (progress) + script (brief_scripts with status 'review'/'revisi')
+      const videoItems = (A.data.progress || []).map(p => ({
+        type: 'video',
+        id: p.id,
+        title: p.title,
+        brand: p.brand,
+        kreator: p.kreator,
+        status: p.status,
+        meta: p.meta || '',
+        video_url: p.video_url,
+        video_storage_path: p.video_storage_path,
+        updated_at: p.updated_at,
+        brief_id: p.brief_id
+      }));
+      const scriptItems = (A.data.scripts || [])
+        .filter(s => s.status === 'review' || s.status === 'revisi')
+        .map(s => {
+          // Enrich dengan brief info (title, brand, deadline)
+          const brief = (A.data.briefs || []).find(b => b.id === s.brief_id);
+          return {
+            type: 'script',
+            id: s.brief_id, // use brief_id as the queue row id (brief_scripts.id adalah UUID, kurang useful)
+            scriptRowId: s.id,
+            title: brief ? brief.title : '(brief tidak ditemukan)',
+            brand: brief ? brief.brand : '—',
+            kreator: s.kreator,
+            status: s.status,
+            meta: 'Script · ' + (s.script ? s.script.substring(0, 60) + '...' : '(kosong)'),
+            video_url: null,
+            video_storage_path: null,
+            updated_at: s.updated_at,
+            brief_id: s.brief_id
+          };
+        });
+      let items = [...videoItems, ...scriptItems];
+      // Apply type filter
+      if (typeFilter === 'video') items = items.filter(i => i.type === 'video');
+      else if (typeFilter === 'script') items = items.filter(i => i.type === 'script');
+      // Sort: terbaru updated_at dulu
+      items.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+
       if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada progres dari kreator. Kreator perlu upload dari halaman Brief & script (setelah script di-approve admin).</td></tr>`;
+        const emptyMsg = typeFilter === 'script'
+          ? 'Belum ada script yang perlu review.'
+          : typeFilter === 'video'
+            ? 'Belum ada video yang perlu review.'
+            : 'Belum ada progres atau script dari kreator. Kreator perlu submit dari halaman Brief & script (setelah script di-approve admin).';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
         return;
       }
       tbody.innerHTML = items.map(item => {
         const profile = profileByUsername(item.kreator, A.data.profiles);
         const displayName = profile ? (profile.display_name || item.kreator) : item.kreator;
         const avatar = avatarFor(item.kreator, displayName);
-        const linkHtml = item.video_url
-          ? `<a href="${escapeHtml(item.video_url)}" target="_blank" rel="noopener" class="link-cell">${escapeHtml(item.video_url)}</a>`
-          : (item.video_storage_path
-              ? `<span style="color: var(--muted); font-family: var(--font-mono); font-size: 11px;">[file: ${escapeHtml(item.video_storage_path.split('/').pop())}]</span>`
-              : '<span style="color: var(--muted);">—</span>');
-        const actionsHtml = (item.status === 'review' || item.status === 'revisi')
-          ? `<div class="row-actions-cell">
-               <button class="btn btn-primary" data-act="approve">Setujui</button>
-               <button class="btn btn-secondary" data-act="revision">Revisi</button>
-               <button class="btn btn-ghost" data-act="reject">Tolak</button>
-             </div>`
-          : `<span class="pill">${statusPill(item.status).replace(/<[^>]+>/g, '')}</span>`;
-        return `<tr data-row data-progress-id="${escapeHtml(item.id)}" data-status="${escapeHtml(item.status)}" data-brand="${escapeHtml(item.brand)}">
+        // Brief info (untuk script row)
+        const brief = item.brief_id ? (A.data.briefs || []).find(b => b.id === item.brief_id) : null;
+        const briefDeadline = brief ? brief.deadline : '—';
+        // Link / preview
+        let linkHtml;
+        if (item.type === 'script') {
+          linkHtml = `<span style="color: var(--muted); font-size: 11px;">${escapeHtml(item.meta)}</span>`;
+        } else if (item.video_url) {
+          linkHtml = `<a href="${escapeHtml(item.video_url)}" target="_blank" rel="noopener" class="link-cell">${escapeHtml(item.video_url)}</a>`;
+        } else if (item.video_storage_path) {
+          linkHtml = `<span style="color: var(--muted); font-family: var(--font-mono); font-size: 11px;">[file: ${escapeHtml(item.video_storage_path.split('/').pop())}]</span>`;
+        } else {
+          linkHtml = '<span style="color: var(--muted);">—</span>';
+        }
+        // Type badge
+        const typeBadge = item.type === 'script'
+          ? `<span class="pill" style="background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); font-size: 10px; padding: 2px 7px; border-radius: 999px; margin-left: 6px;">Script</span>`
+          : `<span class="pill" style="background: var(--fg-soft); color: var(--muted); font-size: 10px; padding: 2px 7px; border-radius: 999px; margin-left: 6px;">Video</span>`;
+        // Actions: untuk video pakai single-admin (legacy), untuk script pakai "Buka brief" link
+        let actionsHtml;
+        if (item.type === 'script') {
+          // Click row → navigate ke brief-detail admin (di sana ada vote system script)
+          actionsHtml = `<a class="btn btn-secondary" href="screens-admin-brief-detail.html?id=${encodeURIComponent(item.brief_id)}">Buka brief →</a>`;
+        } else {
+          actionsHtml = (item.status === 'review' || item.status === 'revisi')
+            ? `<div class="row-actions-cell">
+                 <button class="btn btn-primary" data-act="approve">Setujui</button>
+                 <button class="btn btn-secondary" data-act="revision">Revisi</button>
+                 <button class="btn btn-ghost" data-act="reject">Tolak</button>
+               </div>`
+            : `<span class="pill">${statusPill(item.status).replace(/<[^>]+>/g, '')}</span>`;
+        }
+        // data-type attribute buat click handler detect type
+        const dataType = item.type === 'script' ? `data-script-brief-id="${escapeHtml(item.brief_id)}"` : `data-progress-id="${escapeHtml(item.id)}"`;
+        return `<tr data-row ${dataType} data-type="${item.type}" data-status="${escapeHtml(item.status)}" data-brand="${escapeHtml(item.brand)}">
           <td>
             <div class="row-title">
               <div>
-                <strong data-video-link tabindex="0">${escapeHtml(item.title)}</strong>
+                <strong ${item.type === 'video' ? 'data-video-link tabindex="0"' : ''}>${escapeHtml(item.title)}${typeBadge}</strong>
                 <small>${escapeHtml(item.meta || '')}</small>
               </div>
             </div>
@@ -2952,7 +3042,7 @@
             </div>
           </td>
           <td>${statusPill(item.status)}</td>
-          <td class="num-col">—</td>
+          <td class="num-col">${escapeHtml(briefDeadline)}</td>
           <td>${actionsHtml}</td>
         </tr>`;
       }).join('');

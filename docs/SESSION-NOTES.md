@@ -957,3 +957,244 @@ Diimplement sesi 10. Kreator (`screens-creator.html`): 5 tile clickable (Brief a
 
 ---
 
+
+---
+
+# SESSION 11 (2026-07-13) — Multi-admin approval (quorum 3/5) + Upload bukti transfer + LocalStorage cleanup
+
+> Sesi panjang. Fokus: (1) assign kreator di brief admin, (2) sync script kreator ke cloud, (3) realtime approval system dengan quorum 3/5, (4) upload bukti transfer admin → kreator, (5) hapus semua localStorage → Supabase single source of truth. Plus role-based admin: agung/petra/bagas/praja/putri jadi 5 admin baru.
+
+## TL;DR — apa yang ditambah/diubah
+
+| Fitur | Commit | Status |
+|---|---|---|
+| Assign kreator di brief admin (cell PIC + section Kreator dituju di detail) | `c82add1`–`aff9dd4` | ✅ |
+| Sync script kreator ke Supabase `brief_scripts` table (realtime) | `aad5c3d` | ✅ |
+| Multi-admin approval quorum 3/5 untuk script & video | `27228d3` | ✅ |
+| Upload bukti transfer admin (Storage) + display kreator | `8c38938` | ✅ |
+| Hapus semua localStorage (mirror session + cache script) — Supabase only | `b4d448d` | ✅ |
+| 5 admin baru (agung/petra/putri/bagas/praja) — `role='admin'` | manual SQL | ✅ |
+
+## A. Assign kreator di brief admin
+
+**`screens-admin1.html`** — cell "Kreator dituju" di tabel Briefs clickable → modal assign. Plus filter by brand (klik cell brand toggle). `wireAssignModal(A)` di-init di `adminapp:ready`. Pakai `AdminApp.updateBrief(id, { assigned_to })`.
+
+**`screens-admin-brief-detail.html`** — section "Kreator dituju" di paling atas halaman detail, dengan tombol "Assign ulang kreator" + chevron icon. Inline-block + min-width:max-content biar text ga collapse.
+
+**Plus admin1 filter brand** (commit `aa3af8d`) — cell brand jadi clickable, hover kasih chevron, klik filter by brand itu. Toggle (klik lagi = unfilter).
+
+**Bug fixes session 11 (brief-detail):**
+- `pageTitle`/`pageLead`/`statusPill`/`contentEl` di-declare `const` di awal IIFE — sebelumnya `renderBriefDetail` crash ReferenceError
+- Function `renderBriefDetail` ga di-close dengan `}` → semua kode nested di dalamnya
+- `currentStatus` const → let (handler confirm coba reassign)
+- Root cause container `overflow: hidden` di tabel Briefs (line 718) — clipping text "GIPSY RESEARCH" jadi "GIPSY RESEAR"
+
+## B. Script sync ke Supabase (`brief_scripts` table)
+
+**SQL** (`supabase/add-brief-scripts.sql`):
+```sql
+create table public.brief_scripts (
+  id uuid primary key default gen_random_uuid(),
+  brief_id text not null references public.briefs(id) on delete cascade,
+  kreator text not null references public.profiles(username) on delete cascade,
+  script text default '',
+  status text not null check (status in (...)) default 'draft',
+  updated_at timestamptz default now(),
+  unique(brief_id, kreator)
+);
+-- trigger touch_updated_at + RLS kreator self read/upsert/update, admin read all
+```
+
+**`creator-common.js`** — `data.scripts` di-fetch bareng data lain. API baru:
+- `loadScript(briefId)` — get dari `data.scripts` cache
+- `saveScript(briefId, { script, status })` — upsert with `onConflict: 'brief_id,kreator'`
+
+**`screens-brief-detail.html`** (kreator) — `loadState()` baca dari `A.data.scripts`, `persistState()` panggil `A.saveScript`. Auto-update `state.script` di input handler (sebelumnya render() dipanggil tiap input → textarea ke-replace → text ilang).
+
+**`admin-common.js`** — `data.scripts` di-fetch. `loadScript(targetType, targetId)` filter by `brief_id`. **Plus**: `updateScript(briefId, kreator, { status })` — admin set status script (sebelumnya cuma localStorage). **Plus**: `data.scripts` di-render di `renderBriefsTable()` jadi status dinamis (draft/editing/review/revisi/approved/rejected/selesai, bukan hardcode "Aktif").
+
+**Realtime** — `creator-common.js` subscribe ke `postgres_changes` di `brief_scripts` (filter `kreator=eq.<username>`). Update lokal + dispatch `creatorapp:data-changed` → kreator side re-render. Plus `admin-common.js` juga subscribe (admin view).
+
+**Admin approve script** — di `screens-admin-brief-detail.html` handler confirm, kalau scope='script': panggil `A.updateScript(briefId, scriptKreator, { status: target })` + saveScriptStatus backup.
+
+## C. Multi-admin approval (quorum 3/5) — script & video
+
+**SQL** (`supabase/add-approvals.sql`):
+```sql
+create table public.approvals (
+  id uuid primary key default gen_random_uuid(),
+  target_type text check (target_type in ('script', 'video')),
+  target_id text not null,                 -- brief_id (script) atau progress_id (video)
+  admin_username text not null references public.profiles(username) on delete cascade,
+  decision text check (decision in ('approve', 'reject')),
+  comment text,
+  unique(target_type, target_id, admin_username)  -- 1 admin = 1 vote per item
+);
+alter publication supabase_realtime add table public.approvals;
+```
+
+**`admin-common.js` API:**
+- `voteCounts(targetType, targetId)` — `{ approve: N, reject: M, voters: [...] }`
+- `myVote(targetType, targetId)` — current admin's decision atau null
+- `castVote(targetType, targetId, decision, comment)` — upsert (admin bisa ganti vote)
+- `quorumReached(counts)` / `finalDecision(counts)` — helpers
+- Constants `APPROVAL_QUORUM = 3`, `TOTAL_ADMINS = 5`
+
+**Realtime**: admin-common subscribe ke `approvals` (all admin di-broadcast). Update count + dispatch `adminapp:data-changed`.
+
+**UI** — `screens-admin-brief-detail.html` script section:
+- Counter bar visual (approve vs reject ratio) + count X/5
+- Tombol "Setujui script" / "Tolak script" dengan chevron
+- Hint "kamu udah vote: X" atau "kamu belum vote"
+- Begitu quorum tercapai (3/5) → auto-update `brief_scripts.status` via `updateScript`, lock vote (status final 'approved' / 'rejected')
+- **Fee tetap single-admin** (Putri atau admin lain, ga ada quorum)
+
+**Decision rules** (dari diskusi):
+- 3 approve → status `approved`, lock
+- 3 reject → status `rejected`, lock
+- 2:1 (campuran) → belum quorum, status tetap
+- Admin bisa ganti vote real-time (counter update)
+- 1 admin = 1 vote per item (unique constraint)
+
+## D. Upload bukti transfer — fee payment
+
+**SQL** (`supabase/add-payment-proofs.sql`):
+- Storage bucket `payment-proofs` (private, max 10MB, image/PDF)
+- Tabel `payment_proofs` (id, payment_id, file_path, file_name, mime_type, file_size, note, uploaded_by, created_at)
+- RLS: admin full access, kreator read untuk payment sendiri
+- Storage RLS: admin upload/update/delete, kreator read file di folder `payment_id/`
+- Realtime publication
+
+**`admin-common.js` API:**
+- `getProofs(paymentId)` — filter by payment
+- `uploadPaymentProof(paymentId, file, note)` — upload ke Storage + insert metadata (rollback file kalau metadata gagal)
+- `deletePaymentProof(proofId)` — hapus file + metadata
+- `getProofDownloadUrl(filePath, expiresIn=3600)` — signed URL
+
+**UI admin** (`screens-admin1.html` fee modal) — section "Bukti transfer" di fee modal:
+- File input (accept image/PDF, max 10MB)
+- Catatan opsional
+- Tombol Upload
+- List bukti yang udah di-upload dengan tombol Lihat (signed URL) + Hapus
+- Multiple upload per payment
+
+**UI kreator** (`screens-progres-detail.html`) — section "Bukti transfer" di card selesai/approved:
+- List bukti dengan info upload + timestamp
+- Klik row → download via signed URL
+- Realtime update
+
+**Realtime**: admin + kreator masing-masing subscribe ke `payment_proofs` → update UI live.
+
+## E. 5 admin baru + role scope
+
+**SQL** (manual run):
+```sql
+insert into public.profiles (id, username, role, display_name)
+select u.id, split_part(u.email, '@', 1), 'admin', split_part(u.email, '@', 1)
+from auth.users u
+where u.email in (
+  'agung@gmail.com', 'petra@gmail.com', 'putri@gmail.com',
+  'bagas@gmail.com', 'praja@gmail.com'
+)
+on conflict (id) do update
+  set role = 'admin', username = excluded.username, display_name = excluded.display_name;
+```
+
+**Role scope** (sesuai diskusi):
+- Agung, Petra, Bagas, Praja: scope `review` (acc script & video via quorum 3/5)
+- Putri: scope `finance` (acc fee) + `review` (acc script & video juga) — full access
+- Semua admin boleh acc fee (single-admin, ga ada quorum)
+
+## F. LocalStorage cleanup — Supabase single source of truth
+
+**Yang dihapus total:**
+- ❌ `kreatorhub.session` (mirror session) → `sb.auth.getSession()` + `profiles` table
+- ❌ `kreatorhub.brief-state.<id>` (script status cache) → `brief_scripts` table
+- ❌ `kreatorhub.script-drafts.<id>` (autosave) → `brief_scripts.script` real-time
+- ❌ `kreatorhub.script.<id>` (editor draft) → `brief_scripts.script`
+- ❌ `seedDemoData()` legacy b-1/b-2/b-3/b-4 di admin-brief-detail
+- ❌ `saveSession` / `clearSession` di screens-login.html
+- ❌ Inline `guardAdmin()` di 4 admin pages (admin-common udah handle)
+- ❌ `saveScriptStatus()` di admin-brief-detail (Supabase udah handle)
+- ❌ Auth guard inline + 3x `localStorage.removeItem('kreatorhub.session')` di logout flow
+
+**Yang masih di localStorage (auto-managed Supabase):**
+- ✅ `kreatorhub.auth` — Supabase Auth JWT token (managed by `sb.auth`)
+
+**Single source of truth akhir:**
+| Data | Storage |
+|---|---|
+| Session (user, role, displayName) | Supabase Auth + `profiles` |
+| Briefs | `briefs` table |
+| Progress | `progress` table |
+| History | `history` table |
+| Payments | `payments` table |
+| Script | `brief_scripts` table |
+| Approvals (quorum 3/5) | `approvals` table |
+| Payment proofs (upload) | `payment_proofs` + Storage `payment-proofs` |
+| File video kreator | Storage `videos` (existing) |
+
+**Realtime everywhere** — semua table di-publish ke `supabase_realtime`:
+- Briefs (admin side)
+- Scripts (kreator ↔ admin)
+- Approvals (counter live)
+- Payment proofs (upload live)
+
+## Files modified sesi 11
+
+| File | Highlights |
+|---|---|
+| `admin-common.js` | API: `updateBrief`, `updateScript`, `updatePayment`, `castVote`, `voteCounts`, `myVote`, `quorumReached`, `finalDecision`, `getProofs`, `uploadPaymentProof`, `deletePaymentProof`, `getProofDownloadUrl`, `APPROVAL_QUORUM=3`, `TOTAL_ADMINS=5`. Realtime subscription untuk approvals + payment_proofs |
+| `creator-common.js` | API: `loadScript`, `saveScript`, `getProofs`, `getProofDownloadUrl`. Realtime subscription untuk brief_scripts + payment_proofs. Session dari `sb.auth.getSession()` (no localStorage) |
+| `screens-admin1.html` | Modal assign PIC, cell brand+PIC clickable + filter, fee modal upload bukti, render vote counter di script section, `overflow: visible` di container tabel |
+| `screens-admin-brief-detail.html` | Bug fix: declare `const pageTitle/pageLead/statusPill/contentEl` di IIFE. Close `renderBriefDetail` dengan `}`. Section "Kreator dituju" + chevron. Modal assign ulang. Vote system untuk script |
+| `screens-brief-detail.html` (kreator) | `loadState` baca dari Supabase, `persistState` sync ke cloud. Lock status (kreator ga bisa pilih status — admin only) |
+| `screens-script.html` | Save script → `A.saveScript(briefId, { script, status })` |
+| `screens-progres-detail.html` | `loadScript` dari `A.loadScript(briefId)`. Section "Bukti transfer" (kreator) |
+| `screens-brief.html` | Filter brief visibility per kreator (assigned_to = username atau null). `getBriefStateSummary` dari Supabase |
+| `screens-akun.html` | Hapus 3x `localStorage.setItem(A.SESSION_KEY, ...)` — pakai `A.session` in-memory |
+| `screens-login.html` | Hapus `saveSession` + `clearSession` + auto-login check dari localStorage |
+| `docs/SESSION-NOTES.md` | +sesi 11 (this file) |
+| `supabase/add-brief-scripts.sql` | NEW: brief_scripts table + RLS + trigger + realtime |
+| `supabase/enable-brief-scripts-realtime.sql` | NEW: enable realtime publication |
+| `supabase/add-approvals.sql` | NEW: approvals table + RLS + realtime |
+| `supabase/add-payment-proofs.sql` | NEW: payment_proofs + storage bucket + RLS + realtime |
+
+## SQL yang harus dijalankan (perubahan schema sesi 11)
+
+**Wajib di Supabase SQL Editor:**
+
+1. `supabase/add-brief-scripts.sql` — tabel brief_scripts + RLS
+2. `supabase/enable-brief-scripts-realtime.sql` — publish brief_scripts ke realtime
+3. `supabase/add-approvals.sql` — tabel approvals + RLS + realtime
+4. `supabase/add-payment-proofs.sql` — payment_proofs + storage bucket + RLS
+
+Plus query manual untuk 5 admin baru (insert/update profile role=admin untuk agung/petra/putri/bagus/praja).
+
+## Verifikasi end-to-end
+
+- ✅ Approve script admin → counter vote update live (cross-tab) → quorum 3/5 tercapai → auto-update `brief_scripts.status`
+- ✅ Upload bukti transfer admin → kreator side nongol real-time di section Bukti transfer (detail progress)
+- ✅ Login 5 admin baru (agung/petra/putri/bagus/praja) — role=admin verified via `select username, role from profiles`
+- ✅ Filter visibility per kreator — pipit cuma liat brief yang assigned ke dia atau terbuka (bukan brief cherly)
+- ✅ Hapus localStorage: login ulang di Incognito → session restore dari sb.auth → ga ada `kreatorhub.session` di localStorage
+
+## Bug & lesson session 11
+
+1. **`const currentStatus` di-reassign** → ReferenceError di handler confirm. Fix: `let`. Trap yang keulang.
+2. **`renderBriefDetail` ga di-close** dengan `}` → semua kode nested. `let renderBriefDetail` di-wrap function, harus return explicit.
+3. **`overflow: hidden` di container tabel** → clipping "GIPSY RESEARCH" jadi "GIPSY RESEAR". Root cause styling, bukan data.
+4. **`render()` di input handler** → textarea ke-replace tiap keystroke → text ilang. Fix: jangan panggil `render()` di input, hanya di save.
+5. **Vercel cache agresif** — push udah live tapi browser masih serve file lama. Solusi: query string `?v=N` untuk force-bypass.
+6. **localStorage `kreatorhub.session` masih dipakai** di banyak halaman (auth guard, hydrate display name) → semua harus di-replace dengan `sb.auth.getSession()` + `A.session`.
+
+## Next steps (kalau lanjut)
+
+- Apply **role-based scope** di UI (Putri cuma liat fee modal, 4 admin lain ga liat) — saat ini semua admin lihat semua section
+- **video vote** di queue admin — saat ini cuma script yang vote-based. Video masih pakai `approveProgress/rejectProgress/requestRevision` single-admin (di luar scope Sesi 11)
+- Hapus legacy `kreatorhub.brief-state.*` & `kreatorhub.script-drafts.*` di localStorage user (cleanup manual via DevTools)
+- Shorten Vercel URL (Project Name) atau custom domain
+
+---
+
+End of session 11.

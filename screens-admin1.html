@@ -358,7 +358,7 @@
 
     .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
 
-    .brand-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--muted); }
+    .brand-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--muted); white-space: nowrap; }
 
     /* brand cell: clickable (filter by brand), chevron muncul sebagai hint */
     .brand-cell {
@@ -369,6 +369,7 @@
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.12s ease;
+      white-space: nowrap;
     }
     .brand-cell:hover,
     .brand-cell:focus-visible {
@@ -402,6 +403,7 @@
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.12s ease;
+      white-space: nowrap;
     }
     .pic-cell:hover,
     .pic-cell:focus-visible {

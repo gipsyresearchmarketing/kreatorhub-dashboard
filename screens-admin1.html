@@ -2877,7 +2877,9 @@
 
     // Normalisasi nomor → format wa.me (mis. 08977270062 / +62 897... → 628977270062). null kalau invalid.
     function toWaNumber(raw) {
-      if (!raw) return null;
+      // Trim + treat empty string / whitespace as missing (profiles.phone bisa
+      // '' kalau pernah di-clear manual via SQL — jangan anggap valid)
+      if (!raw || !String(raw).trim()) return null;
       let d = String(raw).replace(/\D/g, '');
       if (!d) return null;
       if (d.charAt(0) === '0') d = '62' + d.slice(1);

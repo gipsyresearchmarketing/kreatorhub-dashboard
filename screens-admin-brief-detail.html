@@ -302,6 +302,32 @@
     .video-list[hidden] { display: none; }
     .video-list { margin-top: 12px; }
 
+    /* inline video player (responsive 16:9) */
+    .video-player-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 10px;
+    }
+    .video-player-wrap iframe,
+    .video-player-wrap video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      border: 0;
+      display: block;
+    }
+    .video-player-placeholder {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px;
+    }
+
     .timeline { display: flex; flex-direction: column; gap: 12px; }
     .timeline-item { display: flex; gap: 12px; }
     .timeline-item .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
@@ -937,7 +963,51 @@
           if (n >= 1e3) return 'Rp ' + Math.round(n/1e3) + ' rb';
           return 'Rp ' + n.toLocaleString('id-ID');
         }
-          
+
+        // Deteksi tipe URL → render embed yang sesuai
+        // Support: YouTube (watch?v=, youtu.be, /shorts/), TikTok (vm.tiktok, /video/),
+        // MP4 direct, atau fallback link biasa
+        function renderVideoEmbed(link) {
+          if (!link || link === '—') {
+            return `<div class="video-player-placeholder">Belum ada link video</div>`;
+          }
+          // Storage path (format: "username/timestamp-filename.mp4") → fetch signed URL
+          if (link.startsWith('[storage] ')) {
+            const path = link.slice('[storage] '.length);
+            const sb = window.AdminApp && window.AdminApp.sb;
+            if (sb) {
+              // Async resolve; render placeholder dulu, swap setelah dapat URL
+              sb.storage.from('videos').createSignedUrl(path, 3600).then(res => {
+                const wrap = document.querySelector(`[data-video-link="${CSS.escape(link)}"]`);
+                if (wrap && res.signedUrl) {
+                  wrap.innerHTML = `<video controls preload="metadata" src="${escapeHtml(res.signedUrl)}"></video>`;
+                }
+              }).catch(() => {});
+            }
+            return `<video controls preload="metadata" src=""></video>`;
+          }
+          // YouTube — beberapa format
+          let m = link.match(/youtube\.com\/watch\?v=([\w-]{11})/);
+          if (!m) m = link.match(/youtube\.com\/shorts\/([\w-]{11})/);
+          if (!m) m = link.match(/youtu\.be\/([\w-]{11})/);
+          if (m) {
+            return `<iframe src="https://www.youtube.com/embed/${m[1]}?rel=0" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+          }
+          // TikTok — share link (vm.tiktok.com/ID) atau canonical (tiktok.com/@user/video/ID)
+          let tt = link.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+          if (!tt) tt = link.match(/vm\.tiktok\.com\/(\w+)/);
+          if (tt) {
+            const videoId = tt[1];
+            return `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+          }
+          // MP4 / direct video URL
+          if (/\.mp4($|\?)/i.test(link)) {
+            return `<video controls preload="metadata" src="${escapeHtml(link)}"></video>`;
+          }
+          // Fallback — bukan video URL yang dikenali, kasih link buka eksternal
+          return `<div class="video-player-placeholder"><a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="color: var(--accent);">Buka video di tab baru ↗</a></div>`;
+        }
+
         const scriptState = loadScript();
         const hasScript = scriptState && (scriptState.script || '').trim().length > 0;
         let currentStatus = (scriptState && scriptState.status) || brief.status;
@@ -1086,12 +1156,14 @@
               const stBoxCls = videoStateClass(v.status);
               return `
           <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
+            <div class="video-player-wrap" data-video-link="${escapeHtml(v.link)}">
+              ${renderVideoEmbed(v.link)}
+            </div>
             <div class="vi-top">
               <div class="v-info">
                 <strong>${escapeHtml(v.title)}</strong>
-                <small>${escapeHtml(v.date)}</small>
+                <small>${escapeHtml(v.date)} · ${fmtRp(v.fee)}</small>
               </div>
-              <span class="v-fee">${fmtRp(v.fee)}</span>
               <span class="vi-status status ${stCls}">${stLabel}</span>
             </div>
             <div class="vi-actions">
@@ -1099,36 +1171,19 @@
               <button class="btn btn-info-soft" data-video-action="revision" data-video-id="${escapeHtml(v.title)}">Revisi</button>
               <button class="btn btn-danger-soft" data-video-action="reject" data-video-id="${escapeHtml(v.title)}">Tolak</button>
             </div>
-            <div class="vi-toolbar">
-              <a href="#" class="vi-tool-link" data-link-url="${escapeHtml(v.link)}">Buka video ↗</a>
-              <a href="#" class="vi-tool-link" data-tool="copy" data-link-url="${escapeHtml(v.link)}">Salin link</a>
-            </div>
           </div>`;
             }).join('')
           : '';
-          
-        // video section: tampil kalau BRIEFS punya data video (gate script-aman dihapus biar prototype-friendly)
+
+        // video section: tampil langsung semua video (no toggle — simpler & to-the-point)
         let videosHeaderMeta;
         let videosHtml;
         if (brief.videos.length === 0) {
           videosHeaderMeta = 'Belum ada video';
           videosHtml = '<p class="meta" style="padding: 8px 0;">Belum ada video di-submit untuk brief ini.</p>';
         } else {
-          videosHeaderMeta = 'Akses hanya lewat klik · default tersembunyi';
-          videosHtml = `
-          <button type="button" class="video-toggle" id="video-toggle" aria-expanded="false" aria-controls="video-list">
-            <span class="vt-left">
-              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M5 4l14 8-14 8z"/></svg>
-              <span class="vt-label">Lihat ${brief.videos.length} video</span>
-            </span>
-            <span class="vt-right">
-              <span class="vt-meta">${brief.videos.filter(v => v.status === 'paid').length} lunas · ${brief.videos.filter(v => v.status === 'pending').length} menunggu</span>
-              <svg class="vt-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
-            </span>
-          </button>
-          <div class="video-list" id="video-list" hidden>
-            ${videosListHtml}
-          </div>`;
+          videosHeaderMeta = `${brief.videos.length} video · ${brief.videos.filter(v => v.status === 'paid').length} lunas · ${brief.videos.filter(v => v.status === 'pending').length} menunggu`;
+          videosHtml = `<div class="video-list" id="video-list">${videosListHtml}</div>`;
         }
           
         const timelineHtml = brief.timeline.map(t => `
@@ -1222,23 +1277,6 @@
           return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
         }
           
-        // ---- video toggle: collapse default, click untuk buka daftar ----
-        const videoToggleBtn = document.getElementById('video-toggle');
-        const videoListEl    = document.getElementById('video-list');
-        const videoLabelEl   = videoToggleBtn?.querySelector('.vt-label');
-        videoToggleBtn?.addEventListener('click', () => {
-          const isOpen = videoToggleBtn.getAttribute('aria-expanded') === 'true';
-          if (isOpen) {
-            videoToggleBtn.setAttribute('aria-expanded', 'false');
-            videoListEl.setAttribute('hidden', '');
-            if (videoLabelEl) videoLabelEl.textContent = `Lihat ${brief.videos.length} video`;
-          } else {
-            videoToggleBtn.setAttribute('aria-expanded', 'true');
-            videoListEl.removeAttribute('hidden');
-            if (videoLabelEl) videoLabelEl.textContent = `Sembunyikan ${brief.videos.length} video`;
-          }
-        });
-          
         // ---- action modal ----
         const actionModal = document.getElementById('action-modal');
         const actionModalTitle  = document.getElementById('action-modal-title');
@@ -1304,28 +1342,7 @@
         const VIDEO_ACT_TARGET = { approve: 'paid', revision: 'pending', reject: 'rejected' };
         const VIDEO_ACT_LABEL  = { approve: 'Setujui', revision: 'Minta revisi', reject: 'Tolak' };
         document.getElementById('video-list')?.addEventListener('click', (e) => {
-          // 1. tool clicks (Buka video / Salin link) — handle BEFORE video actions
-          const toolLink = e.target.closest('[data-link-url]');
-          if (toolLink) {
-            e.preventDefault();
-            e.stopPropagation();
-            const url = toolLink.dataset.linkUrl;
-            if (toolLink.dataset.tool === 'copy') {
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(
-                  () => showToast('Link disalin ke clipboard.'),
-                  () => showToast('Link: ' + url)
-                );
-              } else {
-                showToast('Link: ' + url);
-              }
-            } else {
-              // default tool: open in new tab (simulated)
-              showToast(`Membuka video di tab baru (simulasi): ${url}`);
-            }
-            return;
-          }
-          // 2. video action buttons (Setujui/Revisi/Tolak)
+          // video action buttons (Setujui/Revisi/Tolak)
           const btn = e.target.closest('[data-video-action]');
           if (!btn) return;
           const act = btn.dataset.videoAction;

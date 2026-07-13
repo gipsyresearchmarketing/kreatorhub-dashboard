@@ -187,11 +187,13 @@
     .toolbar .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); }
     .filter-select { padding: 8px 28px 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 13px; font-family: inherit; appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.6'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; }
 
-    .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .ds-table th, .ds-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: auto; }
+    .ds-table th, .ds-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; overflow: visible; }
     .ds-table th { color: var(--muted); font-weight: 500; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
     .ds-table tbody tr:hover { background: var(--fg-soft); }
     .ds-table .num-col { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+    /* Brief table: kasih column brand min-width biar 'Gipsy Research' ga ke-truncate */
+    #briefs-table td:nth-child(2) { min-width: 150px; }
 
     .status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
     .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }

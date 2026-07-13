@@ -302,31 +302,17 @@
     .video-list[hidden] { display: none; }
     .video-list { margin-top: 12px; }
 
-    /* inline video player (responsive 16:9) */
-    .video-player-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: #000;
-      margin-bottom: 10px;
-    }
-    .video-player-wrap iframe,
-    .video-player-wrap video {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      border: 0;
+    /* video link (compact, no inline player) */
+    .video-item .video-link {
       display: block;
-    }
-    .video-player-placeholder {
-      position: absolute; inset: 0;
-      display: grid; place-items: center;
-      color: rgba(255,255,255,0.6);
+      margin-top: 4px;
       font-size: 12px;
-      text-align: center;
-      padding: 16px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      text-decoration: none;
+      word-break: break-all;
     }
+    .video-item .video-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 
     .timeline { display: flex; flex-direction: column; gap: 12px; }
     .timeline-item { display: flex; gap: 12px; }
@@ -964,50 +950,6 @@
           return 'Rp ' + n.toLocaleString('id-ID');
         }
 
-        // Deteksi tipe URL → render embed yang sesuai
-        // Support: YouTube (watch?v=, youtu.be, /shorts/), TikTok (vm.tiktok, /video/),
-        // MP4 direct, atau fallback link biasa
-        function renderVideoEmbed(link) {
-          if (!link || link === '—') {
-            return `<div class="video-player-placeholder">Belum ada link video</div>`;
-          }
-          // Storage path (format: "username/timestamp-filename.mp4") → fetch signed URL
-          if (link.startsWith('[storage] ')) {
-            const path = link.slice('[storage] '.length);
-            const sb = window.AdminApp && window.AdminApp.sb;
-            if (sb) {
-              // Async resolve; render placeholder dulu, swap setelah dapat URL
-              sb.storage.from('videos').createSignedUrl(path, 3600).then(res => {
-                const wrap = document.querySelector(`[data-video-link="${CSS.escape(link)}"]`);
-                if (wrap && res.signedUrl) {
-                  wrap.innerHTML = `<video controls preload="metadata" src="${escapeHtml(res.signedUrl)}"></video>`;
-                }
-              }).catch(() => {});
-            }
-            return `<video controls preload="metadata" src=""></video>`;
-          }
-          // YouTube — beberapa format
-          let m = link.match(/youtube\.com\/watch\?v=([\w-]{11})/);
-          if (!m) m = link.match(/youtube\.com\/shorts\/([\w-]{11})/);
-          if (!m) m = link.match(/youtu\.be\/([\w-]{11})/);
-          if (m) {
-            return `<iframe src="https://www.youtube.com/embed/${m[1]}?rel=0" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
-          }
-          // TikTok — share link (vm.tiktok.com/ID) atau canonical (tiktok.com/@user/video/ID)
-          let tt = link.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
-          if (!tt) tt = link.match(/vm\.tiktok\.com\/(\w+)/);
-          if (tt) {
-            const videoId = tt[1];
-            return `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
-          }
-          // MP4 / direct video URL
-          if (/\.mp4($|\?)/i.test(link)) {
-            return `<video controls preload="metadata" src="${escapeHtml(link)}"></video>`;
-          }
-          // Fallback — bukan video URL yang dikenali, kasih link buka eksternal
-          return `<div class="video-player-placeholder"><a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="color: var(--accent);">Buka video di tab baru ↗</a></div>`;
-        }
-
         const scriptState = loadScript();
         const hasScript = scriptState && (scriptState.script || '').trim().length > 0;
         let currentStatus = (scriptState && scriptState.status) || brief.status;
@@ -1154,15 +1096,14 @@
               const stLabel = v.status === 'paid' ? 'Disetujui' : v.status === 'rejected' ? 'Ditolak' : v.status === 'pending' ? 'Menunggu' : v.status;
               const stCls   = v.status === 'paid' ? 'approved' : v.status === 'rejected' ? 'rejected' : 'pending';
               const stBoxCls = videoStateClass(v.status);
+              const linkDisplay = (v.link && v.link !== '—') ? v.link : '(belum ada link)';
               return `
           <div class="video-item ${stBoxCls}" data-video-row="${escapeHtml(v.title)}">
-            <div class="video-player-wrap" data-video-link="${escapeHtml(v.link)}">
-              ${renderVideoEmbed(v.link)}
-            </div>
             <div class="vi-top">
               <div class="v-info">
                 <strong>${escapeHtml(v.title)}</strong>
                 <small>${escapeHtml(v.date)} · ${fmtRp(v.fee)}</small>
+                <a href="${escapeHtml(v.link || '#')}" target="_blank" rel="noopener" class="video-link">${escapeHtml(linkDisplay)} ↗</a>
               </div>
               <span class="vi-status status ${stCls}">${stLabel}</span>
             </div>

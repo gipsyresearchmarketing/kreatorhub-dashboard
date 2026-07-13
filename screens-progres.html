@@ -133,7 +133,13 @@
         let items = A.data.progress.filter(p => A.userBrands.includes(p.brand));
         if (currentBrandFilter !== 'all')   items = items.filter(p => p.brand === currentBrandFilter);
         if (currentStatusFilter !== 'all')  items = items.filter(p => p.status === currentStatusFilter);
-        if (currentPeriodFilter != null)    items = items.filter(p => parseDaysAgo(p.meta) < currentPeriodFilter);
+        // Period filter: pakai updated_at (timestamp asli) — parseDaysAgo(meta) ga
+        // reliable karena meta text bisa arbitrary string ("Terkirim untuk review",
+        // "silakan di riview", dll) yang ga match regex Indonesian time phrases.
+        if (currentPeriodFilter != null) {
+          const cutoffMs = Date.now() - (currentPeriodFilter * 24 * 60 * 60 * 1000);
+          items = items.filter(p => p.updated_at && new Date(p.updated_at).getTime() >= cutoffMs);
+        }
         if (!items.length) {
           progressListEl.innerHTML = '<div class="empty-state">Tidak ada video untuk filter ini.</div>';
           return;

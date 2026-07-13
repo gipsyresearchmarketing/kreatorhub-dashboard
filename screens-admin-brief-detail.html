@@ -900,7 +900,9 @@
 
       function renderBriefDetail(brief) {
         pageTitle.textContent = brief.title;
-        pageLead.textContent = `${brief.brand} · ${brief.creator} · deadline ${brief.deadline}`;
+        // Tampilin kreator yang submit video kalau ada, fallback ke assigned_to
+        const displayCreator = (brief.videos && brief.videos[0] && brief.videos[0].kreator) || brief.assigned_to || '—';
+        pageLead.textContent = `${brief.brand} · ${displayCreator} · deadline ${brief.deadline}`;
           
         const STATUS_LABEL = {
           draft: 'Draft', editing: 'Sedang ditulis', review: 'Siap review',
@@ -1254,7 +1256,7 @@
             }
             const myV = A.myVote('script', briefId);
             showToast(`Vote "${myV === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
-            render();
+            renderBriefDetail(brief);
           } catch (err) {
             showToast('Vote gagal: ' + err.message);
             btn.disabled = false;
@@ -1268,11 +1270,11 @@
             const counter = document.getElementById('script-vote-counter');
             if (counter) renderScriptVoteCounter();
             // Re-render full untuk sync button state
-            render();
+            renderBriefDetail(brief);
           }
           if (e.detail && e.detail.type === 'vote' && e.detail.targetType === 'video') {
             // Re-render full supaya video list ke-update (counter, status badge, myVote button state)
-            render();
+            renderBriefDetail(brief);
           }
         });
           
@@ -1304,7 +1306,7 @@
             } else {
               showToast(`Vote "${decision === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
             }
-            render();
+            renderBriefDetail(brief);
           } catch (err) {
             showToast('Vote gagal: ' + err.message);
             btn.disabled = false;
@@ -1373,8 +1375,8 @@
         }
           
         function renderVideoList() {
-          // Deprecated: pakai full render() aja. Tetep ada sebagai no-op biar call site lama ga break.
-          render();
+          // Deprecated: pakai full renderBriefDetail() aja. Tetep ada sebagai no-op biar call site lama ga break.
+          renderBriefDetail(brief);
         }
           
         function renderFeeStatus() {

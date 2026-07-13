@@ -2755,8 +2755,31 @@
         feeModalConfirm.textContent = 'Menyimpan…';
         try {
           await A.updatePayment(id, { fee: newFee, status: 'paid', paid_at: new Date().toISOString() });
+          // Trigger notif WA ke kreator (Jalur A — manual wa.me link)
+          // Sama pattern dengan approve konten (line 3148) — buka modal
+          // wa.me dengan nomor + pesan ke kreator. Admin klik "Buka WhatsApp"
+          // → WA kebuka → admin tap Send.
+          const pay = currentFeePayment;
+          const prof = (A.data.profiles || []).find(p => p.username === pay.creator);
+          const name = prof ? (prof.display_name || prof.username) : (pay.creatorNm || pay.creator);
+          const phone = prof ? prof.phone : null;
+          const bankInfo = prof && (prof.bank_name || prof.bank_account)
+            ? `${prof.bank_name || ''}${prof.bank_name && prof.bank_account ? ' · ' : ''}${prof.bank_account || ''}`
+            : null;
+          const msg = (currentFeeChannel === 'wa' || currentFeeChannel === 'both')
+            ? `Halo ${name}, fee kamu untuk video "${pay.title}" (${formatRp(newFee)}) udah ditransfer ya${
+                bankInfo ? ` ke ${bankInfo}` : ''
+              }. Cek dashboard buat lihat bukti transfer-nya. Thanks!`
+            : null;
           closeFeeModal();
-          showToast(`Pembayaran ${formatRp(newFee)} ditandai lunas. Notifikasi dikirim ke kreator lewat ${channelLabel}.`);
+          showToast(`Pembayaran ${formatRp(newFee)} ditandai lunas${msg ? '. Notifikasi WhatsApp siap dikirim.' : '.'}`);
+          // Buka wa.me modal kalo channel termasuk WA
+          if (msg && phone && typeof openWaNotif === 'function') {
+            openWaNotif(name, phone, msg);
+          } else if (msg && !phone) {
+            // Kreator belum isi nomor WA
+            showToast('Kreator belum isi nomor WhatsApp di menu Akun — notif WA dilewati.', 'error');
+          }
         } catch (err) {
           showToast('Gagal simpan pembayaran: ' + err.message, 'error');
         } finally {

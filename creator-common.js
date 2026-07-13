@@ -57,7 +57,7 @@
 
   // Lookup profile kreator dari Supabase (single source of truth)
   const { data: profile, error: profErr } = await sb.from('profiles')
-    .select('id, username, role, display_name, avatar')
+    .select('id, username, role, display_name, avatar, phone, email, bank_name, bank_account')
     .eq('id', user.id)
     .single();
   if (profErr || !profile) {
@@ -72,7 +72,11 @@
     role: profile.role,
     displayName: profile.display_name || profile.username,
     avatar: profile.avatar || null,
-    userEmail: user.email
+    userEmail: user.email,
+    phone: profile.phone || '',
+    email: profile.email || user.email || '',
+    bankName: profile.bank_name || '',
+    bankAccount: profile.bank_account || ''
   };
 
   // ---- brand list (semua kreator punya akses ke semua brand) ----
@@ -264,6 +268,31 @@
     return newId;
   }
 
+  // ---- save profile (display_name, phone, email, bank_name, bank_account) ----
+  // Single source of truth = Supabase profiles table.
+  async function saveProfile(fields) {
+    if (!session || !session.userId) throw new Error('Session tidak ditemukan');
+    // Whitelist kolom yang boleh di-update dari kreator side
+    const allowed = {};
+    if (typeof fields.displayName === 'string') allowed.display_name = fields.displayName;
+    if (typeof fields.phone === 'string') allowed.phone = fields.phone;
+    if (typeof fields.email === 'string') allowed.email = fields.email;
+    if (typeof fields.bankName === 'string') allowed.bank_name = fields.bankName;
+    if (typeof fields.bankAccount === 'string') allowed.bank_account = fields.bankAccount;
+    if (typeof fields.avatar === 'string' || fields.avatar === null) allowed.avatar = fields.avatar;
+    if (Object.keys(allowed).length === 0) return;
+    const updRes = await sb.from('profiles').update(allowed).eq('id', session.userId);
+    if (updRes.error) throw new Error('Simpan profil gagal: ' + updRes.error.message);
+    // Update local session mirror
+    if (allowed.display_name != null) session.displayName = allowed.display_name;
+    if (allowed.phone != null) session.phone = allowed.phone;
+    if (allowed.email != null) session.email = allowed.email;
+    if (allowed.bank_name != null) session.bankName = allowed.bank_name;
+    if (allowed.bank_account != null) session.bankAccount = allowed.bank_account;
+    if (allowed.avatar !== undefined) session.avatar = allowed.avatar;
+    await refresh();
+  }
+
   // ---- expose API ----
   const A = {
     sb,
@@ -276,6 +305,7 @@
     saveScript,
     uploadFile,
     submitProgress,
+    saveProfile,
     getProofs: (paymentId) => (data.paymentProofs || []).filter(p => p.payment_id === paymentId),
     getProofDownloadUrl: async (filePath, expiresIn) => {
       const opts = expiresIn || 3600;

@@ -259,22 +259,14 @@
       const emailEl = document.getElementById('acc-email');
       const bankNameEl = document.getElementById('acc-bank-name');
       const bankAccountEl = document.getElementById('acc-bank-account');
+      // Prefill dari A.session (single source of truth = Supabase profiles).
+      // creator-common.js udah populate session.{displayName, phone, email, bankName, bankAccount}
+      // dari profiles table pas page load — jadi ga perlu refetch manual lagi.
       namaEl.value = A.session.displayName || '';
-      waEl.value = A.session.wa || '';
+      waEl.value = A.session.phone || '';
       emailEl.value = A.session.email || '';
       bankNameEl.value = A.session.bankName || '';
       bankAccountEl.value = A.session.bankAccount || '';
-
-      // prefill nomor WA dari Supabase profiles.phone (sumber yang dibaca admin); fallback session.wa
-      if (A.sb && A.session.userId) {
-        A.sb.from('profiles').select('phone').eq('id', A.session.userId).single()
-          .then(function (res) {
-            if (res && res.data && res.data.phone) {
-              waEl.value = res.data.phone;
-              updateContactStatus();
-            }
-          })
-          .catch(function () {});
       }
 
       function updateContactStatus() {
@@ -307,7 +299,7 @@
       }
 
       // ---- save all (Nama + WA + Email + Bank) ----
-      document.getElementById('btn-save-all').addEventListener('click', function () {
+      document.getElementById('btn-save-all').addEventListener('click', async function () {
         const nama = namaEl.value.trim();
         const wa = waEl.value.trim();
         const em = emailEl.value.trim();
@@ -323,23 +315,21 @@
         if (bankAccount.length < 4) { A.showToast('Nomor rekening terlalu pendek.', 'error'); bankAccountEl.focus(); return; }
         if (!/^[\d\s\-]+$/.test(bankAccount)) { A.showToast('Nomor rekening hanya boleh angka, spasi, atau strip.', 'error'); bankAccountEl.focus(); return; }
 
-        A.session.displayName = nama;
-        A.session.wa = wa;
-        A.session.email = em;
-        A.session.bankName = bankName;
-        A.session.bankAccount = bankAccount;
+        const btn = document.getElementById('btn-save-all');
+        const origLabel = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Menyimpan…';
         try {
-          // Mirror di A.session (in-memory) cukup — sb.auth Supabase sudah handle session persistence
-          A.showToast('Perubahan disimpan.');
+          // Single source of truth = Supabase profiles. saveProfile() handles all 5 fields.
+          await A.saveProfile({
+            displayName: nama,
+            phone: wa,
+            email: em,
+            bankName: bankName,
+            bankAccount: bankAccount
+          });
+          A.showToast('Perubahan disimpan ke server ✓');
           document.getElementById('save-status').textContent = 'Tersimpan · ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-          // sync nomor WA ke Supabase profiles supaya admin bisa kirim notifikasi
-          if (A.sb && A.session.userId) {
-            A.sb.from('profiles').update({ phone: wa }).eq('id', A.session.userId)
-              .then(function (res) {
-                if (res && res.error) A.showToast('Nomor tersimpan lokal, tapi gagal sync ke server: ' + res.error.message, 'error');
-              })
-              .catch(function () {});
-          }
           // update topbar + identitas block
           document.getElementById('session-name').textContent = nama;
           document.getElementById('foto-name').textContent = nama;
@@ -352,6 +342,9 @@
           updateContactStatus();
         } catch (e) {
           A.showToast('Gagal simpan: ' + e.message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = origLabel;
         }
       });
 
@@ -374,7 +367,6 @@
       });
 
       // ---- reset password block dihapus — Ubah password sudah cukup ----
-    });
   </script>
 </body>
 </html>

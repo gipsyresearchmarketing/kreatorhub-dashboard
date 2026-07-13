@@ -1294,7 +1294,7 @@
           
         actionModalCancel?.addEventListener('click', () => actionModal.classList.remove('show'));
         actionModal?.addEventListener('click', (e) => { if (e.target === actionModal) actionModal.classList.remove('show'); });
-        actionModalConfirm?.addEventListener('click', () => {
+        actionModalConfirm?.addEventListener('click', async () => {
           if (!pendingAction) return;
           const note = actionModalNote.value.trim();
           const channels = [...actionModalChannels.querySelectorAll('.notif-channel.active')].map(c => c.dataset.channel);
@@ -1309,7 +1309,18 @@
             if (v) v.status = target;
             targetTxt = `video "${vTitle}"`;
           } else {
-            saveScriptStatus(target);
+            // Script action — sinkron ke Supabase biar kreator side liat perubahan
+            const A = window.AdminApp;
+            const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
+            const scriptKreator = sbBrief && sbBrief.assigned_to;
+            if (A && A.updateScript && scriptKreator) {
+              try {
+                await A.updateScript(briefId, scriptKreator, { status: target });
+              } catch (err) {
+                showToast('Sync script gagal: ' + err.message);
+              }
+            }
+            saveScriptStatus(target); // localStorage backup
             currentStatus = target;
             targetTxt = 'script';
           }

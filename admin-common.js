@@ -205,6 +205,16 @@
       detail: { type: 'brief-delete', id }
     }));
   }
+  async function updateScript(briefId, kreator, fields) {
+    // brief_scripts: unique(brief_id, kreator) — update by composite key
+    const updRes = await sb.from('brief_scripts').update(fields)
+      .eq('brief_id', briefId).eq('kreator', kreator);
+    if (updRes.error) throw new Error('Update script status gagal: ' + updRes.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'script-update', briefId, kreator, fields }
+    }));
+  }
   async function updateBrief(id, fields) {
     const updRes = await sb.from('briefs').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update brief gagal: ' + updRes.error.message);
@@ -257,6 +267,7 @@
     requestRevision,
     createBrief,
     deleteBrief,
+    updateScript,
     updateBrief,
     updatePayment,
     showToast,

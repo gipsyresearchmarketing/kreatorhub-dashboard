@@ -393,9 +393,37 @@
     deletePaymentProof,
     getProofDownloadUrl,
     showToast,
-    handleSignOut
+    handleSignOut,
+    hydrateProfile
   };
   window.AdminApp = A;
+
+  // ---- hydrate profile UI dari session (replace hardcoded "Mira R." defaults) ----
+  function hydrateProfile() {
+    if (!session || !session.displayName) return;
+    const initials = (session.displayName || session.username || '?')
+      .split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const _tm = document.getElementById('profile-trigger-meta');
+    if (_tm) _tm.textContent = 'Admin · ' + (session.displayName || session.username);
+    const _av = document.getElementById('profile-trigger-avatar');
+    if (_av) _av.textContent = initials;
+    const _dn = document.getElementById('profile-dropdown-name');
+    if (_dn) _dn.textContent = session.displayName || session.username;
+    const _de = document.getElementById('profile-dropdown-email');
+    if (_de) _de.textContent = session.userEmail || '';
+    const _pca = document.getElementById('profile-card-avatar');
+    if (_pca) _pca.textContent = initials;
+    const _pcn = document.getElementById('profile-card-name');
+    if (_pcn) _pcn.textContent = session.displayName || session.username;
+    const _pce = document.getElementById('profile-card-email');
+    if (_pce) _pce.textContent = session.userEmail || '';
+    const _an = document.getElementById('admin-name');
+    if (_an && !_an.value) _an.value = session.displayName || session.username || '';
+    const _ae = document.getElementById('admin-email');
+    if (_ae && !_ae.value) _ae.value = session.userEmail || '';
+    const _lm = document.getElementById('login-as-meta');
+    if (_lm) _lm.textContent = (session.displayName || '—') + ' · ' + (session.userEmail || '—');
+  }
 
   // ---- first refresh ----
   try {
@@ -466,6 +494,14 @@
   } catch (e) {
     console.error('[admin-realtime] payment_proofs subscription error:', e);
   }
+
+  // ---- hydrate profile UI (ganti hardcoded "Mira R." defaults dari HTML) ----
+  // Dijalankan setelah adminapp:ready supaya DOM element sudah siap di-parse.
+  hydrateProfile();
+  // Re-hydrate setelah data-changed event (mis. profile update dari settings)
+  document.addEventListener('adminapp:data-changed', () => {
+    setTimeout(hydrateProfile, 0);
+  });
 
   document.dispatchEvent(new CustomEvent('adminapp:ready', { detail: { data } }));
 })();

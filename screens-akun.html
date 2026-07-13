@@ -151,13 +151,46 @@
           </div>
           <div class="form-grid-2">
             <div class="field">
-              <label for="acc-bank-name">Nama bank</label>
-              <input type="text" class="input" id="acc-bank-name" placeholder="mis. BCA, Mandiri, BNI" />
+              <label for="acc-bank-name">Nama bank / e-wallet</label>
+              <select class="input" id="acc-bank-name">
+                <option value="">— Pilih bank atau e-wallet —</option>
+                <optgroup label="Bank">
+                  <option value="BCA">BCA</option>
+                  <option value="BRI">BRI</option>
+                  <option value="BNI">BNI</option>
+                  <option value="Mandiri">Mandiri</option>
+                  <option value="CIMB Niaga">CIMB Niaga</option>
+                  <option value="BTN">BTN</option>
+                  <option value="Bank Danamon">Bank Danamon</option>
+                  <option value="Permata">Permata</option>
+                  <option value="Maybank">Maybank</option>
+                  <option value="HSBC">HSBC</option>
+                  <option value="OCBC NISP">OCBC NISP</option>
+                  <option value="Panin">Panin</option>
+                  <option value="Bank Bukopin">Bank Bukopin</option>
+                  <option value="Bank Mega">Bank Mega</option>
+                  <option value="Bank Syariah Indonesia (BSI)">Bank Syariah Indonesia (BSI)</option>
+                  <option value="Muamalat">Muamalat</option>
+                </optgroup>
+                <optgroup label="E-Wallet">
+                  <option value="GoPay">GoPay</option>
+                  <option value="OVO">OVO</option>
+                  <option value="DANA">DANA</option>
+                  <option value="ShopeePay">ShopeePay</option>
+                  <option value="LinkAja">LinkAja</option>
+                  <option value="Jenius">Jenius</option>
+                  <option value="Sakuku">Sakuku</option>
+                  <option value="iSaku">iSaku</option>
+                  <option value="DOKU">DOKU</option>
+                  <option value="PayPal">PayPal</option>
+                </optgroup>
+                <option value="Lainnya">Lainnya (tulis manual di catatan)</option>
+              </select>
               <div class="field-status">Tujuan transfer fee per video</div>
             </div>
             <div class="field">
-              <label for="acc-bank-account">Nomor rekening <span class="req">*</span></label>
-              <input type="text" class="input" id="acc-bank-account" placeholder="mis. 1234567890" inputmode="numeric" />
+              <label for="acc-bank-account">Nomor rekening / HP <span class="req">*</span></label>
+              <input type="text" class="input" id="acc-bank-account" placeholder="mis. 1234567890 atau 081234567890" inputmode="numeric" />
               <div class="field-status" id="status-bank">Wajib diisi untuk transfer fee iklan</div>
             </div>
           </div>
@@ -265,7 +298,18 @@
       namaEl.value = A.session.displayName || '';
       waEl.value = A.session.phone || '';
       emailEl.value = A.session.email || '';
-      bankNameEl.value = A.session.bankName || '';
+      // Set select value — kalau saved value ga ada di list, tambahin option synthetic
+      const savedBank = A.session.bankName || '';
+      if (savedBank) {
+        const exists = Array.from(bankNameEl.options).some(o => o.value === savedBank);
+        if (!exists) {
+          const opt = document.createElement('option');
+          opt.value = savedBank;
+          opt.textContent = savedBank + ' (saved)';
+          bankNameEl.appendChild(opt);
+        }
+      }
+      bankNameEl.value = savedBank;
       bankAccountEl.value = A.session.bankAccount || '';
       }
 
@@ -291,7 +335,7 @@
       namaEl.addEventListener('input', markDirty);
       waEl.addEventListener('input', markDirty);
       emailEl.addEventListener('input', markDirty);
-      bankNameEl.addEventListener('input', markDirty);
+      bankNameEl.addEventListener('change', markDirty);
       bankAccountEl.addEventListener('input', markDirty);
 
       function markDirty() {
@@ -367,6 +411,7 @@
       });
 
       // ---- reset password block dihapus — Ubah password sudah cukup ----
+    });
   </script>
 </body>
 </html>

@@ -349,6 +349,8 @@
         const bankName = bankNameEl.value.trim();
         const bankAccount = bankAccountEl.value.trim();
 
+        console.log('[save] starting', { nama, wa, em, bankName, bankAccount, A: !!A, saveProfile: !!(A && A.saveProfile) });
+
         if (nama.length < 2) { A.showToast('Nama tampil minimal 2 karakter.', 'error'); namaEl.focus(); return; }
         if (!wa) { A.showToast('Nomor WhatsApp wajib diisi.', 'error'); waEl.focus(); return; }
         if (!/^[+\d][\d\s\-()]{5,}$/.test(wa)) { A.showToast('Format nomor WhatsApp tidak valid.', 'error'); waEl.focus(); return; }
@@ -371,6 +373,7 @@
             bankName: bankName,
             bankAccount: bankAccount
           });
+          console.log('[save] success');
           A.showToast('Perubahan disimpan ke server ✓');
           document.getElementById('save-status').textContent = 'Tersimpan · ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
           // update topbar + identitas block
@@ -384,6 +387,7 @@
           }
           updateContactStatus();
         } catch (e) {
+          console.error('[save] error:', e);
           A.showToast('Gagal simpan: ' + e.message, 'error');
         } finally {
           btn.disabled = false;

@@ -2778,12 +2778,41 @@
         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada brief. Klik "Brief baru" untuk membuat.</td></tr>`;
         return;
       }
+      // Status label & class per script status (from brief_scripts table)
+      const STATUS_LABEL = {
+        draft:    { label: 'Draft',           cls: 'draft' },
+        editing:  { label: 'Sedang ditulis',  cls: 'editing' },
+        review:   { label: 'Siap review',    cls: 'review' },
+        revisi:   { label: 'Perlu revisi',    cls: 'revisi' },
+        approved: { label: 'Disetujui',       cls: 'approved' },
+        rejected: { label: 'Ditolak',         cls: 'rejected' },
+        selesai:  { label: 'Selesai',         cls: 'selesai' }
+      };
+      // Helper: cari script row untuk brief ini (priority: assigned_to kreator, fallback ke kreator pertama)
+      function scriptFor(brief) {
+        const scripts = (A.data.scripts || []).filter(s => s.brief_id === brief.id);
+        if (!scripts.length) return null;
+        if (brief.assigned_to) {
+          const match = scripts.find(s => s.kreator === brief.assigned_to);
+          if (match) return match;
+        }
+        return scripts[0];
+      }
       tbody.innerHTML = items.map(b => {
         const picProfile = b.assigned_to ? profileByUsername(b.assigned_to, A.data.profiles) : null;
         const picCell = b.assigned_to
           ? escapeHtml(picProfile ? (picProfile.display_name || picProfile.username) : b.assigned_to)
           : '<span style="color: var(--muted);">Terbuka</span>';
         const feeCell = (b.fee != null && b.fee !== '') ? formatRp(b.fee) : '—';
+        // Status: dari brief_scripts kalau ada, fallback ke "Aktif" (brief baru, belum ada script)
+        const script = scriptFor(b);
+        let statusCell;
+        if (script) {
+          const meta = STATUS_LABEL[script.status] || { label: script.status, cls: 'review' };
+          statusCell = `<span class="status ${meta.cls}">${escapeHtml(meta.label)}</span>`;
+        } else {
+          statusCell = '<span class="status review">Aktif</span>';
+        }
         return `<tr data-od-id="${escapeHtml(b.id)}" data-brief-id="${escapeHtml(b.id)}">
         <td>
           <a href="screens-admin-brief-detail.html?id=${encodeURIComponent(b.id)}" class="brief-title-link">
@@ -2794,7 +2823,7 @@
         <td><span class="brand-tag">${brandTag(b.brand)}</span></td>
         <td>${picCell}</td>
         <td class="num-col">${feeCell}</td>
-        <td><span class="status review">Aktif</span></td>
+        <td>${statusCell}</td>
         <td class="num-col">${escapeHtml(b.deadline || '—')}</td>
       </tr>`;
       }).join('');

@@ -84,6 +84,39 @@
     .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
     .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
     .btn-secondary:hover { border-color: var(--fg); }
+
+    /* btn-reassign-pic: tombol "Assign ulang kreator" dengan visual cue yang jelas */
+    .btn-reassign-pic {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
+      transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+    .btn-reassign-pic:hover {
+      background: var(--accent);
+      color: var(--surface);
+      transform: translateX(2px);
+      box-shadow: 0 4px 12px color-mix(in oklch, var(--accent) 25%, transparent);
+    }
+    .btn-reassign-pic .btn-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      transition: transform 0.15s ease;
+    }
+    .btn-reassign-pic:hover .btn-arrow {
+      transform: translateX(3px);
+    }
+
+    /* brief-pic-card hover (kasih hint "editable") */
+    .brief-pic-card {
+      position: relative;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .brief-pic-card:hover {
+      border-color: color-mix(in oklch, var(--accent) 50%, var(--border));
+      box-shadow: 0 4px 16px color-mix(in oklch, var(--accent) 10%, transparent);
+    }
     .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; padding-inline: 6px; font-size: 12px; }
     .btn-ghost:hover { color: var(--fg); }
     .btn-danger { background: var(--danger); color: var(--surface); border-color: var(--danger); }
@@ -1115,17 +1148,18 @@
 
         contentEl.innerHTML = `
           <!-- 0. Kreator dituju (dengan tombol assign ulang) -->
-          <div class="card" data-od-id="brief-pic-card">
+          <div class="card brief-pic-card" data-od-id="brief-pic-card" title="Klik untuk ganti kreator">
             <div class="row-between" style="flex-wrap: wrap; gap: 12px;">
-              <div style="min-width: 0;">
-                <span class="meta" style="display: block; margin-bottom: 6px;">KREATOR DITUJU</span>
+              <div style="min-width: 0; flex: 1;">
+                <span class="meta" style="display: block; margin-bottom: 6px;">KREATOR DITUJU <span style="color: var(--accent);">· klik untuk ganti</span></span>
                 <div id="detail-pic-info" style="font-size: 15px; font-weight: 500; line-height: 1.4;">
                   ${picLabelHtml}
                 </div>
               </div>
-              <button type="button" class="btn btn-secondary" id="btn-reassign-pic" style="flex-shrink: 0;">
+              <button type="button" class="btn btn-reassign-pic" id="btn-reassign-pic" style="flex-shrink: 0;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>
                 Assign ulang kreator
+                <span class="btn-arrow" aria-hidden="true">→</span>
               </button>
             </div>
           </div>

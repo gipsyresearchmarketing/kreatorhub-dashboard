@@ -1196,7 +1196,7 @@
         </div>
         <div style="display: flex; justify-content: space-between; padding: 4px 0;">
           <span style="color: var(--muted); font-size: 12px;">Metode transfer</span>
-          <span style="font-family: var(--font-mono); font-size: 12px;">Transfer bank · BCA</span>
+          <span id="fee-modal-method" style="font-family: var(--font-mono); font-size: 12px;">—</span>
         </div>
       </div>
 
@@ -2617,6 +2617,27 @@
         feeModalCreator.textContent = pay.creatorNm || pay.creator || '—';
         feeModalAmount.value = pay.fee || 0;
         feeModalSubmitted.textContent = pay.submittedText || '—';
+        // Metode transfer — dinamis dari profiles.bank_name + bank_account
+        // (kreator ngisi di menu Akun; admin side tinggal liat)
+        const methodEl = document.getElementById('fee-modal-method');
+        if (methodEl) {
+          const A = window.AdminApp;
+          const profile = A && A.data && A.data.profiles
+            ? A.data.profiles.find(p => p.username === pay.creator)
+            : null;
+          if (profile && (profile.bank_name || profile.bank_account)) {
+            const parts = [];
+            if (profile.bank_name) parts.push(profile.bank_name);
+            if (profile.bank_account) parts.push(profile.bank_account);
+            methodEl.textContent = parts.join(' · ');
+            methodEl.style.color = 'var(--fg)';
+            methodEl.style.fontStyle = 'normal';
+          } else {
+            methodEl.textContent = 'Belum diisi kreator — tambahin di menu Akun';
+            methodEl.style.color = 'var(--danger)';
+            methodEl.style.fontStyle = 'italic';
+          }
+        }
         feeModalNote.value = '';
         currentFeeChannel = 'email';
         feeChannelBtns.forEach(b => b.classList.toggle('active', b.dataset.channel === 'email'));

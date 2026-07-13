@@ -248,10 +248,7 @@
   wireUserInfoClick();
 
   // ---- realtime subscription: brief_scripts ----
-  // Dengerin perubahan script untuk kreator ini (INSERT/UPDATE/DELETE).
-  // Filter server-side: kreator = session.username.
-  // Begitu ada perubahan dari admin side (yang update via AdminApp.updateScript),
-  // cache lokal di-update dan event di-dispatch supaya halaman re-render.
+  console.log('[realtime] setting up brief_scripts subscription for kreator:', session.username);
   try {
     const channel = sb.channel('brief_scripts_' + session.username)
       .on(
@@ -283,7 +280,7 @@
         }
       )
       .subscribe((status, err) => {
-        console.log('[realtime] brief_scripts status:', status, err || '');
+        console.log('[realtime] brief_scripts status:', status, err ? 'err=' + JSON.stringify(err) : '');
       });
     // Cleanup saat page unload
     window.addEventListener('beforeunload', () => {

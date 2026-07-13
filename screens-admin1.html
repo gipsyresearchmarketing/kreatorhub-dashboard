@@ -2786,10 +2786,23 @@
           const bankInfo = prof && (prof.bank_name || prof.bank_account)
             ? `${prof.bank_name || ''}${prof.bank_name && prof.bank_account ? ' · ' : ''}${prof.bank_account || ''}`
             : null;
+          // Kalo ada bukti transfer yg udah ke-upload, generate signed URL
+          // (1 jam expired) → include di pesan WA biar kreator bisa verify
+          let proofUrl = null;
+          if (A.getProofs && A.getProofDownloadUrl) {
+            const proofs = A.getProofs(id) || [];
+            if (proofs.length > 0) {
+              try {
+                proofUrl = await A.getProofDownloadUrl(proofs[0].file_path, 3600);
+              } catch (e) {
+                console.warn('[fee] gagal generate proof URL:', e);
+              }
+            }
+          }
           const msg = (currentFeeChannel === 'wa' || currentFeeChannel === 'both')
             ? `Halo ${name}, fee kamu untuk video "${pay.title}" (${formatRp(newFee)}) udah ditransfer ya${
                 bankInfo ? ` ke ${bankInfo}` : ''
-              }. Cek dashboard buat lihat bukti transfer-nya. Thanks!`
+              }.${proofUrl ? `\n\nBukti transfer: ${proofUrl}` : ' Cek dashboard buat lihat bukti transfer-nya.'} Thanks!`
             : null;
           closeFeeModal();
           showToast(`Pembayaran ${formatRp(newFee)} ditandai lunas${msg ? '. Notifikasi WhatsApp siap dikirim.' : '.'}`);

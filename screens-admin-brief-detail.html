@@ -941,7 +941,7 @@
           
         const scriptState = loadScript();
         const hasScript = scriptState && (scriptState.script || '').trim().length > 0;
-        const currentStatus = (scriptState && scriptState.status) || brief.status;
+        let currentStatus = (scriptState && scriptState.status) || brief.status;
         const SCRIPT_AMAN_STATUSES = ['review', 'approved', 'selesai'];
         const isScriptAman = SCRIPT_AMAN_STATUSES.includes(currentStatus);
           

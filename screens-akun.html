@@ -240,7 +240,7 @@
         const reader = new FileReader();
         reader.onload = function (ev) {
           A.session.photo = ev.target.result;
-          try { localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session)); } catch (err) { A.showToast('Gagal simpan foto: ' + err.message, 'error'); return; }
+          // session.photo di-mirror ke A.session (in-memory), ga perlu localStorage — Supabase Auth (sb.auth) sudah handle session persistence
           renderFoto();
           A.renderTopbar();
           A.showToast('Foto profil diperbarui.');
@@ -250,7 +250,7 @@
       });
       document.getElementById('btn-remove-foto').addEventListener('click', function () {
         delete A.session.photo;
-        try { localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session)); } catch (_) {}
+        // Mirror di A.session (in-memory) cukup — sb.auth Supabase sudah handle session persistence
         renderFoto();
         A.renderTopbar();
         A.showToast('Foto profil dihapus.');
@@ -333,7 +333,7 @@
         A.session.bankName = bankName;
         A.session.bankAccount = bankAccount;
         try {
-          localStorage.setItem(A.SESSION_KEY, JSON.stringify(A.session));
+          // Mirror di A.session (in-memory) cukup — sb.auth Supabase sudah handle session persistence
           A.showToast('Perubahan disimpan.');
           document.getElementById('save-status').textContent = 'Tersimpan · ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
           // sync nomor WA ke Supabase profiles supaya admin bisa kirim notifikasi

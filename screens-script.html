@@ -130,9 +130,15 @@
         if (overlap.length > 0) { matchedBrief = b; break; }
       }
 
-      // load saved script draft (kalau ada)
-      const SCRIPT_KEY = 'kreatorhub.script-drafts.' + id;
-      const savedScript = (() => { try { return localStorage.getItem(SCRIPT_KEY) || ''; } catch (_) { return ''; } })();
+      // load saved script draft dari Supabase (brief_scripts) — single source of truth
+      let savedScript = '';
+      try {
+        const A0 = window.CreatorApp;
+        if (A0 && A0.loadScript) {
+          const data = A0.loadScript(matchedBrief ? matchedBrief.id : id);
+          savedScript = (data && data.script) || '';
+        }
+      } catch (_) {}
 
       document.getElementById('page-title').textContent = item.title;
       document.getElementById('page-lead').textContent  = item.brand + ' · ' + item.meta;
@@ -221,12 +227,23 @@
         setTimeout(() => successEl.classList.remove('show'), 4000);
       });
 
-      document.getElementById('btn-save-script').addEventListener('click', function () {
+      document.getElementById('btn-save-script').addEventListener('click', async function () {
         const text = document.getElementById('script-text').value;
-        try { localStorage.setItem(SCRIPT_KEY, text); } catch (_) {}
-        A.showToast('Script draft tersimpan di browser.');
         const successEl = document.getElementById('save-success');
-        successEl.textContent = 'Script tersimpan di lokal.';
+        try {
+          if (A && A.saveScript && matchedBrief) {
+            await A.saveScript(matchedBrief.id, { script: text, status: item.status || 'draft' });
+            successEl.textContent = 'Script tersinkron ke cloud ✓';
+            A.showToast('Script tersinkron ke cloud ✓');
+          } else {
+            successEl.textContent = 'Gagal sync — Supabase belum siap.';
+            A.showToast('Gagal sync — Supabase belum siap.', 'error');
+          }
+        } catch (err) {
+          successEl.textContent = 'Gagal: ' + err.message;
+          A.showToast('Gagal: ' + err.message, 'error');
+          return;
+        }
         successEl.classList.add('show');
         setTimeout(() => successEl.classList.remove('show'), 4000);
       });

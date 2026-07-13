@@ -108,7 +108,15 @@
       }
 
       function loadScript(id) {
-        try { return localStorage.getItem('kreatorhub.script-drafts.' + id) || ''; } catch (_) { return ''; }
+        // Baca script dari Supabase (brief_scripts) via CreatorApp.loadScript
+        try {
+          const A = window.CreatorApp;
+          if (A && A.loadScript) {
+            const data = A.loadScript(id);
+            return (data && data.script) || '';
+          }
+        } catch (_) {}
+        return '';
       }
 
       function briefCard(brief, item) {
@@ -169,7 +177,7 @@
       }
 
       function scriptCard(item) {
-        const saved = loadScript(item.id);
+        const saved = loadScript(item.brief_id || item.id);
         const isEditable = (item.status === 'draft' || item.status === 'editing');
         const titleSuffix = isEditable ? ' (bisa diedit di halaman Script)' : ' (read-only)';
         return `

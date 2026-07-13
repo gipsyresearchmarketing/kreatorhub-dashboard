@@ -948,42 +948,7 @@
             localStorage.setItem(key, JSON.stringify(data));
           } catch (_) {}
         }
-          
-        // ---- seed default demo scripts (prototype) ----
-        // Supaya section Video di-submit selalu punya video + action buttons available,
-        // kita seed default script content ke localStorage untuk b-1/b-2/b-3 (status 'review')
-        // dan b-4 (draft, kosong — sesuai data). Cuma ngisi kalau slot masih kosong,
-        // jadi action admin yang udah jalan sebelumnya tetep ke-persist.
-        (function seedDemoData() {
-          const seeds = {
-            'b-1': {
-              status: 'review',
-              script: '[Hook — 0:00]\n"Pagi-pagi enaknya ngopi sachet!"\n\n[Body — 0:05]\n1. Tangan masukin sachet ke cangkir\n2. Tuangkan air panas\n3. Close-up aroma kopi mengepul\n4. Sip pertama, senyum puas\n\n[CTA — 0:25]\n"Cobain Jamuzen sachet sekarang — link di bio"'
-            },
-            'b-2': {
-              status: 'review',
-              script: '[00:00] Hook: "Bikin thumbnail 5 menit pake AI!"\n[00:05] Tools: Canva + Adobe Firefly\n[00:30] Step 1 — prompt AI\n[01:00] Step 2 — edit di Canva\n[02:00] Step 3 — resize + export\n[04:30] Result\n[04:50] CTA: "Free template di komen"'
-            },
-            'b-3': {
-              status: 'review',
-              script: 'Variasi A — Lipatan kertas unfold cepat\nVariasi B — Waktu berhenti, kertas melayang\nVariasi C — Tangan origami master close-up\n\nTotal 15 detik. Musik bebas. Tone playful.'
-            },
-            'b-4': {
-              status: 'review',
-              script: '[00:00] Hook: "Gen Z mau apa sih dari konten?"\n\n[00:30] Daftar 5 sample:\n1. Pelajar SMA, 17 th\n2. Fresh grad, 22 th\n3. Freelancer, 25 th\n4. Ibu muda, 28 th\n5. Karyawan, 24 th\n\n[01:00] Pertanyaan guide:\n- Konten apa yang lo skip?\n- Yang bikin lo berhenti scroll?\n- Iklan yg lo inget minggu ini?\n\n[05:00] Closing voice-over + tag "Gipsy Research".'
-            }
-          };
-          Object.entries(seeds).forEach(([id, data]) => {
-            const key = 'kreatorhub.brief-state.' + id;
-            if (!localStorage.getItem(key)) {
-              localStorage.setItem(key, JSON.stringify({
-                ...data,
-                lastUpdate: new Date().toISOString()
-              }));
-            }
-          });
-        })();
-          
+
         // ---- render ----
         function statusBadge(s) {
           return `<span class="status ${s}">${STATUS_LABEL[s] || s}</span>`;

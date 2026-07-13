@@ -2852,6 +2852,42 @@
       document.addEventListener('adminapp:data-changed', hydrateFromAdmin);
       // kalau AdminApp udah siap sebelum listener kepasang (race), langsung hydrate
       if (window.AdminApp && window.AdminApp.data) hydrateFromAdmin();
+
+      // Auto-notif WA: kalau ada tab admin yang aktif pas video baru di-approve
+      // (realtime broadcast dari progress_admin channel di admin-common.js),
+      // langsung popup modal wa.notif biar admin tinggal klik "Buka WhatsApp"
+      document.addEventListener('adminapp:data-changed', (e) => {
+        if (e.detail && e.detail.type === 'video-approved') {
+          const A = window.AdminApp;
+          if (!A) return;
+          // Debounce: skip kalo ada modal WA yg udah kebuka buat progress yg sama
+          const existingModal = document.getElementById('wa-notif-modal');
+          if (existingModal && existingModal.classList.contains('show')
+              && existingModal.dataset.progressId === e.detail.progressId) return;
+          // Lookup creator profile
+          const prof = (A.data.profiles || []).find(p => p.username === e.detail.kreator);
+          if (!prof) {
+            console.warn('[auto-notif] profile ga ketemu untuk', e.detail.kreator);
+            return;
+          }
+          if (!prof.phone) {
+            showToast(`Video "${e.detail.title}" udah di-approve — tapi ${prof.display_name || prof.username} belum isi nomor WhatsApp.`, 'error');
+            return;
+          }
+          const name = prof.display_name || prof.username;
+          const msg = `Halo ${name}, konten video kamu "${e.detail.title}" udah di-approve admin Gipsy Group ✓ via voting quorum 3/5. Cek dashboard buat detailnya ya. Thanks!`;
+          // Tunda sedikit biar toast "video approved" keliatan dulu
+          setTimeout(() => {
+            if (typeof openWaNotif === 'function') {
+              openWaNotif(name, prof.phone, msg);
+              // Tag modal dengan progressId biar duplicate detection works
+              const m = document.getElementById('wa-notif-modal');
+              if (m) m.dataset.progressId = e.detail.progressId;
+              showToast(`Video "${e.detail.title}" baru di-approve — modal WA siap dikirim.`);
+            }
+          }, 500);
+        }
+      });
     })();
   </script>
 

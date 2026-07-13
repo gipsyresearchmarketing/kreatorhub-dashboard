@@ -541,6 +541,47 @@
     console.error('[admin-realtime] payment_proofs subscription error:', e);
   }
 
+  // ---- realtime subscription: progress (auto-notif WA saat video approved) ----
+  // Deteksi transition ke status 'approved' atau 'selesai' → dispatch custom
+  // event supaya admin page bisa trigger modal wa.notif otomatis. Cuma works
+  // kalau ada admin tab terbuka (partial auto — gak perlu provider).
+  try {
+    const progressChannel = sb.channel('progress_admin')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'progress' },
+        async (payload) => {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+          // Trigger cuma kalau status transition ke 'approved' atau 'selesai'
+          if ((newRow.status === 'approved' || newRow.status === 'selesai')
+              && oldRow && oldRow.status !== newRow.status) {
+            console.log('[admin-realtime] video approved:', newRow.id, newRow.status);
+            // Refresh data biar profiles terbaru juga ke-pull
+            await refresh();
+            // Dispatch custom event — admin page (yang lagi aktif) handle notif
+            document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+              detail: {
+                type: 'video-approved',
+                progressId: newRow.id,
+                kreator: newRow.kreator,
+                title: newRow.title,
+                status: newRow.status
+              }
+            }));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[admin-realtime] progress status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(progressChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[admin-realtime] progress subscription error:', e);
+  }
+
   // ---- hydrate profile UI (ganti hardcoded "Mira R." defaults dari HTML) ----
   // Dijalankan setelah adminapp:ready supaya DOM element sudah siap di-parse.
   hydrateProfile();

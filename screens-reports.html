@@ -603,7 +603,6 @@
       document.getElementById('logout-confirm')?.addEventListener('click', () => {
         const keep2fa = document.getElementById('logout-keep-2fa')?.checked; // undefined kalau ga ada
         logoutModal.classList.remove('show');
-        try { localStorage.removeItem('kreatorhub.session'); } catch (_) {}
         showToast(keep2fa ? 'Sesi diakhiri. Device ini tetap diingat.' : 'Sesi diakhiri.');
         setTimeout(() => { window.location.href = 'screens-login.html'; }, 600);
       });

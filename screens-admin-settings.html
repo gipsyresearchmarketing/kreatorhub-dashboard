@@ -732,7 +732,6 @@
       document.getElementById('logout-confirm')?.addEventListener('click', () => {
         const keep2fa = document.getElementById('logout-keep-2fa')?.checked;
         logoutModal.classList.remove('show');
-        try { localStorage.removeItem('kreatorhub.session'); } catch (_) {}
         showToast(keep2fa ? 'Sesi diakhiri. Device ini tetap diingat.' : 'Sesi diakhiri. Device ini dilupakan.');
         setTimeout(() => { window.location.href = 'screens-login.html'; }, 600);
       });

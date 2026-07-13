@@ -754,16 +754,13 @@
           timeline: dynamicTimeline
         });
 
-        // Update header
-        const titleEl = document.getElementById('page-title');
-        const leadEl  = document.getElementById('page-lead');
+        // Update header (pakai outer-scoped refs: pageTitle, pageLead, contentEl)
         const b = BRIEFS[briefId];
-        if (titleEl) titleEl.textContent = b.title;
-        if (leadEl)  leadEl.textContent = b.brand + ' · deadline ' + b.deadline;
+        if (pageTitle) pageTitle.textContent = b.title;
+        if (pageLead)  pageLead.textContent = b.brand + ' · deadline ' + b.deadline;
 
         // Re-render video list & timeline
         const briefObj = BRIEFS[briefId];
-        const contentEl = document.getElementById('content-area');
         if (!contentEl) return;
         // Cari section yang berisi video & timeline
         const allCards = contentEl.querySelectorAll('.card');

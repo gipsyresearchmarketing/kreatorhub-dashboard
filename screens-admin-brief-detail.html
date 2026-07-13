@@ -1039,7 +1039,7 @@
           
         const scriptBlock = (hasScript
           ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
-             <small class="meta" style="display: block; margin-top: 6px;">Disimpan oleh kreator di browser-nya (lokal). <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
+             <small class="meta" style="display: block; margin-top: 6px;">Disinkron ke cloud dari Supabase. <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
           : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script. Kreator belum submit untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Minta kreator untuk submit script via mode kreator.</small></div>`) +
           `<div class="script-actions" id="script-actions">${scriptActionsStrip}</div>`;
           

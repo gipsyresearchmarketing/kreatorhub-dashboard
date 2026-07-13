@@ -237,6 +237,33 @@
           </div>`;
       }
 
+      // ---- payment proofs card (kreator lihat bukti transfer dari admin) ----
+      function paymentProofsCard(paymentId) {
+        const A = window.AdminApp;
+        const proofs = A && A.getProofs ? A.getProofs(paymentId) : [];
+        const items = proofs.length
+          ? proofs.map(p => `
+              <div class="proof-row" data-proof-path="${escapeHtml(p.file_path)}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer;" title="Klik untuk lihat/download">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width: 20px; height: 20px; color: var(--success); flex-shrink: 0;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.file_name)}</div>
+                  <div style="font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 2px;">${new Date(p.created_at).toLocaleString('id-ID')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width: 16px; height: 16px; color: var(--muted); flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+              </div>`).join('')
+          : '<div class="meta" style="padding: 12px; text-align: center; font-size: 12px;">Belum ada bukti transfer di-upload. Admin akan upload bukti di sini setelah transfer.</div>';
+        return `
+          <div class="card" data-od-id="detail-payment-proofs" style="margin-bottom: var(--gap-lg);">
+            <div class="row-between" style="margin-bottom: 12px;">
+              <h2 class="h2" style="font-size: 18px;">Bukti transfer</h2>
+              <span class="meta" style="font-family: var(--font-mono); font-size: 11px;">${proofs.length} file</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${items}
+            </div>
+          </div>`;
+      }
+
       if (!id) {
         contentEl.innerHTML = `
           <div class="card">
@@ -312,6 +339,14 @@
       }
       // Note: untuk status lain (draft/editing/review) tidak ada feedback khusus
 
+      // payment proofs (kreator lihat bukti transfer dari admin) — muncul kalau status approved/selesai
+      if (item.status === 'approved' || item.status === 'selesai' || fromHistory) {
+        const linkedPayment = A.data.payments.find(p => p.kreator === item.kreator && p.video_title === item.title);
+        if (linkedPayment) {
+          sections.push(paymentProofsCard(linkedPayment.id));
+        }
+      }
+
       // actions row
       const backToProgres = `<a class="btn btn-secondary" href="screens-progres.html">← Balik ke Progres</a>`;
       const editScript = (item.status === 'draft' || item.status === 'editing')
@@ -324,6 +359,41 @@
         </div>`;
 
       contentEl.innerHTML = sections.join('') + sections_actions;
+
+      // Click proof row → download (signed URL)
+      contentEl.addEventListener('click', async (e) => {
+        const row = e.target.closest('.proof-row');
+        if (!row) return;
+        const A = window.AdminApp;
+        if (!A || !A.getProofDownloadUrl) return;
+        try {
+          const url = await A.getProofDownloadUrl(row.dataset.proofPath, 3600);
+          window.open(url, '_blank');
+        } catch (err) {
+          alert('Gagal buka bukti: ' + err.message);
+        }
+      });
+
+      // Realtime: re-fetch + re-render saat ada data-changed (proof upload/delete dari admin)
+      document.addEventListener('creatorapp:data-changed', async (e) => {
+        if (!e.detail) return;
+        if (e.detail.type === 'proof-upload' || e.detail.type === 'proof-delete') {
+          try { await A.refresh(); } catch (_) {}
+          // Re-render seluruh content biar proof list update
+          if (item && (item.status === 'approved' || item.status === 'selesai' || fromHistory)) {
+            const linkedPayment = A.data.payments.find(p => p.kreator === item.kreator && p.video_title === item.title);
+            if (linkedPayment) {
+              const card = contentEl.querySelector('[data-od-id="detail-payment-proofs"]');
+              if (card) {
+                const temp = document.createElement('div');
+                temp.innerHTML = paymentProofsCard(linkedPayment.id);
+                const newCard = temp.firstElementChild;
+                card.replaceWith(newCard);
+              }
+            }
+          }
+        }
+      });
     });
   </script>
 </body>

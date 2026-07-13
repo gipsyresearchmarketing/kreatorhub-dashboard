@@ -92,23 +92,26 @@
   // ---- refresh: fetch semua data kreator dari Supabase ----
   async function refresh() {
     const me = session.username;
-    const [briefsRes, progressRes, historyRes, paymentsRes, scriptsRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, scriptsRes, proofsRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').eq('kreator', me).order('updated_at', { ascending: false }),
       sb.from('history').select('*').eq('kreator', me).order('reviewed_at', { ascending: false }),
       sb.from('payments').select('*').eq('kreator', me).order('submitted_at', { ascending: false }),
-      sb.from('brief_scripts').select('*').eq('kreator', me)
+      sb.from('brief_scripts').select('*').eq('kreator', me),
+      sb.from('payment_proofs').select('*').order('created_at', { ascending: false })
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
     if (historyRes.error)  console.error('[refresh] history', historyRes.error);
     if (paymentsRes.error) console.error('[refresh] payments', paymentsRes.error);
     if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
-    data.briefs   = briefsRes.data   || [];
-    data.progress = progressRes.data || [];
-    data.history  = historyRes.data  || [];
-    data.payments = paymentsRes.data || [];
-    data.scripts  = scriptsRes.data  || [];
+    if (proofsRes.error)   console.error('[refresh] payment_proofs', proofsRes.error);
+    data.briefs       = briefsRes.data       || [];
+    data.progress     = progressRes.data     || [];
+    data.history      = historyRes.data      || [];
+    data.payments     = paymentsRes.data     || [];
+    data.scripts      = scriptsRes.data      || [];
+    data.paymentProofs = proofsRes.data      || [];
     return data;
   }
 
@@ -228,6 +231,13 @@
     setStatusOverride,
     loadScript,
     saveScript,
+    getProofs: (paymentId) => (data.paymentProofs || []).filter(p => p.payment_id === paymentId),
+    getProofDownloadUrl: async (filePath, expiresIn) => {
+      const opts = expiresIn || 3600;
+      const res = await sb.storage.from('payment-proofs').createSignedUrl(filePath, opts);
+      if (res.error) throw new Error('Buat link download gagal: ' + res.error.message);
+      return res.signedUrl;
+    },
     renderTopbar,
     wireSignOut,
     handleSignOut,
@@ -287,6 +297,35 @@
       try { sb.removeChannel(channel); } catch (_) {}
     });
   } catch (e) {
+    console.error('[realtime] brief_scripts subscription error:', e);
+  }
+
+  // ---- realtime subscription: payment_proofs (kreator lihat bukti transfer baru) ----
+  try {
+    const proofsChannel = sb.channel('payment_proofs_kreator_' + session.username)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_proofs' },
+        async (payload) => {
+          console.log('[realtime] payment_proof change:', payload.eventType);
+          await refresh();
+          const ev = payload.new || payload.old;
+          if (ev) {
+            document.dispatchEvent(new CustomEvent('creatorapp:data-changed', {
+              detail: { type: payload.eventType === 'DELETE' ? 'proof-delete' : 'proof-upload', paymentId: ev.payment_id, source: 'realtime' }
+            }));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[realtime] payment_proofs status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(proofsChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[realtime] payment_proofs subscription error:', e);
+  }
     console.error('[realtime] brief_scripts subscription error:', e);
   }
 

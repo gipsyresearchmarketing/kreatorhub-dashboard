@@ -61,7 +61,7 @@
 
   // Pastikan role admin (cocok dengan profiles.role)
   const { data: profile, error: profErr } = await sb.from('profiles')
-    .select('id, username, role, display_name, avatar').eq('id', user.id).single();
+    .select('id, username, role, display_name, avatar, is_finance').eq('id', user.id).single();
   if (profErr || !profile || profile.role !== 'admin') {
     console.warn('[admin-common] bukan admin, redirect ke login');
     window.location.replace('screens-login.html');
@@ -73,6 +73,7 @@
     userId: user.id,
     username: profile.username,
     role: profile.role,
+    isFinance: !!profile.is_finance,
     displayName: profile.display_name || profile.username,
     avatar: profile.avatar || null,
     userEmail: user.email
@@ -176,6 +177,7 @@
   }
   async function uploadPaymentProof(paymentId, file, note) {
     if (!session || !session.username) throw new Error('Session admin tidak ditemukan');
+    if (!session.isFinance) throw new Error('Akses ditolak: cuma finance (Putri) yang boleh upload bukti');
     if (!file) throw new Error('File wajib diisi');
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
     const filePath = `${paymentId}/${crypto.randomUUID()}.${ext}`;
@@ -206,6 +208,7 @@
     return ins.data[0];
   }
   async function deletePaymentProof(proofId) {
+    if (!session || !session.isFinance) throw new Error('Akses ditolak: cuma finance (Putri) yang boleh hapus bukti');
     const proof = (data.paymentProofs || []).find(p => p.id === proofId);
     if (!proof) return;
     const remRes = await sb.storage.from('payment-proofs').remove([proof.file_path]);
@@ -384,6 +387,10 @@
 
   // ---- action: payment ----
   async function updatePayment(id, fields) {
+    // finance-only kalau mau mark paid; edit fee nominal tanpa ubah status boleh semua admin
+    if (fields && fields.status === 'paid' && !(session && session.isFinance)) {
+      throw new Error('Akses ditolak: cuma finance (Putri) yang boleh tandai lunas');
+    }
     const updRes = await sb.from('payments').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update payment gagal: ' + updRes.error.message);
     await refresh();
@@ -440,7 +447,9 @@
     getProofDownloadUrl,
     showToast,
     handleSignOut,
-    hydrateProfile
+    hydrateProfile,
+    // finance-only gate (Putri) — upload/mark-paid/hapus bukti bayar
+    isFinance: () => !!(session && session.isFinance)
   };
   window.AdminApp = A;
 

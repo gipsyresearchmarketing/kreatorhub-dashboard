@@ -2311,7 +2311,9 @@
         const statusLabel = isPaid ? 'Sudah dibayar' : 'Menunggu';
         const actionBtn = isPaid
           ? '<button class="btn btn-ghost" data-act="fee-detail">Lihat detail</button>'
-          : '<button class="btn btn-primary" data-act="fee-approve">Tandai bayar</button>';
+          : (A.isFinance && A.isFinance()
+              ? '<button class="btn btn-primary" data-act="fee-approve">Tandai bayar</button>'
+              : '<span class="meta" title="Cuma finance (Putri) yang boleh tandai lunas">— finance only —</span>');
         // fee cell selalu bisa diklik buat ubah nominal (pending & paid) — nominal beragam
         const feeCell = `<td class="col-fee fee-editable" data-fee-edit="1" title="Klik untuk ubah nominal fee"><strong>${formatRp(data.fee)}</strong></td>`;
         tr.innerHTML = `
@@ -2631,6 +2633,12 @@
         const id = row.dataset.paymentId;
         const pay = FEE_DATA.find(r => r.id === id);
         if (!pay) return;
+        // finance-only gate: non-finance cuma boleh buka modal READ-ONLY untuk payment yg udah paid
+        const A = window.AdminApp;
+        if (pay.status !== 'paid' && A && A.isFinance && !A.isFinance()) {
+          A.showToast && A.showToast('Cuma finance (Putri) yang boleh tandai lunas.', 'error');
+          return;
+        }
         currentFeePayment = pay;
         feeModalTitle.textContent = pay.title || '—';
         feeModalBrand.textContent = pay.brand || '—';

@@ -1618,3 +1618,46 @@ Total: 18 commits, 21 files changed (incl. 3 new SQL), 1 file deleted (screens-u
 ---
 
 End of session 12.
+
+---
+
+# SESSION 13 (2026-07-13) — Finance-only gate (Putri handle payment)
+
+> **Goal**: gate fitur upload bukti bayar & mark-paid supaya cuma Putri (finance) yang boleh, admin lain tetep bisa review/approve konten tapi nggak bisa mark-paid.
+> **Status**: ✅ kode selesai & deployed. SQL `is_finance=true` udah di-set untuk akun `putri@gmail.com`. E2E live (tes di app) belum dijalankan — tinggal Bagas test pas balik.
+
+## TL;DR
+- Fitur **payment proof + WA notif** udah lengkap dari sesi 12 (cuma bucket `payment-proofs` belum dibuat di Supabase-mu — Bagas belum run `supabase/add-payment-proofs.sql`, tanya waktu balik).
+- Tambahan sesi ini: **gate role-finance** via kolom `profiles.is_finance` (pilihannya: flag boolean, bukan role baru — lebih minimal).
+- Commit `0efa8ca` push ke main (auto-deploy Vercel).
+
+## Yang udah jadi
+- `supabase/add-finance-flag.sql` (baru) — kolom `is_finance boolean` + helper DB `is_finance()` (mirror `is_admin()`) + `UPDATE profiles SET is_finance=true WHERE username = ...`.
+- `admin-common.js`:
+  - Fetch `is_finance` di profile query + mirror ke `session.isFinance`.
+  - Helper `A.isFinance()` di-export API.
+  - Guard di `uploadPaymentProof` & `deletePaymentProof` (throw kalau non-finance).
+  - Guard di `updatePayment({status:'paid'})` — edit fee nominal tanpa ubah status tetep boleh semua admin.
+- `screens-admin1.html`:
+  - `renderFeeRow`: tombol "Tandai bayar" cuma muncul kalau `A.isFinance()`, else ganti jadi `<span>— finance only —</span>`.
+  - `openFeeModal`: guard non-finance non-paid → toast "Cuma finance..." + return (read-only paid tetap boleh).
+- Hard gate `admin-common` (`role !== 'admin'`) **tidak diubah** — Putri role='admin' + `is_finance=true` jadi login normal.
+
+## Account
+- Akun Putri: `putri@gmail.com` (auth.users.email). username di profiles = `putri` (split dari email via trigger atau manual set).
+- `is_finance = true` udah dikonfirmasi aktif untuk akun ini (via SQL Editor — sebelumnya kena bug di query `where username = 'putri'` yang gak match, fix-nya pakai `where id = (select id from auth.users where email = 'putri@gmail.com')`).
+
+## Verifikasi
+- Syntax OK (jsc + new Function).
+- Smoke test gate: finance=true → tombol muncul, finance=false → "finance only" text ✅.
+
+## E2E tinggal Bagas test pas balik (kalau belum)
+1. **Login sebagai Putri** → Fee kreator → klik "Tandai bayar" → upload bukti → confirm → WA modal muncul dengan signed URL → admin klik → WA kebuka.
+2. **Login sebagai admin lain (Bagas)** → Fee kreator → tombol "Tandai bayar" **tersembunyi**, ganti "— finance only —".
+3. **Login kreator penerima** → Progres → klik Detail baris yg barusan di-bayar → muncul card "Bukti transfer" → klik → lihat/download gambar/PDF.
+4. (Kalau belum) **Run `supabase/add-payment-proofs.sql`** biar bucket `payment-proofs` ada → upload bukti di step 1 bisa jalan.
+
+## Memory links
+- Lihat `~/.claude/.../memory/deployment-live-and-pending-migrations.md` — migrasi `is_finance` sekarang DONE, bucket `payment-proofs` masih opsional.
+
+---

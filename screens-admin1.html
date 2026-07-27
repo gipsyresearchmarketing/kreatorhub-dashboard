@@ -2120,31 +2120,56 @@
         },
         'pendapatan-dibayarkan': {
           title: 'Pendapatan dibayarkan',
-          lead: 'Total fee yang sudah dibayarkan ke kreator.',
+          lead: 'Total fee yang sudah ditransfer ke kreator.',
           valueLabel: 'Total dibayarkan',
           getValue: () => {
             const paid = FEE_DATA.filter(r => r.status === 'paid').reduce((s, r) => s + r.fee, 0);
             return formatRp(paid);
           },
           getMeta: () => {
-            const byCreator = {};
-            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
-              if (!byCreator[r.creator]) byCreator[r.creator] = { name: r.creatorNm, total: 0, n: 0 };
-              byCreator[r.creator].total += r.fee;
-              byCreator[r.creator].n += 1;
-            });
-            return `${Object.keys(byCreator).length} kreator · ${FEE_DATA.filter(r => r.status === 'paid').length} video lunas`;
+            const A = window.AdminApp;
+            const kreators = ((A && A.data && A.data.profiles) || []).filter(p => p.role === 'kreator');
+            const paidN = FEE_DATA.filter(r => r.status === 'paid').length;
+            const pendN = FEE_DATA.filter(r => r.status === 'pending').length;
+            return `${kreators.length} kreator terdaftar · ${paidN} lunas · ${pendN} menunggu`;
           },
           getItems: () => {
             const items = [];
+            const A = window.AdminApp;
+            const kreators = ((A && A.data && A.data.profiles) || []).filter(p => p.role === 'kreator');
+            // aggregate FEE_DATA per kreator (paid + pending)
             const byCreator = {};
-            FEE_DATA.filter(r => r.status === 'paid').forEach(r => {
-              if (!byCreator[r.creator]) byCreator[r.creator] = { name: r.creatorNm, total: 0, n: 0 };
-              byCreator[r.creator].total += r.fee;
-              byCreator[r.creator].n += 1;
+            FEE_DATA.forEach(r => {
+              if (!byCreator[r.creator]) byCreator[r.creator] = { name: r.creatorNm, paidTotal: 0, pendTotal: 0, paidN: 0, pendN: 0 };
+              if (r.status === 'paid') {
+                byCreator[r.creator].paidTotal += r.fee;
+                byCreator[r.creator].paidN += 1;
+              } else {
+                byCreator[r.creator].pendTotal += r.fee;
+                byCreator[r.creator].pendN += 1;
+              }
             });
-            Object.values(byCreator).sort((a, b) => b.total - a.total).forEach(c => {
-              items.push({ title: c.name, meta: [{ label: `${c.n} video lunas` }], value: formatRp(c.total) });
+            // list SEMUA kreator terdaftar (general view)
+            kreators.forEach(p => {
+              const k = byCreator[p.username] || { name: p.display_name || p.username, paidTotal: 0, pendTotal: 0, paidN: 0, pendN: 0 };
+              const total = k.paidTotal + k.pendTotal;
+              let badge, label;
+              if (k.paidN > 0)        { badge = 'approved'; label = 'Lunas'; }
+              else if (k.pendN > 0)    { badge = 'pending';  label = 'Menunggu'; }
+              else                     { badge = 'draft';    label = 'Belum ada fee'; }
+              const meta = [];
+              if (k.paidN > 0) meta.push({ label: `${k.paidN} lunas`, value: formatRp(k.paidTotal) });
+              if (k.pendN > 0) meta.push({ label: `${k.pendN} menunggu`, value: formatRp(k.pendTotal) });
+              items.push({ title: k.name, meta, badge: { cls: badge, label }, value: total > 0 ? formatRp(total) : '—' });
+            });
+            // sort: kreator dgn fee terbesar di atas, 'Belum ada fee' di bawah
+            items.sort((a, b) => {
+              const av = a.value === '—' ? 0 : parseInt(a.value.replace(/\D/g, ''));
+              const bv = b.value === '—' ? 0 : parseInt(b.value.replace(/\D/g, ''));
+              if (bv !== av) return bv - av;
+              if (a.value === '—' && b.value !== '—') return 1;
+              if (b.value === '—' && a.value !== '—') return -1;
+              return a.title.localeCompare(b.title);
             });
             return items;
           }

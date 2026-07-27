@@ -825,7 +825,7 @@
               <div class="bar-chart" style="margin-top: 8px;">
                 <div class="bar-row"><span class="bar-label">Jamuzen</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
                 <div class="bar-row"><span class="bar-label">CalmadeAI</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
-                <div class="bar-row"><span class="bar-label">Conventio</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
+                <div class="bar-row"><span class="bar-label">Convictio.id</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
                 <div class="bar-row"><span class="bar-label">Gipsy Research</span><div class="bar-track"><div class="bar-fill" style="width: 0%;"></div></div><span class="bar-value num">—</span></div>
               </div>
             </div>
@@ -1008,7 +1008,7 @@
       <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;" id="new-c-brands">
         <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Jamuzen" style="margin-right: 6px;" /> Jamuzen</label>
         <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="CalmadeAI" style="margin-right: 6px;" /> CalmadeAI</label>
-        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Conventio" style="margin-right: 6px;" /> Conventio</label>
+        <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Convictio.id" style="margin-right: 6px;" /> Convictio.id</label>
         <label class="brand-chip" style="cursor: pointer;"><input type="checkbox" value="Gipsy Research" style="margin-right: 6px;" /> Gipsy Research</label>
       </div>
 
@@ -1041,7 +1041,7 @@
           <select class="filter-select" id="nb-brand" style="width: 100%;">
             <option value="Jamuzen">Jamuzen</option>
             <option value="CalmadeAI">CalmadeAI</option>
-            <option value="Conventio">Conventio</option>
+            <option value="Convictio.id">Convictio.id</option>
             <option value="Gipsy Research">Gipsy Research</option>
           </select>
         </div>
@@ -2121,7 +2121,7 @@
           getMeta: () => '1 butuh diskusi manual · 1 final',
           getItems: () => [
             { title: 'Mini Vlog Liburan — Take 1', meta: [{ label: 'Brand:', value: 'Jamuzen' }, { label: 'Kreator:', value: 'Putri L.' }], badge: { cls: 'rejected', label: 'Ditolak' }, _html: '<div class="stat-item"><div><strong>Mini Vlog Liburan — Take 1</strong><small class="row-meta"><span style="color: var(--muted);">Brand:</span> JAMUZEN · <span style="color: var(--muted);">Kreator:</span> Putri L.</small></div><span class="status rejected">Ditolak</span></div>' },
-            { title: 'Behind The Scene Lipat Kertas (v2)', meta: [{ label: 'Brand:', value: 'Conventio' }, { label: 'Kreator:', value: 'Bayu D.' }], badge: { cls: 'rejected', label: 'Ditolak' }, _html: '<div class="stat-item"><div><strong>Behind The Scene Lipat Kertas (v2)</strong><small class="row-meta"><span style="color: var(--muted);">Brand:</span> CONVENTIO · <span style="color: var(--muted);">Kreator:</span> Bayu D.</small></div><span class="status rejected">Ditolak</span></div>' }
+            { title: 'Behind The Scene Lipat Kertas (v2)', meta: [{ label: 'Brand:', value: 'Convictio.id' }, { label: 'Kreator:', value: 'Bayu D.' }], badge: { cls: 'rejected', label: 'Ditolak' }, _html: '<div class="stat-item"><div><strong>Behind The Scene Lipat Kertas (v2)</strong><small class="row-meta"><span style="color: var(--muted);">Brand:</span> CONVICTIO.ID · <span style="color: var(--muted);">Kreator:</span> Bayu D.</small></div><span class="status rejected">Ditolak</span></div>' }
           ]
         },
         'pendapatan-dibayarkan': {
@@ -2406,7 +2406,7 @@
 
       // repopulate select scope brand/kreator dari FEE_DATA (pertahankan option[0] placeholder)
       // 4 brand tetap yang dihandle Gipsy Group
-      const FIXED_BRANDS = ['Jamuzen', 'CalmadeAI', 'Conventio', 'Gipsy Research'];
+      const FIXED_BRANDS = ['Jamuzen', 'CalmadeAI', 'Convictio.id', 'Gipsy Research'];
 
       // Dropdown scope: tampilkan SEMUA kreator terdaftar (profiles) + 4 brand tetap,
       // di-union dengan apapun yang muncul di FEE_DATA (jaga-jaga ada data di luar master).

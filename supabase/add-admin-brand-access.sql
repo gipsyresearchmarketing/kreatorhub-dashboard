@@ -43,7 +43,7 @@ update public.profiles
 --    trus uncomment + sesuaikan username di bawah. Default: butuh verifikasi manual.
 -- update public.profiles set is_super_admin = false, brand_access = array['CalmadeAI'], is_approved = true where username = 'petra';
 -- update public.profiles set is_super_admin = false, brand_access = array['Jamuzen'],   is_approved = true where username = 'praja';
--- update public.profiles set is_super_admin = false, brand_access = array['Conventio'],  is_approved = true where username = 'sendi';
+-- update public.profiles set is_super_admin = false, brand_access = array['Convictio.id'],  is_approved = true where username = 'sendi';
 
 -- 4. Update handle_new_user trigger (sudah ada di schema.sql, recreate untuk pick up function baru)
 --    PENTING: trigger ini ngebaca raw_user_meta_data->>'requested_role' dari signup form

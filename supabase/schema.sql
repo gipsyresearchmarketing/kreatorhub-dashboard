@@ -65,7 +65,7 @@ create table if not exists public.brands (
 insert into public.brands (id, name) values
   ('jamuzen', 'Jamuzen'),
   ('calmadeai', 'CalmadeAI'),
-  ('conventio', 'Conventio'),
+  ('convictio.id', 'Convictio.id'),
   ('gipsy-research', 'Gipsy Research')
 on conflict (id) do nothing;
 

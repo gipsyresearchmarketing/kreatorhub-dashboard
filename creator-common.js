@@ -80,7 +80,7 @@
   };
 
   // ---- brand list (semua kreator punya akses ke semua brand) ----
-  const ALL_BRANDS = ['Jamuzen', 'CalmadeAI', 'Conventio', 'Gipsy Research'];
+  const ALL_BRANDS = ['Jamuzen', 'CalmadeAI', 'Convictio.id', 'Gipsy Research'];
 
   // ---- greeting/lead fallback per username (kalau belum ada di profile) ----
   const DATA = {

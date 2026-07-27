@@ -350,9 +350,17 @@
 
         // Ambil profile (role, display_name, avatar)
         var userId = signInRes.data.user.id;
-        var profRes = await sb.from('profiles').select('id, username, role, display_name, avatar').eq('id', userId).single();
+        var profRes = await sb.from('profiles').select('id, username, role, display_name, avatar, is_approved').eq('id', userId).single();
         if (profRes.error || !profRes.data) {
           showToast('Profil user belum siap. Coba lagi atau hubungi admin.', 'error');
+          submitEl.disabled = false;
+          submitEl.textContent = originalLabel;
+          return;
+        }
+        // Gate verifikasi admin: admin baru perlu approval super admin
+        if (profRes.data.role === 'admin' && !profRes.data.is_approved) {
+          showToast('Akun admin menunggu verifikasi dari super admin. Hubungi WA 628977270062.', 'error');
+          try { await sb.auth.signOut(); } catch (_) {}
           submitEl.disabled = false;
           submitEl.textContent = originalLabel;
           return;

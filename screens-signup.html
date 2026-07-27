@@ -161,6 +161,23 @@
           </div>
         </div>
 
+        <div class="field" style="margin-top: 4px;">
+          <label>Daftar sebagai</label>
+          <div style="display: flex; gap: 8px;">
+            <label class="role-chip" style="flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; background: var(--accent-soft);">
+              <input type="radio" name="requested-role" value="kreator" checked style="accent-color: var(--accent);" />
+              <span style="font-size: 13px;"><strong>Kreator</strong><br><small style="color: var(--muted); font-size: 11px;">Langsung aktif setelah daftar</small></span>
+            </label>
+            <label class="role-chip" style="flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="requested-role" value="admin" style="accent-color: var(--accent);" />
+              <span style="font-size: 13px;"><strong>Admin</strong><br><small style="color: var(--muted); font-size: 11px;">Butuh verifikasi super admin</small></span>
+            </label>
+          </div>
+          <div id="admin-info" class="field-hint" style="display: none; margin-top: 8px; padding: 10px 12px; background: var(--warn-soft, color-mix(in oklch, var(--warn) 14%, transparent)); border-radius: 8px; color: var(--fg); font-size: 12px;">
+            Akun admin perlu diverifikasi oleh tim Gipsy Group (Pak Bagas) sebelum bisa login. Setelah daftar, hubungi WA <strong>08977270062</strong> untuk aktivasi.
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary" id="submit-btn">Daftar</button>
       </form>
 
@@ -209,6 +226,26 @@
       var email = document.getElementById('email').value.trim();
       var password = document.getElementById('password').value;
       var displayName = document.getElementById('display-name').value.trim();
+      var requestedRole = (document.querySelector('input[name="requested-role"]:checked') || {}).value || 'kreator';
+      // show/hide admin info box
+      var adminInfo = document.getElementById('admin-info');
+      if (adminInfo) adminInfo.style.display = (requestedRole === 'admin') ? '' : 'none';
+      // toggle radio chip styling (yang dipilih di-highlight)
+      document.querySelectorAll('label.role-chip').forEach(function (lb) {
+        var inp = lb.querySelector('input[type="radio"]');
+        lb.style.background = (inp && inp.checked) ? 'var(--accent-soft)' : 'var(--surface)';
+      });
+      // re-render UI kalau radio berubah
+      document.querySelectorAll('input[name="requested-role"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          var cur = (document.querySelector('input[name="requested-role"]:checked') || {}).value || 'kreator';
+          if (adminInfo) adminInfo.style.display = (cur === 'admin') ? '' : 'none';
+          document.querySelectorAll('label.role-chip').forEach(function (lb) {
+            var inp = lb.querySelector('input[type="radio"]');
+            lb.style.background = (inp && inp.checked) ? 'var(--accent-soft)' : 'var(--surface)';
+          });
+        });
+      });
       var phone = document.getElementById('phone').value.trim();
       var bankName = document.getElementById('bank-name').value.trim();
       var bankAccount = document.getElementById('bank-account').value.trim();
@@ -230,11 +267,11 @@
       submitBtn.innerHTML = '<span class="spinner"></span> Mendaftar…';
 
       try {
-        // 1) Sign up ke Supabase Auth (trigger handle_new_user auto-bikin profile role 'kreator')
+        // 1) Sign up ke Supabase Auth (trigger handle_new_user auto-bikin profile role 'kreator'/'admin' sesuai requested_role)
         var signRes = await sb.auth.signUp({
           email: email,
           password: password,
-          options: { data: { display_name: displayName } }
+          options: { data: { display_name: displayName, requested_role: requestedRole } }
         });
         if (signRes.error) throw signRes.error;
 

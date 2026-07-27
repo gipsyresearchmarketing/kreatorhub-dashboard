@@ -745,6 +745,16 @@
         if (!A) return;
         const sbBrief = A.data.briefs.find(b => b.id === briefId);
 
+        // Guard brand_access: admin brand cuma boleh akses brief di brand-nya
+        if (sbBrief && !A.isSuperAdmin()) {
+          const access = A.brandAccess() || [];
+          if (access.indexOf(sbBrief.brand) < 0) {
+            A.showToast && A.showToast('Brief ini bukan di brand Anda (' + sbBrief.brand + '). Redirect ke dasbor.', 'error');
+            window.location.replace('screens-admin1.html');
+            return;
+          }
+        }
+
         // Build videos array dari progress yang terkait brief ini
         const relatedProgress = A.data.progress.filter(p => p.brief_id === briefId || (sbBrief && p.title && sbBrief.title && p.title.toLowerCase().includes(sbBrief.title.toLowerCase().split(/\s+/).slice(0, 2).join(' '))));
 

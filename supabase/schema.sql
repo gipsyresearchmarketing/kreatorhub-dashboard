@@ -11,6 +11,9 @@ create table if not exists public.profiles (
   display_name text,
   avatar text,
   phone text,             -- nomor WhatsApp kreator (buat notifikasi manual wa.me)
+  is_super_admin boolean default false,    -- true = Bagas (akses semua brand)
+  brand_access text[] default '{}',         -- admin per brand: ['Gipsy Research'], dll
+  is_approved boolean default true,          -- false = admin baru yg perlu verifikasi Bagas
   created_at timestamptz default now()
 );
 
@@ -21,13 +24,27 @@ returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  uname text;
+  dname text;
+  req_role text;
+  is_admin boolean;
 begin
-  insert into public.profiles (id, username, role, display_name)
+  uname := split_part(new.email, '@', 1);
+  uname := regexp_replace(uname, '[^a-zA-Z0-9._-]', '-', 'g');
+  while exists (select 1 from public.profiles where username = uname) loop
+    uname := uname || floor(random() * 1000)::text;
+  end loop;
+  dname := coalesce(new.raw_user_meta_data->>'display_name', uname);
+  req_role := coalesce(new.raw_user_meta_data->>'requested_role', 'kreator');
+  is_admin := (req_role = 'admin');
+  insert into public.profiles (id, username, role, display_name, is_approved)
   values (
     new.id,
-    split_part(new.email, '@', 1),
-    'kreator',  -- default; admin diubah manual setelahnya
-    split_part(new.email, '@', 1)
+    uname,
+    case when is_admin then 'admin' else 'kreator' end,
+    dname,
+    case when is_admin then false else true end   -- admin → perlu approval Bagas, kreator → auto-approved
   )
   on conflict (id) do nothing;
   return new;

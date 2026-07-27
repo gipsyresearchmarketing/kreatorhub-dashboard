@@ -53,6 +53,7 @@
     .brand-logo { display: flex; align-items: center; gap: 10px; }
     .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
     .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .brand-badge-pill { font-family: var(--font-mono); font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); letter-spacing: 0.02em; }
     .topnav-right { display: flex; align-items: center; gap: var(--gap-md); }
     .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
     .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; }
@@ -545,6 +546,7 @@
         <span class="logo-mark">G</span>
         <span class="logo-text">Gipsy Group</span>
       </a>
+      <span class="brand-badge-pill" id="brand-badge" style="display:none;"></span>
       <div class="topnav-right">
         <div class="profile-menu" id="profile-menu">
           <button type="button" class="profile-trigger" id="profile-trigger" aria-haspopup="true" aria-expanded="false">
@@ -1603,7 +1605,11 @@
       let BRIEFS = [];
       function buildBriefsData() {
         const A = window.AdminApp;
-        const briefs = (A && A.data && A.data.briefs) || [];
+        const allBriefs = (A && A.data && A.data.briefs) || [];
+        // Filter by brand_access (admin brand) atau semua (super admin)
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const briefs = isSuper ? allBriefs : allBriefs.filter(b => access.indexOf(b.brand) >= 0);
         BRIEFS = briefs.map(b => ({
           id:       b.id || '',
           title:    b.title || '',
@@ -2413,8 +2419,12 @@
         FEE_DATA.forEach(r => { if (r.creator && !creatorMap.has(r.creator)) creatorMap.set(r.creator, r.creatorNm || r.creator); });
         const uniqueCreators = [...creatorMap.entries()];
         // brand: 4 brand tetap (urutan dipertahankan) + brand lain yang muncul di fee
-        const brandList = FIXED_BRANDS.slice();
-        FEE_DATA.forEach(r => { if (r.brand && brandList.indexOf(r.brand) === -1) brandList.push(r.brand); });
+        // TAPI: untuk admin brand (bukan super admin), filter cuma brand yg di-access
+        const allBrands = FIXED_BRANDS.slice();
+        FEE_DATA.forEach(r => { if (r.brand && allBrands.indexOf(r.brand) === -1) allBrands.push(r.brand); });
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const brandList = isSuper ? allBrands : allBrands.filter(b => access.indexOf(b) >= 0);
 
         [[scopeBrandSel, brandList.map(b => [b, b])], [scopeCreatorSel, uniqueCreators]].forEach(([sel, entries]) => {
           if (!sel) return;
@@ -2430,7 +2440,11 @@
 
       function buildFeeData() {
         const A = window.AdminApp;
-        const payments = (A && A.data && A.data.payments) || [];
+        const allPayments = (A && A.data && A.data.payments) || [];
+        // Filter by brand_access (admin brand) atau semua (super admin)
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const payments = isSuper ? allPayments : allPayments.filter(p => access.indexOf(p.brand) >= 0);
         const profiles = (A && A.data && A.data.profiles) || [];
         const nameOf = (username) => {
           const p = profiles.find(pr => pr.username === username);
@@ -3019,25 +3033,34 @@
     function renderQueueTable(A) {
       const tbody = document.querySelector('#queue-table tbody');
       if (!tbody) return;
+      // Filter by brand_access (admin brand) atau semua (super admin)
+      const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+      const access = (A && A.brandAccess && A.brandAccess()) || [];
+      const briefsById = {};
+      (A.data.briefs || []).forEach(b => { briefsById[b.id] = b.brand; });
+      const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
       // Tipe filter (Semua / Video / Script) — baca dari pill yang aktif
       const typeFilter = document.querySelector('#queue-type-filter .filter-pill.active')?.dataset.type || '';
 
       // Build unified items array: video (progress) + script (brief_scripts with status 'review'/'revisi')
-      const videoItems = (A.data.progress || []).map(p => ({
-        type: 'video',
-        id: p.id,
-        title: p.title,
-        brand: p.brand,
-        kreator: p.kreator,
-        status: p.status,
-        meta: p.meta || '',
-        video_url: p.video_url,
-        video_storage_path: p.video_storage_path,
-        updated_at: p.updated_at,
-        brief_id: p.brief_id
-      }));
+      const videoItems = (A.data.progress || [])
+        .filter(p => inScope(p.brand) || inScope(briefsById[p.brief_id]))
+        .map(p => ({
+          type: 'video',
+          id: p.id,
+          title: p.title,
+          brand: p.brand,
+          kreator: p.kreator,
+          status: p.status,
+          meta: p.meta || '',
+          video_url: p.video_url,
+          video_storage_path: p.video_storage_path,
+          updated_at: p.updated_at,
+          brief_id: p.brief_id
+        }));
       const scriptItems = (A.data.scripts || [])
         .filter(s => s.status === 'review' || s.status === 'revisi')
+        .filter(s => { const b = briefsById[s.brief_id]; return !b || inScope(b); })
         .map(s => {
           // Enrich dengan brief info (title, brand, deadline)
           const brief = (A.data.briefs || []).find(b => b.id === s.brief_id);

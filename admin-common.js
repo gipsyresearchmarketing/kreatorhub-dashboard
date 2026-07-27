@@ -61,9 +61,27 @@
 
   // Pastikan role admin (cocok dengan profiles.role)
   const { data: profile, error: profErr } = await sb.from('profiles')
-    .select('id, username, role, display_name, avatar, is_finance').eq('id', user.id).single();
+    .select('id, username, role, display_name, avatar, is_finance, is_super_admin, brand_access, is_approved').eq('id', user.id).single();
   if (profErr || !profile || profile.role !== 'admin') {
     console.warn('[admin-common] bukan admin, redirect ke login');
+    window.location.replace('screens-login.html');
+    return;
+  }
+  // Gate verifikasi: admin baru perlu approval super admin (Bagas)
+  if (!profile.is_approved) {
+    console.warn('[admin-common] akun admin belum diverifikasi');
+    alert('Akun admin menunggu verifikasi dari super admin (Bagas).\n\nHubungi WA 628977270062 untuk aktivasi.');
+    try { await sb.auth.signOut(); } catch (_) {}
+    window.location.replace('screens-login.html');
+    return;
+  }
+  // Gate brand_access: admin brand wajib punya minimal 1 brand, atau super admin
+  const isSuper = !!profile.is_super_admin;
+  const brandAccess = Array.isArray(profile.brand_access) ? profile.brand_access : [];
+  if (!isSuper && brandAccess.length === 0) {
+    console.warn('[admin-common] admin tanpa brand_access');
+    alert('Akun admin butuh brand_access yang ditetapkan. Hubungi super admin (Bagas).');
+    try { await sb.auth.signOut(); } catch (_) {}
     window.location.replace('screens-login.html');
     return;
   }
@@ -74,6 +92,9 @@
     username: profile.username,
     role: profile.role,
     isFinance: !!profile.is_finance,
+    isSuperAdmin: isSuper,
+    brandAccess: brandAccess,
+    isApproved: !!profile.is_approved,
     displayName: profile.display_name || profile.username,
     avatar: profile.avatar || null,
     userEmail: user.email
@@ -449,7 +470,9 @@
     handleSignOut,
     hydrateProfile,
     // finance-only gate (Putri) — upload/mark-paid/hapus bukti bayar
-    isFinance: () => !!(session && session.isFinance)
+    isFinance: () => !!(session && session.isFinance),
+    isSuperAdmin: () => !!(session && session.isSuperAdmin),
+    brandAccess: () => (session && session.brandAccess) || []
   };
   window.AdminApp = A;
 
@@ -458,6 +481,18 @@
     if (!session || !session.displayName) return;
     const initials = (session.displayName || session.username || '?')
       .split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    // Brand badge di topbar: kalau admin brand (bukan super admin), tunjuk brand-nya
+    const _bb = document.getElementById('brand-badge');
+    if (_bb) {
+      if (session.isSuperAdmin) {
+        _bb.style.display = 'none';
+      } else if (session.brandAccess && session.brandAccess.length > 0) {
+        _bb.textContent = session.brandAccess.join(' · ');
+        _bb.style.display = '';
+      } else {
+        _bb.style.display = 'none';
+      }
+    }
     const _tm = document.getElementById('profile-trigger-meta');
     if (_tm) _tm.textContent = 'Admin · ' + (session.displayName || session.username);
     const _av = document.getElementById('profile-trigger-avatar');

@@ -889,12 +889,12 @@ End of session 8.
 - **Status field brief**: `assigned_to` & `fee` cuma **informasional** sekarang — visibility restriction & fee→payment SUDAH DI-REVERT. Payment tetap pakai `DEFAULT_FEE=300000`. Kalau nanti mau fee brief nyambung ke payment / batasi visibility, lihat plan lama (udah pernah dibangun, tinggal re-apply).
 
 ## C. Deploy Vercel (commit 75f6bf4, 629eb53)
-- **LIVE di 2 tempat**: GH Pages (lama) + **Vercel**: `https://dashboard-content-creator-gipsy-gro-five.vercel.app`
+- **LIVE di 2 tempat**: GH Pages (lama) + **Vercel**: `https://creatorgipsy.vercel.app` (sebelumnya `dashboard-content-creator-gipsy-gro-five.vercel.app` — di-rename sesi 14).
 - Setup Vercel: Import repo → Framework Preset **Other**, Build Command kosong, Output `.`. Auto-deploy tiap push ke `main`.
 - Prep: tambah `index.html` root (redirect ke screens-login.html) biar root URL nggak 404. Fix `screens-admin-settings.html` reset-password `redirectTo` jadi path-relative (`new URL('screens-login.html', location.href)`) biar jalan di root (Vercel) + subfolder (GH Pages).
 - `vercel.json`: `{ "cleanUrls": true, "trailingSlash": false }` (URL tanpa .html di Vercel).
 - Nomor WA admin di login (`screens-login.html` "Lupa sandi?" + "klik di sini") → `628977270062`.
-- URL Vercel bisa dipendekin: Vercel → Project → Settings → General → Project Name. Custom domain via Settings → Domains.
+- URL Vercel bisa dipendekin: Vercel → Project → Settings → General → Project Name. ✅ **Dilakukan sesi 14** → rename jadi `creatorgipsy`. Custom domain via Settings → Domains (belum).
 
 ## D. Notifikasi WhatsApp manual — Jalur A (commit 3fba7e4)
 - Metode dipilih Bagas: **manual wa.me (gratis)**, admin klik → WA kebuka + pesan terisi → admin tap Send. (Jalur B = otomatis via provider Fonnte/Wablas + Supabase Edge Function + biaya — belum, future.)
@@ -1659,5 +1659,41 @@ End of session 12.
 
 ## Memory links
 - Lihat `~/.claude/.../memory/deployment-live-and-pending-migrations.md` — migrasi `is_finance` sekarang DONE, bucket `payment-proofs` masih opsional.
+
+---
+
+# SESSION 14 (2026-07-14) — Rename Vercel + self-signup kreator + audit payment proofs
+
+> **Goal**: rapikan URL Vercel + bangun fitur self-signup kreator (pilihan A dari Bagas) + selesaikan audit payment-proofs yg ketunda.
+> **Status**: ✅ selesai & deployed. SQL payment-proofs 100% live. Signup page siap (butuh Confirm email OFF di Auth Providers — Bagas udah matiin).
+
+## TL;DR
+| Task | Hasil |
+|---|---|
+| **A. Rename Vercel** | Project name `dashboard-content-creator-gipsy-gro-five` → `creatorgipsy`. URL baru: https://creatorgipsy.vercel.app. ✅ |
+| **B. SQL payment-proofs** | Dipecah jadi 5 blok (bucket → tabel → RLS tabel → RLS storage → realtime) + DROP IF EXISTS biar idempotent. Semua 5 blok BERHASIL — bucket, tabel, 6 policy (2 tabel + 4 storage), payment_proofs masuk publication supabase_realtime. |
+| **C. Self-signup kreator** | Halaman `screens-signup.html` (baru): form email + password + display_name + phone + bank_name + bank_account. Submit → sb.auth.signUp → trigger handle_new_user auto-create profile role 'kreator' → update phone/bank di profile → auto-login (signUp return session) + fallback signInWithPassword. Link "Daftar" ditambah di `screens-login.html`. Confirm email dimatiin di Auth Providers biar auto-login langsung. |
+| **D. Docs/memory** | URL Vercel lama diganti di SESSION 9 + memory `deployment-live-and-pending-migrations.md`. Task list di-cleanup. |
+
+## File yang disentuh (commit `10f9f8a`)
+- `supabase/add-payment-proofs.sql` — dipecah 5 blok + idempotent (sebelumnya bentrok policy).
+- `screens-signup.html` (baru) — form signup lengkap.
+- `screens-login.html` — tambah link "Belum punya akun? Daftar".
+
+## Catatan signup (PENTING untuk E2E)
+- **Confirm email** harus OFF di **Supabase → Authentication → Providers → Email** (Bagas udah matiin).
+- Trigger `handle_new_user` (sudah ada di `schema.sql:18-49`) bikin profile otomatis dengan role='kreator' + username di-split dari email (sanitize + collision check).
+- Field `phone`, `bank_name`, `bank_account` di-update setelah signup (300ms delay buat trigger selesai) — bukan lewat trigger karena trigger cuma insert field minimal.
+- Kalo signup return session null (edge case), ada fallback `signInWithPassword`.
+- Kalo signup sukses → redirect ke `screens-creator.html`.
+
+## Verifikasi (perlu Bagas tes pas balik)
+- Upload bukti di fee modal sebagai Putri → file masuk bucket + tabel payment_proofs.
+- Login admin biasa → tombol "Tandai bayar" tersembunyi (gate is_finance jalan).
+- Login kreator penerima → Progres → Detail → card "Bukti transfer" → klik → lihat/download.
+- Self-signup kreator baru → daftar → langsung masuk dashboard kreator.
+
+## Memory links
+- `[[deployment-live-and-pending-migrations]]` — URL Vercel updated, SQL is_finance DONE.
 
 ---

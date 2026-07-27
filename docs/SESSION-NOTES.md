@@ -889,12 +889,12 @@ End of session 8.
 - **Status field brief**: `assigned_to` & `fee` cuma **informasional** sekarang — visibility restriction & fee→payment SUDAH DI-REVERT. Payment tetap pakai `DEFAULT_FEE=300000`. Kalau nanti mau fee brief nyambung ke payment / batasi visibility, lihat plan lama (udah pernah dibangun, tinggal re-apply).
 
 ## C. Deploy Vercel (commit 75f6bf4, 629eb53)
-- **LIVE di 2 tempat**: GH Pages (lama) + **Vercel**: `https://dashboard-content-creator-gipsy-gro-five.vercel.app` (Project Name udah di-rename jadi `creatorgipsy` tapi **production URL immutable** di Vercel — suffix hash pertama yang kebentuk saat deploy awal, gak berubah pas rename project name).
+- **LIVE di 2 tempat**: GH Pages (lama) + **Vercel**: `https://dashboard-content-creator-gipsy-gro-five.vercel.app`. **Short URL**: `https://s.id/creatorgipsy` (Bagas pake s.id shortener sesi 14 — Project Name udah di-rename jadi `creatorgipsy` tapi production URL immutable di Vercel, jadi pake s.id buat share).
 - Setup Vercel: Import repo → Framework Preset **Other**, Build Command kosong, Output `.`. Auto-deploy tiap push ke `main`.
 - Prep: tambah `index.html` root (redirect ke screens-login.html) biar root URL nggak 404. Fix `screens-admin-settings.html` reset-password `redirectTo` jadi path-relative (`new URL('screens-login.html', location.href)`) biar jalan di root (Vercel) + subfolder (GH Pages).
 - `vercel.json`: `{ "cleanUrls": true, "trailingSlash": false }` (URL tanpa .html di Vercel).
 - Nomor WA admin di login (`screens-login.html` "Lupa sandi?" + "klik di sini") → `628977270062`.
-- URL Vercel bisa dipendekin: Vercel → Project → Settings → General → Project Name. ⚠️ **Rename Project Name GAK ngubah production URL** — suffix hash permanent. Untuk ganti URL asli, perlu: (a) bikin project baru & re-deploy, atau (b) pakai custom domain (Settings → Domains). Project Name udah rename jadi `creatorgipsy` (label internal).
+- URL Vercel bisa dipendekin: Vercel → Project → Settings → General → Project Name. ⚠️ **Rename Project Name GAK ngubah production URL** — suffix hash permanent. **Solusi dipilih sesi 14**: pake **s.id shortener** (Pt. Surya Digital Internasional, gratis) → `https://s.id/creatorgipsy` redirect ke URL panjang. Alternatif yg gak dipilih: bikin project Vercel baru (effort lebih) atau custom domain (perlu akses DNS).
 
 ## D. Notifikasi WhatsApp manual — Jalur A (commit 3fba7e4)
 - Metode dipilih Bagas: **manual wa.me (gratis)**, admin klik → WA kebuka + pesan terisi → admin tap Send. (Jalur B = otomatis via provider Fonnte/Wablas + Supabase Edge Function + biaya — belum, future.)

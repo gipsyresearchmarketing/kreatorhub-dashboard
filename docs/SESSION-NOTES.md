@@ -1697,3 +1697,48 @@ End of session 12.
 - `[[deployment-live-and-pending-migrations]]` — URL Vercel updated, SQL is_finance DONE.
 
 ---
+
+# CATATAN sesi 14 (belum dikerjain — di-pause karena Bagas mau lanjut ke topik lain)
+
+## Quick wins sesi 14 (yang udah LIVE)
+- ✅ Rename Project Name Vercel → `creatorgipsy` (production URL immutable, pake s.id `https://s.id/creatorgipsy`).
+- ✅ `supabase/add-payment-proofs.sql` dipecah 5 blok idempotent, semua sudah live (bucket + tabel + 6 RLS + realtime).
+- ✅ Self-signup kreator (`screens-signup.html`) + Confirm email OFF di Auth Providers.
+- ✅ Fix stat card "Pendapatan dibayarkan" → list SEMUA kreator terdaftar (bukan cuma yg paid).
+- ✅ Fix `renderFeeRow ReferenceError: A is not defined` (introduced gate finance sesi 13) → tambah `const A = window.AdminApp` di awal function. Fee table gak stuck lagi.
+- ✅ Auto-open WA di `openWaNotif` → klik 'Tandai sudah dibayar' langsung buka tab WhatsApp baru (1 klik total). Modal preview jadi fallback.
+
+## Next: PENDING besar — admin multi-brand dengan isolasi data
+**Goal** (dari Bagas): struktur admin dipisah per brand. Masing-masing admin cuma bisa liat data brand-nya sendiri, gak bisa akses brand lain.
+
+**Struktur yang diminta**:
+- **Bagas** (`marketinggipsyresearch@gmail.com`) → super admin / "head" → akses SEMUA brand
+- **Putri, Petra, Praja** → admin brand **Gipsy Research** → cuma liat data Gipsy
+- **(nama lain)** → admin brand **CalmadeAI** → cuma liat CalmadeAI
+- **(nama lain)** → admin brand **Jamuzen** → cuma liat Jamuzen
+- **(nama lain)** → admin brand **Conventio** → cuma liat Conventio
+- Kreator TIDAK kena perubahan (kreator sudah filter brand via `userBrands`).
+
+**Konkret yang perlu**:
+1. Skema: tambah `is_super_admin boolean` + `brand_access text[]` di `profiles`. Super admin = `is_super_admin=true`, admin brand = `brand_access = ARRAY['Gipsy Research']`, kreator = `role='kreator'` (gak relevan).
+2. RLS update: `briefs`, `progress`, `payments`, `payment_proofs` di-filter by brand_access (admin) atau by kreator_username (kreator) atau by created_by admin (super admin bisa all). Kreator existing: kalo `userBrands` udah narrow ke brand tertentu, gak perlu diubah.
+3. Frontend: filter otomatis di admin1.html — semua panel (queue, briefs, creators, fee) ke-filter by admin's brand_access. Super admin liat semua, admin brand cuma brand-nya.
+4. Akun existing: Bagas = super admin. Putri (yg udah ada `putri@gmail.com`) = admin Gipsy Research. Akun Petra/Praja/Sendi (per brand) perlu dibuat via Supabase Auth Dashboard.
+5. Login: setelah admin login, redirect ke admin1.html dengan brand context. Header/topbar show brand admin (biar jelas mereka cuma boleh akses brand itu).
+
+**Decisions to confirm saat lanjut**:
+- Opsi A: `brand_access text[]` di profiles (simple, single source)
+- Opsi B: tabel terpisah `admin_brand_access(admin_username, brand)` (more normalized, easier multi-admin-per-brand)
+- `is_super_admin` boolean atau `brand_access IS NULL` = super?
+- Kreator existing `kreator@gmail.com` — apakah dia Akses ke semua 4 brand (kayak sekarang) atau narrow ke 1 brand aja?
+- Akun Petra/Praja/Sendi per brand — username/email persisnya?
+
+**File yang bakal ke-touch** (saat lanjut):
+- `supabase/schema.sql` (+ file migrasi terpisah)
+- `admin-common.js` (gate + brand filter)
+- `creator-common.js` (gak banyak — kreator unchanged)
+- `screens-admin1.html` (filter + topbar brand badge)
+- `screens-admin-brief-detail.html`, `screens-admin-settings.html`, `screens-reports.html` (cek scope)
+- `SESSION-NOTES.md` + memory
+
+---

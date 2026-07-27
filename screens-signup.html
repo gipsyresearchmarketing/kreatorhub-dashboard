@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar kreator · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --danger:  oklch(58% 0.18 25);
+      --font-display: 'Poppins', system-ui, sans-serif;
+      --font-body:    'Poppins', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+    p { text-wrap: pretty; margin: 0; }
+    h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
+    body.login-view {
+      background:
+        radial-gradient(ellipse 1200px 600px at 50% -10%, color-mix(in oklch, var(--accent) 7%, transparent), transparent 60%),
+        var(--bg);
+    }
+    .topnav { background: color-mix(in oklch, var(--bg) 80%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .topnav-inner { max-width: 1080px; margin-inline: auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav .back { font-size: 13px; color: var(--muted); }
+    .topnav .back:hover { color: var(--fg); }
+    .wrap { flex: 1; display: grid; place-items: center; padding: 36px 24px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow:
+        0 1px 2px color-mix(in oklch, var(--fg) 4%, transparent),
+        0 8px 24px color-mix(in oklch, var(--fg) 6%, transparent);
+    }
+    .card .brand-lockup { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .card .brand-lockup .logo-mark { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+    .card .brand-lockup .logo-text { font-weight: 600; font-size: 15px; line-height: 1.1; }
+    .card .brand-lockup .logo-text small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 0.02em; margin-top: 2px; }
+    .card h1 { font-size: 24px; letter-spacing: -0.015em; font-weight: 600; margin-bottom: 6px; }
+    .card .lead { color: var(--muted); font-size: 14px; margin-bottom: 22px; line-height: 1.55; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--fg); font: inherit; font-size: 14px; font-family: inherit; }
+    .input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .field.has-error .input { border-color: var(--danger); }
+    .field-hint { font-size: 11px; color: var(--muted); }
+    .field-error { font-size: 11px; color: var(--danger); display: none; }
+    .field.has-error .field-error { display: block; }
+    .password-wrap { position: relative; }
+    .password-wrap .input { padding-right: 42px; }
+    .password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: 0; padding: 6px; color: var(--muted); cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .password-toggle:hover { color: var(--fg); background: var(--fg-soft); }
+    .password-toggle svg { width: 18px; height: 18px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 18px; border-radius: var(--radius); border: 1px solid transparent; font-size: 14px; font-weight: 500; font-family: inherit; transition: background 0.15s ease; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover:not(:disabled) { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .spinner { width: 14px; height: 14px; border: 2px solid color-mix(in oklch, var(--surface) 30%, transparent); border-top-color: var(--surface); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .helper { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+    .helper a { color: var(--accent); }
+    .helper a:hover { text-decoration: underline; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 200; background: var(--fg); color: var(--surface); max-width: 360px; text-align: center; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--danger); }
+    .toast.success { background: var(--success); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="login-view">
+
+  <header class="topnav">
+    <div class="topnav-inner">
+      <div class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </div>
+      <a href="screens-login.html" class="back">← Sudah punya akun? Login</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" data-od-id="signup-card">
+      <div class="brand-lockup">
+        <div class="logo-mark">G</div>
+        <div class="logo-text">Gipsy Group<small>Internal workspace</small></div>
+      </div>
+      <p class="eyebrow" style="margin-top: -12px; margin-bottom: 8px;">DAFTAR KREATOR</p>
+      <h1 style="margin-bottom: 6px;">Mulai kerja sama ✨</h1>
+      <p class="lead">Daftar dulu supaya admin bisa kirim brief & pembayaran ke kamu. Username kamu di-generate otomatis dari email.</p>
+
+      <form id="signup-form" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" class="input" id="email" name="email" placeholder="nama@gmail.com" autocomplete="email" required />
+          <span class="field-error" id="email-error">Format email tidak valid.</span>
+        </div>
+
+        <div class="field">
+          <label for="password">Kata sandi</label>
+          <div class="password-wrap">
+            <input type="password" class="input" id="password" name="password" placeholder="Min. 8 karakter" autocomplete="new-password" minlength="8" required />
+            <button type="button" class="password-toggle" id="pw-toggle" aria-label="Lihat atau sembunyikan kata sandi" title="Lihat/sembunyikan">
+              <svg id="pw-icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" 12" r="3"/></svg>
+              <svg id="pw-icon-eyeoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none;"><path d="M3 3l18 18M10.6 10.6a3 3 0 004.2 4.2M9.9 5.1A10 10 0 0112 5c6.5 0 10 7 10 7a13.4 13.4 0 01-3.1 4M6.1 6.1A13.4 13.4 0 002 12s3.5 7 10 7c1.7 0 3.2-.4 4.6-1"/></svg>
+            </button>
+          </div>
+          <span class="field-error" id="password-error">Min. 8 karakter.</span>
+        </div>
+
+        <div class="field">
+          <label for="display-name">Nama tampil</label>
+          <input type="text" class="input" id="display-name" name="display-name" placeholder="mis. Sasa Aulia" required />
+          <span class="field-error" id="display-name-error">Nama wajib diisi.</span>
+        </div>
+
+        <div class="field">
+          <label for="phone">Nomor WhatsApp</label>
+          <input type="tel" class="input" id="phone" name="phone" placeholder="+62 812-3456-7890" required />
+          <span class="field-hint">Admin akan kirim notifikasi & bukti pembayaran ke nomor ini.</span>
+          <span class="field-error" id="phone-error">Wajib diisi untuk notifikasi.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="field">
+            <label for="bank-name">Nama bank</label>
+            <input type="text" class="input" id="bank-name" name="bank-name" placeholder="mis. BCA" />
+          </div>
+          <div class="field">
+            <label for="bank-account">No. rekening</label>
+            <input type="text" class="input" id="bank-account" name="bank-account" placeholder="1234567890" inputmode="numeric" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">Daftar</button>
+      </form>
+
+      <div class="helper">
+        Sudah punya akun? <a href="screens-login.html"><strong>Login di sini</strong></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ===== toast helper =====
+    var toastEl = null;
+    function showToast(msg, kind) {
+      if (!toastEl) toastEl = document.getElementById('toast');
+      toastEl.textContent = msg;
+      toastEl.className = 'toast show' + (kind ? ' ' + kind : '');
+      clearTimeout(toastEl._t);
+      toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 3000);
+    }
+
+    // ===== password toggle =====
+    (function () {
+      var pwInput = document.getElementById('password');
+      var btn = document.getElementById('pw-toggle');
+      var eye = document.getElementById('pw-icon-eye');
+      var eyeoff = document.getElementById('pw-icon-eyeoff');
+      btn.addEventListener('click', function () {
+        if (pwInput.type === 'password') { pwInput.type = 'text'; eye.style.display = 'none'; eyeoff.style.display = ''; }
+        else { pwInput.type = 'password'; eye.style.display = ''; eyeoff.style.display = 'none'; }
+      });
+    })();
+
+    // ===== validation helpers =====
+    function valEmail(s) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s); }
+    function valPhone(s) { return /^[+\d][\d\s\-()]{5,}$/.test(s); }
+    function setErr(id, on) {
+      var f = document.getElementById(id).closest('.field');
+      if (f) f.classList.toggle('has-error', !!on);
+    }
+
+    // ===== signup handler =====
+    document.getElementById('signup-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var email = document.getElementById('email').value.trim();
+      var password = document.getElementById('password').value;
+      var displayName = document.getElementById('display-name').value.trim();
+      var phone = document.getElementById('phone').value.trim();
+      var bankName = document.getElementById('bank-name').value.trim();
+      var bankAccount = document.getElementById('bank-account').value.trim();
+
+      // reset errors
+      ['email', 'password', 'display-name', 'phone'].forEach(function (k) { setErr(k, false); });
+
+      // validation
+      var ok = true;
+      if (!valEmail(email)) { setErr('email', true); ok = false; }
+      if (password.length < 8) { setErr('password', true); ok = false; }
+      if (displayName.length < 2) { setErr('display-name', true); ok = false; }
+      if (!valPhone(phone)) { setErr('phone', true); ok = false; }
+      if (!ok) { showToast('Periksa lagi isian di atas.', 'error'); return; }
+
+      var submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      var origLabel = submitBtn.textContent;
+      submitBtn.innerHTML = '<span class="spinner"></span> Mendaftar…';
+
+      try {
+        // 1) Sign up ke Supabase Auth (trigger handle_new_user auto-bikin profile role 'kreator')
+        var signRes = await sb.auth.signUp({
+          email: email,
+          password: password,
+          options: { data: { display_name: displayName } }
+        });
+        if (signRes.error) throw signRes.error;
+
+        // 2) signUp return session langsung kalau email confirmation off & auto-login aktif
+        if (!signRes.session) {
+          // fallback: login manual
+          var loginRes = await sb.auth.signInWithPassword({ email: email, password: password });
+          if (loginRes.error) throw loginRes.error;
+        }
+
+        // 3) Tunggu trigger bikin profile, lalu update field tambahan (phone/bank)
+        //    Profile row otomatis ke-create oleh handle_new_user dengan username dari email
+        var me = (await sb.auth.getUser()).data.user;
+        if (!me) throw new Error('Akun belum siap, coba lagi sebentar.');
+
+        // kecil jeda 300ms buat trigger selesai
+        await new Promise(function (r) { setTimeout(r, 300); });
+
+        var updRes = await sb.from('profiles').update({
+          display_name: displayName,
+          phone: phone,
+          bank_name: bankName || null,
+          bank_account: bankAccount || null
+        }).eq('id', me.id);
+        if (updRes.error) console.warn('[signup] update profile gagal:', updRes.error);
+
+        showToast('Akun berhasil dibuat! Mengarahkan ke dashboard…', 'success');
+
+        // 4) Redirect ke dashboard kreator
+        setTimeout(function () { window.location.href = 'screens-creator.html'; }, 600);
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origLabel;
+        showToast(err.message || 'Pendaftaran gagal.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

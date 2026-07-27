@@ -2327,6 +2327,7 @@
 
       // Bangun <tr> fee dari objek data (bukan clone DOM — sumbernya A.data.payments).
       function renderFeeRow(data) {
+        const A = window.AdminApp;   // safety: A gak ke-resolve di scope ini sebelum di-declare
         const tr = document.createElement('tr');
         tr.dataset.paymentId = data.id;
         tr.dataset.creator = data.creator;

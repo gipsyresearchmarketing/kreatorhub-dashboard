@@ -661,15 +661,26 @@
 
       // ---- section renderers ----
       function renderKreatorAktif() {
-        document.getElementById('kreator-aktif-value').textContent = CREATORS.length;
-        const byStatus = {};
-        CREATORS.forEach(c => byStatus[c.status] = (byStatus[c.status] || 0) + 1);
-        document.getElementById('kreator-aktif-meta').textContent = Object.entries(byStatus).map(([k, v]) => `${v} ${k}`).join(' · ');
-        document.getElementById('kreator-aktif-list').innerHTML = CREATORS.map(c => rowItem({
-          title: c.name,
-          meta: `<span style="color: var(--muted);">Brand:</span> ${c.brands.join(', ')} · <span style="color: var(--muted);">Video:</span> ${c.video}`,
-          right: statusBadge(c.status.toLowerCase())
-        })).join('');
+        const A = window.AdminApp;
+        const profiles = (A && A.data && A.data.profiles || []).filter(p => p.role === 'kreator');
+        document.getElementById('kreator-aktif-value').textContent = profiles.length;
+        // Group: count kreator yg punya progress di brand admin (kreator "aktif" = pernah handle progress)
+        const progByKreator = {};
+        ((A && A.data && A.data.progress) || []).forEach(p => {
+          progByKreator[p.kreator] = (progByKreator[p.kreator] || 0) + 1;
+        });
+        const activeCount = profiles.filter(p => progByKreator[p.username]).length;
+        const meta = profiles.length === 0
+          ? 'belum ada kreator'
+          : `${activeCount} aktif · ${profiles.length - activeCount} idle`;
+        document.getElementById('kreator-aktif-meta').textContent = meta;
+        document.getElementById('kreator-aktif-list').innerHTML = profiles.length === 0
+          ? '<div class="meta">Belum ada kreator.</div>'
+          : profiles.map(p => rowItem({
+              title: p.display_name || p.username,
+              meta: `username: ${p.username} · ${progByKreator[p.username] || 0} video`,
+              right: progByKreator[p.username] ? '<span class="status approved">Aktif</span>' : '<span class="status draft">Idle</span>'
+            })).join('');
       }
 
       function renderMenungguReview() {
@@ -690,14 +701,20 @@
       }
 
       function renderDisetujuiMinggu() {
-        const items = FEE.filter(f => f.status === 'paid' && f.days <= 7);
-        const total = items.reduce((s, f) => s + f.fee, 0);
+        const A = window.AdminApp;
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+        const cutoff = Date.now() - 7 * 86400000;
+        const all = (A && A.data && A.data.progress) || [];
+        const items = all.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai') && p.updated_at && new Date(p.updated_at).getTime() >= cutoff);
+        const total = items.reduce((s, p) => s + (Number(p.fee) || 0), 0);
         document.getElementById('disetujui-minggu-value').textContent = items.length;
-        document.getElementById('disetujui-minggu-meta').textContent = `${items.length} video · ${fmtRp(total)}`;
-        document.getElementById('disetujui-minggu-list').innerHTML = items.length ? items.map(f => rowItem({
-          title: f.title || f.name,
-          meta: `<span style="color: var(--muted);">Kreator:</span> ${f.name} · <span style="color: var(--muted);">Brand:</span> ${f.brand} · <span style="color: var(--muted);">Disubmit:</span> ${f.submitted}`,
-          right: `<span class="item-value">${fmtRp(f.fee)}</span>`
+        document.getElementById('disetujui-minggu-meta').textContent = items.length ? `${items.length} video · ${fmtRp(total)}` : 'belum ada';
+        document.getElementById('disetujui-minggu-list').innerHTML = items.length ? items.map(p => rowItem({
+          title: p.title || '—',
+          meta: `<span style="color: var(--muted);">Kreator:</span> ${escapeHtml(p.kreator)} · <span style="color: var(--muted);">Brand:</span> ${escapeHtml(p.brand)}`,
+          right: `<span class="item-value">${fmtRp(p.fee || 0)}</span>`
         })).join('') : '<p class="meta" style="padding: 8px 0;">Tidak ada video disetujui dalam 7 hari terakhir.</p>';
       }
 
@@ -714,25 +731,31 @@
       }
 
       function renderDisetujui() {
-        const queueReview = QUEUE.filter(q => q.status === 'review');
-        const paid = FEE.filter(f => f.status === 'paid');
-        const items = [...queueReview.map(q => ({ ...q, _kind: 'review' })), ...paid.map(p => ({ ...p, _kind: 'paid' }))];
-        document.getElementById('disetujui-value').textContent = items.length;
-        document.getElementById('disetujui-meta').textContent = `${queueReview.length} di antrian · ${paid.length} sudah dibayar`;
-        document.getElementById('disetujui-list').innerHTML = items.map(it => {
-          if (it._kind === 'review') {
-            return rowItem({
-              title: it.title,
-              meta: `<span style="color: var(--muted);">Brand:</span> ${it.brand} · <span style="color: var(--muted);">Kreator:</span> ${it.creator}`,
-              right: statusBadge('approved')
-            });
-          }
-          return rowItem({
-            title: it.name + ' — ' + it.brand,
-            meta: `<span style="color: var(--muted);">Disubmit:</span> ${it.submitted}`,
-            right: `<span class="item-value">${fmtRp(it.fee)}</span>`
-          });
-        }).join('');
+        const A = window.AdminApp;
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+        const prog = (A && A.data && A.data.progress) || [];
+        const pays = (A && A.data && A.data.payments) || [];
+        // Disetujui = progress yg approved/selesai (by brand filter) + payments yg paid
+        const approvedProg = prog.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
+        const paidPays = pays.filter(p => inScope(p.brand) && p.status === 'paid');
+        const total = approvedProg.length + paidPays.length;
+        document.getElementById('disetujui-value').textContent = total;
+        document.getElementById('disetujui-meta').textContent = `${approvedProg.length} disetujui · ${paidPays.length} sudah dibayar`;
+        // List: gabung history approved + payments paid (10 teratas)
+        const hist = (A && A.data && A.data.history) || [];
+        const items = [
+          ...approvedProg.slice(0, 10).map(p => ({ title: p.title || '—', brand: p.brand, kreator: p.kreator, fee: p.fee || 0, _kind: 'progress' })),
+          ...paidPays.slice(0, 10).map(p => ({ title: p.video_title || '—', brand: p.brand, kreator: p.kreator, fee: p.fee || 0, _kind: 'paid' }))
+        ].slice(0, 10);
+        document.getElementById('disetujui-list').innerHTML = items.length === 0
+          ? '<div class="meta">Belum ada video disetujui.</div>'
+          : items.map(it => rowItem({
+              title: escapeHtml(it.title),
+              meta: `<span style="color: var(--muted);">Brand:</span> ${escapeHtml(it.brand)} · <span style="color: var(--muted);">Kreator:</span> ${escapeHtml(it.kreator)}`,
+              right: it._kind === 'paid' ? `<span class="item-value">${fmtRp(it.fee)}</span>` : statusBadge('approved')
+            })).join('');
       }
 
       function renderRevisiDiminta() {
@@ -947,7 +970,17 @@
         const menungguEl = document.querySelector('#menunggu-review .value');
         if (menungguEl) menungguEl.textContent = prog.filter(p => p.status === 'review').length;
 
+        // Render functions yg baru fix (pakai A.data real + filter brand_access)
+        renderKreatorAktif();
+        renderDisetujuiMinggu();
+        renderDisetujui();
+
         A.showToast('Laporan dimuat dari database ✓');
+      });
+      document.addEventListener('adminapp:data-changed', () => {
+        renderKreatorAktif();
+        renderDisetujuiMinggu();
+        renderDisetujui();
       });
 
       // scroll to hash on load

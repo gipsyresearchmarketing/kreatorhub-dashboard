@@ -2998,9 +2998,12 @@
       const modal = document.getElementById('wa-notif-modal');
       const link = document.getElementById('wa-notif-open');
       if (!modal || !link) return;
-      document.getElementById('wa-notif-desc').textContent = 'Kirim ke ' + name + ' (+' + no + '). Klik tombol di bawah, lalu tap Send di WhatsApp.';
+      const waUrl = 'https://wa.me/' + no + '?text=' + encodeURIComponent(message);
+      link.href = waUrl;
+      document.getElementById('wa-notif-desc').textContent = 'WhatsApp udah kebuka otomatis di tab baru. Tinggal tap Send di WhatsApp. Kalo ngga kebuka (popup diblok), klik tombol di bawah.';
       document.getElementById('wa-notif-preview').textContent = message;
-      link.href = 'https://wa.me/' + no + '?text=' + encodeURIComponent(message);
+      // Auto-open WA di tab baru (triggered dari user-click → popup-blocker aman)
+      try { window.open(waUrl, '_blank', 'noopener'); } catch (_) {}
       modal.classList.add('show');
     }
     // wiring tutup modal (sekali)

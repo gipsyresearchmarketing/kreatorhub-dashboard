@@ -585,6 +585,32 @@
     console.error('[admin-realtime] payment_proofs subscription error:', e);
   }
 
+  // ---- realtime subscription: profiles (kreator/admin baru auto-refresh) ----
+  // Kalo ada kreator baru signup (via screens-signup.html) atau admin baru dibuat,
+  // dashboard admin auto-refresh biar langsung kelihatan (gak perlu manual reload).
+  try {
+    const profilesChannel = sb.channel('profiles_admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        async (payload) => {
+          console.log('[admin-realtime] profile change:', payload.eventType, payload.new?.username || payload.old?.username);
+          await refresh();
+          document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+            detail: { type: 'profile-' + payload.eventType.toLowerCase(), source: 'realtime' }
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('[admin-realtime] profiles status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(profilesChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[admin-realtime] profiles subscription error:', e);
+  }
+
   // ---- realtime subscription: progress (auto-notif WA saat video approved) ----
   // Deteksi transition ke status 'approved' atau 'selesai' → dispatch custom
   // event supaya admin page bisa trigger modal wa.notif otomatis. Cuma works

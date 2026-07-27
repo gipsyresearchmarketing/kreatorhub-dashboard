@@ -2961,10 +2961,10 @@
         buildBriefsData();
         updateFeeView();
         updateCreatorsView();
-        renderTopStats(A);
-        renderMetricsStats(A);
         renderBrandChart();
         renderTrendChart();
+        // renderTopStats & renderMetricsStats di-handle oleh IIFE #2 listener
+        // (adminapp:ready + data-changed) — jangan dipanggil dari sini, cross-IIFE error.
       }
       document.addEventListener('adminapp:ready', hydrateFromAdmin);
       document.addEventListener('adminapp:data-changed', hydrateFromAdmin);

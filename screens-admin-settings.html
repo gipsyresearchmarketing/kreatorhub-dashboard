@@ -887,9 +887,28 @@
       function renderSettingsCreators(A) {
         const tbody = document.querySelector('#settings-creators-table tbody');
         if (!tbody) return;
-        const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        const isSuper = A.isSuperAdmin && A.isSuperAdmin();
+        const access  = (A.brandAccess && A.brandAccess()) || [];
+        let kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        // Scope: admin brand cuma lihat kreator yang pernah kerja di brand-nya
+        // (ada progress/payment di brand_access). Kreator tanpa history di brand tsb
+        // tetap ada di pool tapi gak di-list buat admin brand.
+        if (!isSuper && access.length > 0) {
+          const usernamesInBrand = new Set();
+          (A.data.progress || []).forEach(p => { if (access.indexOf(p.brand) >= 0) usernamesInBrand.add(p.kreator); });
+          (A.data.payments || []).forEach(p => { if (access.indexOf(p.brand) >= 0) usernamesInBrand.add(p.kreator); });
+          if (usernamesInBrand.size > 0) {
+            kreators = kreators.filter(k => usernamesInBrand.has(k.username));
+          } else {
+            // Admin brand belum punya kreator sama sekali di brand-nya
+            kreators = [];
+          }
+        }
         if (kreators.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada kreator.</td></tr>`;
+          const emptyMsg = (!isSuper && access.length > 0)
+            ? `Belum ada kreator yang pernah kerja di brand Anda (${access.join(' · ')}).`
+            : 'Belum ada kreator.';
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
           return;
         }
         tbody.innerHTML = kreators.map(p => {
@@ -957,6 +976,33 @@
         const A = window.AdminApp;
         if (!A) return;
         renderSettingsCreators(A);
+
+        // Scope brand chips di modal Tambah Kreator: admin brand cuma boleh pilih brand-nya
+        const isSuper = A.isSuperAdmin && A.isSuperAdmin();
+        const access = (A.brandAccess && A.brandAccess()) || [];
+        if (!isSuper && access.length > 0) {
+          document.querySelectorAll('#new-c-brands .brand-tag').forEach(lb => {
+            const inp = lb.querySelector('input[type="checkbox"]');
+            if (!inp) return;
+            if (access.indexOf(inp.value) < 0) {
+              lb.style.display = 'none';
+              inp.checked = false;
+              inp.disabled = true;
+            }
+          });
+          // Tambah info text
+          const info = document.createElement('div');
+          info.style.fontSize = '11px';
+          info.style.color = 'var(--muted)';
+          info.style.marginTop = '4px';
+          info.textContent = 'Brand yang ditampilkan sesuai akses Anda: ' + access.join(' · ') + '.';
+          const cont = document.getElementById('new-c-brands');
+          if (cont && !cont.parentNode.querySelector('.scope-info')) {
+            info.className = 'scope-info';
+            cont.parentNode.insertBefore(info, cont.nextSibling);
+          }
+        }
+
         // Hydrate profile email field kalau ada
         const emailEl = document.getElementById('admin-email');
         if (emailEl && A.session) {

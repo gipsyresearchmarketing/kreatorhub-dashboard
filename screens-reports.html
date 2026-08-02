@@ -662,16 +662,29 @@
       // ---- section renderers ----
       function renderKreatorAktif() {
         const A = window.AdminApp;
-        const profiles = (A && A.data && A.data.profiles || []).filter(p => p.role === 'kreator');
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+        const allProfiles = (A && A.data && A.data.profiles || []).filter(p => p.role === 'kreator');
+        const allProgress = (A && A.data && A.data.progress) || [];
+        // Scope: kalau admin brand, hanya hitung kreator yang punya progress di brand-nya
+        let profiles = allProfiles;
+        let progress = allProgress;
+        if (!isSuper && access.length > 0) {
+          const usernamesInBrand = new Set();
+          progress = allProgress.filter(p => inScope(p.brand));
+          progress.forEach(p => usernamesInBrand.add(p.kreator));
+          profiles = allProfiles.filter(p => usernamesInBrand.has(p.username));
+        }
         document.getElementById('kreator-aktif-value').textContent = profiles.length;
         // Group: count kreator yg punya progress di brand admin (kreator "aktif" = pernah handle progress)
         const progByKreator = {};
-        ((A && A.data && A.data.progress) || []).forEach(p => {
+        progress.forEach(p => {
           progByKreator[p.kreator] = (progByKreator[p.kreator] || 0) + 1;
         });
         const activeCount = profiles.filter(p => progByKreator[p.username]).length;
         const meta = profiles.length === 0
-          ? 'belum ada kreator'
+          ? (!isSuper && access.length > 0 ? `belum ada kreator aktif di brand Anda (${access.join(' · ')})` : 'belum ada kreator')
           : `${activeCount} aktif · ${profiles.length - activeCount} idle`;
         document.getElementById('kreator-aktif-meta').textContent = meta;
         document.getElementById('kreator-aktif-list').innerHTML = profiles.length === 0

@@ -396,6 +396,23 @@
       detail: { type: 'script-update', briefId, kreator, fields }
     }));
   }
+  async function createScriptForKreator(briefId, kreator, fields) {
+    // Admin pre-populate script untuk kreator tertentu (brief_scripts admin INSERT policy).
+    // Upsert supaya kalau kreator sudah pernah bikin script, admin edit dia overwrite.
+    const payload = {
+      brief_id: briefId,
+      kreator,
+      script: fields.script || '',
+      status: fields.status || 'draft'
+    };
+    const res = await sb.from('brief_scripts').upsert(payload, { onConflict: 'brief_id,kreator' }).select();
+    if (res.error) throw new Error('Buat script gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'script-update', briefId, kreator, fields }
+    }));
+    return res.data[0];
+  }
   async function updateBrief(id, fields) {
     const updRes = await sb.from('briefs').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update brief gagal: ' + updRes.error.message);
@@ -452,6 +469,7 @@
     createBrief,
     deleteBrief,
     updateScript,
+    createScriptForKreator,
     updateProgress,
     updateBrief,
     updatePayment,

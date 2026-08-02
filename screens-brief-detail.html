@@ -66,7 +66,7 @@
         <div>
           <a href="screens-brief.html" class="meta" style="color: var(--accent);">← Balik ke daftar brief</a>
           <h1 id="page-title">Brief &amp; script</h1>
-          <p id="page-lead">Tulis script untuk brief ini. Status baru bisa di-update setelah script terisi.</p>
+          <p id="page-lead">Tulis script dan upload video untuk brief ini — keduanya bisa dilakukan terpisah. Kalau admin sudah menyediakan script, tinggal upload video aja.</p>
         </div>
       </div>
 
@@ -189,16 +189,16 @@
           <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-script">
             <div class="section-title">
               <h2 class="h2">Script video ${scriptEditable ? '' : '<span class="meta" style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warn);">· dikunci</span>'}</h2>
-              <span class="meta" id="script-meta">${scriptDirty ? '● ada perubahan belum disimpan' : (hasScript ? 'tersimpan' : 'belum disimpan')}</span>
+              <span class="meta" id="script-meta">${scriptDirty ? '● ada perubahan belum disimpan' : (hasScript ? 'tersimpan' : 'belum diisi')}</span>
             </div>
             <div class="field brief-script-wrap">
-              <label for="script-text">Tulis script kamu</label>
+              <label for="script-text">Tulis script kamu ${hasScript ? '(sudah ada — admin bisa edit & kamu bisa refine)' : '<small style="color: var(--muted); font-weight: 400;">(opsional — bisa juga langsung upload video di bawah)</small>'}</label>
               <textarea id="script-text" class="textarea" rows="14"
                         placeholder="Mulai ketik script untuk video ini. Misal:&#10;&#10;Hook (3 detik): ...&#10;&#10;Body (15 detik): ...&#10;&#10;CTA (2 detik): ..."
                         ${scriptEditable ? '' : 'disabled'}></textarea>
               <span class="field-hint">
                 ${scriptEditable
-                  ? 'Script tersimpan otomatis saat klik tombol Simpan di bawah.'
+                  ? 'Script tersimpan saat klik tombol Simpan di bawah. Video bisa di-upload terpisah di card Upload video.'
                   : 'Status sudah final (approved/ditolak/selesai) — script dikunci. Hubungi admin kalau perlu perubahan.'}
               </span>
             </div>
@@ -210,7 +210,7 @@
           <div class="card" data-od-id="brief-status">
             <div class="section-title">
               <h2 class="h2">Status brief</h2>
-              <span class="meta">${hasScript ? '' : 'Isi script dulu sebelum ubah status'}</span>
+              <span class="meta">${hasScript ? '' : 'Script & video bisa ditulis/di-upload terpisah'}</span>
             </div>
 
             <div class="field">
@@ -227,7 +227,7 @@
                 </span>
               </div>
               <span class="field-hint">
-                Status hanya bisa diubah oleh admin. Kamu bisa nulis script lalu klik "Tandai siap review" di bawah untuk menyerahkannya.
+                Status hanya diatur oleh admin. Video tetap bisa di-upload terpisah kapan saja (gak harus nunggu script approved).
               </span>
             </div>
 
@@ -235,12 +235,12 @@
               <span class="cta-label">Aksi cepat</span>
               ${state.status === 'review' || state.status === 'revisi' || isKreatorFinal
                 ? `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Sudah dikirim untuk review</button>
-                   <span class="cta-hint">Brief ini menunggu admin review (atau sudah final). Status berikutnya diatur oleh admin.</span>`
+                   <span class="cta-hint">Script ini menunggu admin review (atau sudah final). Status berikutnya diatur oleh admin. Video bisa di-upload terpisah di bawah.</span>`
                 : hasScript
-                  ? `<button type="button" class="btn btn-primary" id="btn-submit-review">Tandai siap review →</button>
-                     <span class="cta-hint">Setelah klik ini, script akan terkunci untuk diedit sampai admin beri feedback.</span>`
-                  : `<button type="button" class="btn btn-primary" id="btn-submit-review" disabled>Belum bisa: isi script dulu</button>
-                     <span class="cta-hint warn">Tulis script di atas sebelum menandai siap review.</span>`}
+                  ? `<button type="button" class="btn btn-primary" id="btn-submit-review">Tandai script siap review →</button>
+                     <span class="cta-hint">Setelah klik ini, script akan terkunci untuk diedit sampai admin beri feedback. Video tetap bisa di-upload terpisah.</span>`
+                  : `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Script belum ditulis</button>
+                     <span class="cta-hint">Bisa upload video langsung tanpa script. Atau tulis script di atas kalau perlu.</span>`}
             </div>
 
             ${!scriptEditable ? `
@@ -355,8 +355,10 @@
       });
 
       // ---- upload card: video + thumbnail, linked ke brief via progress.brief_id ----
+      // Video upload tidak lagi tergantung status script — kreator bisa upload kapan saja
+      // (script & video independen). Admin bisa pre-fill script, kreator tinggal upload video.
       function renderUploadCard(brief, scriptStatus) {
-        const canUpload = scriptStatus === 'approved' || scriptStatus === 'selesai';
+        const hasPreFilledScript = !!scriptStatus; // ada row script (status apapun)
         // Cek apakah sudah ada progress row untuk brief ini (kreator ini)
         const existing = (A.data.progress || []).find(p =>
           p.brief_id === brief.id && p.kreator === A.session.username
@@ -381,50 +383,40 @@
           <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
             <div class="section-title">
               <h2 class="h2">Upload video</h2>
-              <span class="meta">${canUpload ? 'Script sudah di-approve — siap upload' : 'Menunggu script di-approve admin'}</span>
+              <span class="meta">${hasPreFilledScript ? 'Admin sudah sediakan script (optional) — langsung upload video bisa' : 'Bisa upload langsung — gak perlu nunggu script'}</span>
             </div>
-            ${!canUpload ? `
-              <div class="brief-status-locked">
-                <span>🔒</span>
-                <div>
-                  <strong>Upload terkunci</strong> — script belum di-approve admin (status: <em>${escapeHtml(STATUS_LABEL[scriptStatus] || scriptStatus || 'draft')}</em>).
-                  Tunggu admin approve script di sini, baru kamu bisa upload video.
-                </div>
+            <form id="brief-upload-form">
+              <div class="field">
+                <label for="brief-vid-link">Link video <small style="color: var(--muted); font-weight: 400;">(YouTube / TikTok / drive)</small></label>
+                <input type="url" class="input" id="brief-vid-link" placeholder="https://…" />
+                <span class="field-hint">Atau upload file di bawah — pilih salah satu.</span>
               </div>
-            ` : `
-              <form id="brief-upload-form">
-                <div class="field">
-                  <label for="brief-vid-link">Link video <small style="color: var(--muted); font-weight: 400;">(YouTube / TikTok / drive)</small></label>
-                  <input type="url" class="input" id="brief-vid-link" placeholder="https://…" />
-                  <span class="field-hint">Atau upload file di bawah — pilih salah satu.</span>
-                </div>
-                <div class="field">
-                  <label for="brief-vid-file">File video <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
-                  <input type="file" class="input" id="brief-vid-file" accept="video/mp4,video/quicktime,video/webm" />
-                  <span class="field-hint">Format .mp4/.mov/.webm — maks 200MB.</span>
-                </div>
-                <div class="field">
-                  <label for="brief-vid-thumb">Thumbnail <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
-                  <input type="file" class="input" id="brief-vid-thumb" accept="image/png,image/jpeg,image/webp" />
-                </div>
-                <div class="field">
-                  <label for="brief-vid-title">Judul untuk admin</label>
-                  <input type="text" class="input" id="brief-vid-title" value="${escapeHtml(brief.title)}" />
-                </div>
-                <div class="field">
-                  <label for="brief-vid-notes">Catatan untuk admin <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
-                  <textarea class="textarea" id="brief-vid-notes" rows="2" placeholder="Hal yang perlu admin perhatikan?"></textarea>
-                </div>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 14px;">
-                  <input type="checkbox" id="brief-vid-ready" />
-                  Saya siap kirim untuk review admin sekarang.
-                </label>
-                <div style="display: flex; gap: 8px;">
-                  <button type="submit" class="btn btn-primary" id="brief-btn-submit">Kirim untuk review</button>
-                  <button type="button" class="btn btn-secondary" id="brief-btn-draft">Simpan draft</button>
-                </div>
-              </form>
-            `}
+              <div class="field">
+                <label for="brief-vid-file">File video <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <input type="file" class="input" id="brief-vid-file" accept="video/mp4,video/quicktime,video/webm" />
+                <span class="field-hint">Format .mp4/.mov/.webm — maks 200MB.</span>
+              </div>
+              <div class="field">
+                <label for="brief-vid-thumb">Thumbnail <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <input type="file" class="input" id="brief-vid-thumb" accept="image/png,image/jpeg,image/webp" />
+              </div>
+              <div class="field">
+                <label for="brief-vid-title">Judul untuk admin</label>
+                <input type="text" class="input" id="brief-vid-title" value="${escapeHtml(brief.title)}" />
+              </div>
+              <div class="field">
+                <label for="brief-vid-notes">Catatan untuk admin <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <textarea class="textarea" id="brief-vid-notes" rows="2" placeholder="Hal yang perlu admin perhatikan?"></textarea>
+              </div>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 14px;">
+                <input type="checkbox" id="brief-vid-ready" />
+                Saya siap kirim untuk review admin sekarang.
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" id="brief-btn-submit">Kirim untuk review</button>
+                <button type="button" class="btn btn-secondary" id="brief-btn-draft">Simpan draft</button>
+              </div>
+            </form>
           </div>`;
       }
 

@@ -1742,3 +1742,102 @@ End of session 12.
 - `SESSION-NOTES.md` + memory
 
 ---
+
+## Sesi 11 (2 Aug 2026): Multi-brand admin isolation + self-signup admin gate
+
+### Skema (jalanin di Supabase → SQL Editor)
+File migrasi: `supabase/add-admin-brand-access.sql` + `supabase/fix-rls-brand-strict.sql`.
+
+- Tambah 3 kolom di `public.profiles`:
+  - `is_super_admin boolean default false` — Bagas
+  - `brand_access text[] default '{}'` — admin brand: `ARRAY['Gipsy Research']`, dll
+  - `is_approved boolean default true` — kreator auto-approved, admin baru = false sampai Bagas setujui
+- Helper SQL: `public.is_super_admin()`, `public.has_brand_access(brand)`
+- Trigger `handle_new_user()`: deteksi `raw_user_meta_data->>'requested_role'`. `admin` → `role='admin', is_approved=false`. `kreator` → `role='kreator', is_approved=true`.
+- RLS baru (strict): admin cuma lihat data brand-nya, super admin lihat semua. Update policy di `briefs`, `progress`, `payments`, `payment_proofs`, `profiles`.
+
+### Frontend
+- `admin-common.js`: fetch `is_super_admin/brand_access/is_approved`. Hard gate tolak kalau `!is_approved` atau admin tanpa `brand_access`. Expose `A.isSuperAdmin()`, `A.brandAccess()`.
+- `screens-signup.html`: radio role picker (Kreator / Admin). Admin → info box "butuh verifikasi". Kirim `requested_role` ke `sb.auth.signUp`.
+- `screens-login.html`: cek `is_approved` setelah login. Admin baru → toast error + signOut + balik ke login.
+- `screens-admin1.html`: filter semua renderer (`renderQueueTable`, `renderBriefsTable`, `buildFeeData`, `renderTopStats`, `renderMetricsStats`) by `A.brandAccess()`. Topbar `brand-badge` tampil kalau admin brand.
+- `screens-admin-brief-detail.html`: scope guard — admin brand yg akses brief brand lain → toast error + redirect ke dasbor.
+- `screens-admin-settings.html`: kreator list filter by kreator yg punya progress/payment di brand admin. Brand chips di modal Tambah Kreator di-hide kalau di luar `brand_access`.
+- `screens-reports.html`: `renderKreatorAktif`, `renderDisetujui`, `renderDisetujuiMinggu` filter by `inScope(brand)`. Render function lain (renderMenungguReview, renderBriefAktif, dll) masih mock data — refactor nanti.
+
+### Verifikasi (perlu akun baru)
+1. Login Bagas → super admin → liat semua brand.
+2. Login Putri → admin Gipsy → liat cuma data Gipsy, topbar badge "Gipsy Research".
+3. Signup admin baru (mis. praja@jamuzen.id) → `is_approved=false` → login ditolak.
+4. Bagas set `is_approved=true` + `brand_access=['Jamuzen']` via Dashboard → admin baru bisa login, liat data Jamuzen saja.
+5. Admin brand coba query data brand lain via Supabase API → RLS block.
+
+---
+
+## Debug 11.b (2 Aug 2026): Brief gak masuk ke kreator setelah admin assign
+
+**Root cause**: `supabase/fix-briefs-rls-strict.sql` (line 11-12) bikin policy `briefs read all auth` jadi:
+```sql
+for select using (public.is_super_admin() OR public.has_brand_access(brand));
+```
+Policy ini cuma izinkan super admin + admin brand. Kreator **gak ada akses baca sama sekali**, jadi brief yang di-assign admin invisible dari sisi kreator.
+
+Frontend filter di `screens-brief.html` (`!b.assigned_to || b.assigned_to === me`) udah benar — masalahnya di layer database, bukan JS.
+
+**Fix**: `supabase/fix-briefs-kreator-read.sql` — tambah policy baru "briefs kreator read":
+```sql
+create policy "briefs kreator read" on public.briefs
+  for select to authenticated
+  using (
+    assigned_to = (select username from public.profiles where id = auth.uid())
+    or assigned_to is null
+  );
+```
+Postgres RLS multi-policy di-OR-kan — kreator tetap bisa baca brief assigned atau terbuka, admin tetap punya policy sendiri.
+
+**Verifikasi**:
+1. Run `fix-briefs-kreator-read.sql` di Supabase SQL Editor.
+2. Login sbg kreator (mis. `sasa.id`) → `screens-brief.html` → brief assigned muncul.
+3. Cek Table Editor `briefs` apakah `assigned_to` terisi dengan **username** (bukan display_name).
+
+---
+
+## Sesi 12 (2 Aug 2026): Script & video dibuka terpisah (independen)
+
+Konsep baru: script dan video gak sequential. Kreator bisa ngerjain salah satu atau keduanya. Admin bisa pre-fill script → kreator tinggal upload video.
+
+### Perubahan
+
+**`screens-brief-detail.html` (creator)**:
+- Hapus gate `canUpload = scriptStatus === 'approved'` → upload form selalu tersedia selama belum ada progress row.
+- Update `page-lead` dan hints: "Tulis script dan upload video untuk brief ini — keduanya bisa dilakukan terpisah. Kalau admin sudah menyediakan script, tinggal upload video aja."
+- CTA section: "Tandai script siap review" jadi opsional (button disabled dengan hint "Script belum ditulis").
+- Script section tetap editable (kecuali status final approved/rejected/selesai).
+
+**`admin-common.js`**:
+- Tambah `A.createScriptForKreator(briefId, kreator, fields)` — upsert script (kalau kreator udah pernah bikin, admin edit overwrite).
+
+**`screens-admin-brief-detail.html`**:
+- Tambah tombol "Edit script" / "+ Tulis script untuk kreator" di section Script.
+- Modal `script-editor-modal`: textarea + status awal (draft/editing/review) + kreator selector (kalau brief terbuka).
+- Save → `A.createScriptForKreator(briefId, kreator, {script, status})` → realtime broadcast ke kreator.
+
+**RLS** (`supabase/add-admin-script-write-policy.sql`):
+```sql
+create policy "brief_scripts admin insert" on public.brief_scripts
+  for insert to authenticated
+  with check (
+    (select role from public.profiles where id = auth.uid()) = 'admin'
+  );
+```
+Wajib Run SQL Editor (policy sebelumnya cuma `admin update/delete`, gak ada `admin insert`).
+
+### Verifikasi
+
+1. Run `add-admin-script-write-policy.sql`.
+2. Login Bagas → buka brief detail (brief assigned ke kreator) → klik "+ Tulis script untuk kreator" → ketik script → save.
+3. Login sbg kreator → buka brief-detail → script admin muncul di textarea, bisa di-refine + save.
+4. Kreator upload video langsung (gak perlu script di-approve).
+5. Test brief terbuka: admin pilih kreator di dropdown → script masuk ke row `(brief_id, kreator)` yg tepat.
+
+---

@@ -614,6 +614,40 @@
     </div>
   </div>
 
+  <!-- script editor modal (admin tulis/edit script untuk kreator) -->
+  <div class="modal-backdrop" id="script-editor-modal">
+    <div class="modal" style="max-width: 620px;">
+      <h3 id="script-editor-title">Tulis script untuk kreator</h3>
+      <p class="lead">Admin bisa pre-fill script. Kreator tetap bisa edit / refine sebelum submit untuk review.</p>
+
+      <div class="field" id="script-editor-kreator-field" style="display: none;">
+        <label for="script-editor-kreator">Untuk kreator</label>
+        <select class="filter-select" id="script-editor-kreator" style="width: 100%;"></select>
+        <span class="field-hint">Brief ini terbuka (belum di-assign) — pilih kreator tujuan.</span>
+      </div>
+
+      <div class="field">
+        <label for="script-editor-status">Status awal</label>
+        <select class="filter-select" id="script-editor-status" style="width: 100%;">
+          <option value="draft">Draft (kreator refine dulu)</option>
+          <option value="editing">Sedang ditulis (kreator refine)</option>
+          <option value="review">Siap review (langsung masuk antrian)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="script-editor-text">Isi script</label>
+        <textarea id="script-editor-text" class="textarea" rows="12"
+          placeholder="Hook (3 detik):&#10;...&#10;&#10;Body (15 detik):&#10;...&#10;&#10;CTA (2 detik):&#10;..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="script-editor-cancel">Batal</button>
+        <button class="btn btn-primary" id="script-editor-save">Simpan script</button>
+      </div>
+    </div>
+  </div>
+
   <!-- logout confirmation modal -->
   <div class="modal-backdrop" id="logout-modal">
     <div class="modal" style="max-width: 420px;">
@@ -1070,7 +1104,13 @@
         const scriptBlock = (hasScript
           ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
              <small class="meta" style="display: block; margin-top: 6px;">Disinkron ke cloud dari Supabase. <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
-          : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script. Kreator belum submit untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Minta kreator untuk submit script via mode kreator.</small></div>`) +
+          : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Admin bisa menulis script dulu sebagai draft — kreator tinggal refine & upload video.</small></div>`) +
+          `<div style="margin-top: 12px;">
+            <button type="button" class="btn ${hasScript ? 'btn-secondary' : 'btn-primary'}" id="btn-edit-script">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              ${hasScript ? 'Edit script' : '+ Tulis script untuk kreator'}
+            </button>
+          </div>` +
           scriptActionsHtml;
           
         const videosListHtml = brief.videos.length
@@ -1272,6 +1312,108 @@
             btn.disabled = false;
           }
         });
+
+        // ---- script editor (admin tulis/edit script) ----
+        (function wireScriptEditor() {
+          const modal = document.getElementById('script-editor-modal');
+          if (!modal) return;
+          const elTitle   = document.getElementById('script-editor-title');
+          const elKreator = document.getElementById('script-editor-kreator');
+          const elKreatorField = document.getElementById('script-editor-kreator-field');
+          const elStatus  = document.getElementById('script-editor-status');
+          const elText    = document.getElementById('script-editor-text');
+          const btnCancel = document.getElementById('script-editor-cancel');
+          const btnSave   = document.getElementById('script-editor-save');
+
+          function open() {
+            const A = window.AdminApp;
+            const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
+            const assigned = sbBrief && sbBrief.assigned_to;
+
+            // Populate kreator dropdown kalau brief terbuka
+            elKreator.innerHTML = '';
+            if (!assigned) {
+              const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+              if (kreators.length === 0) {
+                showToast('Belum ada kreator. Tambah kreator dulu via menu Pengaturan.');
+                return;
+              }
+              kreators.forEach(p => {
+                const o = document.createElement('option');
+                o.value = p.username;
+                o.textContent = p.display_name || p.username;
+                elKreator.appendChild(o);
+              });
+              elKreatorField.style.display = '';
+            } else {
+              elKreatorField.style.display = 'none';
+            }
+
+            // Pre-fill dengan script existing kalau ada
+            const existing = (A.data.scripts || []).find(s => s.brief_id === briefId);
+            if (existing) {
+              elText.value = existing.script || '';
+              elStatus.value = ['draft', 'editing', 'review'].includes(existing.status) ? existing.status : 'draft';
+              elTitle.textContent = 'Edit script';
+            } else {
+              elText.value = '';
+              elStatus.value = 'draft';
+              elTitle.textContent = assigned
+                ? 'Tulis script untuk ' + (assigned)
+                : 'Tulis script untuk kreator';
+            }
+
+            modal.classList.add('show');
+            setTimeout(() => elText.focus(), 50);
+          }
+          function close() { modal.classList.remove('show'); }
+
+          // Click handler di-delegate ke document supaya button di dalam script section works
+          document.addEventListener('click', (e) => {
+            const btn = e.target.closest('#btn-edit-script');
+            if (btn) { e.preventDefault(); open(); }
+          });
+
+          btnCancel?.addEventListener('click', close);
+          modal?.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+          btnSave?.addEventListener('click', async () => {
+            const A = window.AdminApp;
+            if (!A || !A.createScriptForKreator) {
+              showToast('AdminApp belum siap.');
+              return;
+            }
+            const sbBrief = A.data.briefs.find(b => b.id === briefId);
+            const assigned = sbBrief && sbBrief.assigned_to;
+            const kreator = assigned || elKreator.value;
+            if (!kreator) {
+              showToast('Pilih kreator dulu.');
+              return;
+            }
+            const script = elText.value.trim();
+            if (script.length < 5) {
+              showToast('Script minimal 5 karakter.');
+              return;
+            }
+            btnSave.disabled = true;
+            const orig = btnSave.textContent;
+            btnSave.textContent = 'Menyimpan…';
+            try {
+              await A.createScriptForKreator(briefId, kreator, {
+                script,
+                status: elStatus.value
+              });
+              showToast('Script tersimpan ✓');
+              close();
+              renderBriefDetail(brief);
+            } catch (err) {
+              showToast('Gagal: ' + err.message, 'error');
+            } finally {
+              btnSave.disabled = false;
+              btnSave.textContent = orig;
+            }
+          });
+        })();
 
         // Listener: re-render saat ada data-changed dari tab lain (realtime)
         document.addEventListener('adminapp:data-changed', (e) => {

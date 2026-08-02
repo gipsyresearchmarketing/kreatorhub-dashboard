@@ -402,6 +402,31 @@
     console.error('[realtime] payment_proofs subscription error:', e);
   }
 
+  // ---- realtime subscription: briefs (kreator liat brief baru di-assign) ----
+  // Admin bikin brief baru → realtime broadcast → kreator langsung liat di Brief & script
+  try {
+    const briefsChannel = sb.channel('briefs_kreator_' + session.username)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'briefs' },
+        async (payload) => {
+          console.log('[realtime] brief change:', payload.eventType);
+          await refresh();
+          document.dispatchEvent(new CustomEvent('creatorapp:data-changed', {
+            detail: { type: 'brief-' + payload.eventType.toLowerCase(), briefId: (payload.new || payload.old).id, source: 'realtime' }
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('[realtime] briefs status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(briefsChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[realtime] briefs subscription error:', e);
+  }
+
   // Beri tahu halaman: data sudah siap
   document.dispatchEvent(new CustomEvent('creatorapp:ready', { detail: { data } }));
 })();

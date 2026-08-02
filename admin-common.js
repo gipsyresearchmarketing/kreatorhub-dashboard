@@ -611,6 +611,30 @@
     console.error('[admin-realtime] profiles subscription error:', e);
   }
 
+  // ---- realtime subscription: briefs (admin lain lihat brief baru setelah dibuat) ----
+  try {
+    const briefsAdminChannel = sb.channel('briefs_admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'briefs' },
+        async (payload) => {
+          console.log('[admin-realtime] brief change:', payload.eventType);
+          await refresh();
+          document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+            detail: { type: 'brief-' + payload.eventType.toLowerCase(), briefId: (payload.new || payload.old).id, source: 'realtime' }
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('[admin-realtime] briefs_admin status:', status);
+      });
+    window.addEventListener('beforeunload', () => {
+      try { sb.removeChannel(briefsAdminChannel); } catch (_) {}
+    });
+  } catch (e) {
+    console.error('[admin-realtime] briefs_admin subscription error:', e);
+  }
+
   // ---- realtime subscription: progress (auto-notif WA saat video approved) ----
   // Deteksi transition ke status 'approved' atau 'selesai' → dispatch custom
   // event supaya admin page bisa trigger modal wa.notif otomatis. Cuma works

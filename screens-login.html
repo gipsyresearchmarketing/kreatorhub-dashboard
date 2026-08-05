@@ -98,6 +98,20 @@
     .helper a { color: var(--accent); }
     .helper a:hover { text-decoration: underline; }
 
+    /* modal (lupa sandi) */
+    .modal-backdrop { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 45%, transparent); backdrop-filter: blur(4px); display: grid; place-items: center; z-index: 100; padding: 24px; animation: fadeIn 0.18s ease; }
+    .modal-backdrop[hidden] { display: none !important; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card { background: var(--surface); border-radius: 18px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 16px 48px color-mix(in oklch, var(--fg) 14%, transparent); position: relative; animation: pop 0.2s ease; }
+    @keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 8px; display: grid; place-items: center; }
+    .modal-close:hover { background: var(--fg-soft); color: var(--fg); }
+    .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    .modal-lead { color: var(--muted); font-size: 13px; margin-bottom: 18px; line-height: 1.55; }
+    .modal-helper { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: center; }
+    .link-like { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-weight: 500; }
+    .link-like:hover { text-decoration: underline; }
+
     /* toast */
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 200; background: var(--fg); color: var(--surface); max-width: 360px; text-align: center; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -162,7 +176,7 @@
           <div class="field" id="field-password">
             <div class="password-label-row">
               <label for="password">Kata sandi</label>
-              <a href="https://wa.me/628977270062?text=Halo%20admin%2C%20saya%20lupa%20kata%20sandi%20akun%20saya.%20Bisa%20dibantu%20reset%3F" target="_blank" rel="noopener" class="forgot">Lupa sandi?</a>
+              <a href="#" id="forgot-link" class="forgot">Lupa sandi?</a>
             </div>
             <div class="password-wrap">
               <input type="password" class="input" id="password" name="password" placeholder="Kata sandi kamu" autocomplete="current-password" />
@@ -184,6 +198,24 @@
     </div>
 
     <footer class="pagefoot">© 2026 Gipsy Group · Internal tool</footer>
+
+    <!-- ===== MODAL LUPA SANDI ===== -->
+    <div class="modal-backdrop" id="forgot-modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgot-title">
+        <button type="button" class="modal-close" id="forgot-close" aria-label="Tutup">×</button>
+        <p class="eyebrow" style="margin-bottom: 4px; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; font-weight: 600;">RESET KATA SANDI</p>
+        <h2 class="modal-title" id="forgot-title">Lupa kata sandi?</h2>
+        <p class="modal-lead">Masukkan username kamu. Kami kirim link reset ke email yang terdaftar. Cek inbox (atau folder Spam).</p>
+        <div class="field">
+          <label for="forgot-username">Username</label>
+          <input type="text" class="input" id="forgot-username" placeholder="mis. sasa.id" autocomplete="username" autocapitalize="none" spellcheck="false" />
+        </div>
+        <button type="button" class="btn btn-primary" id="forgot-send">Kirim link reset</button>
+        <div class="modal-helper">
+          Sudah ingat? <button type="button" class="link-like" id="forgot-back">Kembali ke login</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== DASHBOARD VIEW ===== -->
@@ -259,6 +291,82 @@
         document.getElementById('pw-icon-eye').style.display = isPw ? 'none' : '';
         document.getElementById('pw-icon-eyeoff').style.display = isPw ? '' : 'none';
         passEl.focus();
+      });
+    }
+
+    // ===== modal lupa sandi =====
+    var forgotLink   = document.getElementById('forgot-link');
+    var forgotModal  = document.getElementById('forgot-modal');
+    var forgotClose  = document.getElementById('forgot-close');
+    var forgotSend   = document.getElementById('forgot-send');
+    var forgotInput  = document.getElementById('forgot-username');
+    var forgotBack   = document.getElementById('forgot-back');
+
+    function openForgot() {
+      if (!forgotModal) return;
+      forgotModal.hidden = false;
+      forgotInput.value = '';
+      setTimeout(function () { forgotInput.focus(); }, 50);
+    }
+    function closeForgot() {
+      if (!forgotModal) return;
+      forgotModal.hidden = true;
+      forgotInput.value = '';
+    }
+
+    async function doForgot() {
+      var username = (forgotInput.value || '').trim().toLowerCase();
+      if (!username) {
+        showToast('Isi username dulu', 'error');
+        forgotInput.focus();
+        return;
+      }
+      forgotSend.disabled = true;
+      var origLabel = forgotSend.textContent;
+      forgotSend.innerHTML = '<span class="spinner"></span> Mengirim…';
+      try {
+        var sb = await waitForSb();
+        // Sama kayak login: coba 3 suffix supaya gak perlu hafalin domain email.
+        // Supabase silently drop email yang gak ada → aman kirim ke semua suffix.
+        var suffixes = ['@gipsyresearch.id', '@gipsy.id', ''];
+        var redirectTo = new URL('screens-reset-password.html', window.location.href).href;
+        var sentAtLeastOne = false;
+        for (var i = 0; i < suffixes.length; i++) {
+          var email = username + suffixes[i];
+          var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+          // resetPasswordForEmail balikin { data, error }. Kalau email invalid, error.message
+          // berisi "Email address ... is invalid" — skip suffix ini, lanjut.
+          if (!res.error) { sentAtLeastOne = true; continue; }
+          if (/invalid email/i.test(res.error.message || '')) continue;
+          // Error lain (rate limit, network) → stop loop
+          throw res.error;
+        }
+        closeForgot();
+        showToast('Kalau username terdaftar, link reset sudah dikirim ke email kamu ✓', 'success');
+      } catch (err) {
+        showToast('Gagal kirim link: ' + (err.message || err), 'error');
+      } finally {
+        forgotSend.disabled = false;
+        forgotSend.textContent = origLabel;
+      }
+    }
+
+    if (forgotLink)  forgotLink.addEventListener('click', function (e) { e.preventDefault(); openForgot(); });
+    if (forgotClose)  forgotClose.addEventListener('click', closeForgot);
+    if (forgotBack)   forgotBack.addEventListener('click', closeForgot);
+    if (forgotSend)   forgotSend.addEventListener('click', doForgot);
+    if (forgotInput) {
+      forgotInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); doForgot(); }
+        if (e.key === 'Escape') { closeForgot(); }
+      });
+    }
+    if (forgotModal) {
+      forgotModal.addEventListener('click', function (e) {
+        if (e.target === forgotModal) closeForgot();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !forgotModal.hidden) closeForgot();
       });
     }
 
@@ -404,6 +512,21 @@
       passEl.value = '';
       showLoginView();
     });
+
+    // Tampilkan toast kalau redirect dari halaman reset password
+    (function handleResetRedirect() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('reset') === 'success') {
+          setTimeout(function () {
+            showToast('Kata sandi berhasil diubah. Silakan login dengan kata sandi baru ✓', 'success');
+          }, 300);
+          // Bersihin query string dari URL biar reload gak munculin toast terus
+          var cleanUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      } catch (_) {}
+    })();
 
     // Auto-login kalau session valid di localStorage + Supabase Auth masih aktif
     (async function autoLogin() {

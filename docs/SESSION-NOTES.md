@@ -1841,3 +1841,104 @@ Wajib Run SQL Editor (policy sebelumnya cuma `admin update/delete`, gak ada `adm
 5. Test brief terbuka: admin pilih kreator di dropdown → script masuk ke row `(brief_id, kreator)` yg tepat.
 
 ---
+
+# Sesi 15 (5 Aug 2026): Reset password flow direct + memory sync infra
+
+## A. Reset password → direct (ga kirim email)
+
+**Goal**: ganti flow reset password dari email-roundtrip jadi input email + password baru langsung di web. Bagas minta "ga perlu konfirmasi email, langsung reset di web".
+
+**Sebelum** (email-based, commit `9dd8319`):
+1. Klik "Lupa sandi?" → modal input username
+2. Submit → `resetPasswordForEmail()` kirim email link reset
+3. User klik link di email → landing `screens-reset-password.html`
+4. Input password baru → `updateUser({password})` → success
+
+**Sesudah** (direct, commit `ee7ad4a` + `b366f38`):
+1. Klik pill biru "Lupa kata sandi? Reset via email →" (prominent di bawah tombol Masuk)
+2. Modal: email + password baru + konfirmasi (eye toggle)
+3. Submit → `sb.rpc('reset_password_direct', {...})` langsung
+4. Function SECURITY DEFINER update `auth.users.encrypted_password` via bcrypt
+5. Toast "Password berhasil diubah ✓" → login pake password baru
+
+**File yang disentuh:**
+- `supabase/reset-password-direct.sql` (baru): Postgres function SECURITY DEFINER. Validasi email + min 8 char. Granted ke anon + authenticated.
+- `screens-login.html`: pill biru prominent, modal dengan email + 2 password field, JS handler panggil RPC. Disable all inputs selama proses biar no double-submit. Specific error message kalo function not exist / permission denied.
+
+**⚠️ SQL Editor Supabase bug**: function body multi-line dengan `$$` atau `$body$` delimiter kadang gagal parse ("unterminated dollar-quoted string"). Workaround: SELALU pake CREATE FUNCTION single-line dengan unique delimiter (mis `$func$`). File SQL di repo udah include catatan ini.
+
+**Security tradeoff**: Function `SECURITY DEFINER` + executable oleh `anon`. Siapapun yang tahu email seseorang bisa reset. Acceptable untuk internal tool trusted users.
+
+**Setup step-by-step** (4 SQL terpisah):
+1. `create extension if not exists pgcrypto;` (wajib untuk crypt())
+2. `drop function if exists public.reset_password_direct(text, text);` (idempotent)
+3. CREATE FUNCTION single-line persis
+4. `grant execute on function ... to anon, authenticated;` + verifikasi
+
+## B. Memory sync ke Supabase
+
+**Goal**: memory file yang ada di `~/.claude/projects/.../memory/` jangan cuma di local disk satu mesin. Sync ke Supabase biar bisa di-pull di mesin lain.
+
+**Arsitektur:**
+```
+Local: ~/.claude/projects/.../memory/*.md  ◄──►  Supabase: public.claude_memory
+                                              (name PK, description, body, metadata jsonb)
+```
+
+**File yang dibuat:**
+- `supabase/add-claude-memory-table.sql`: table + RLS deny-all + trigger touch updated_at
+- `tools/claude-memory-sync.sh`: bash script pake `curl` + `jq` (Node.js ga ada di Mac Bagas)
+- `tools/claude-memory-sync.js`: versi Node.js (future-proof, kalau Node di-install nanti)
+- `docs/CLAUDE-MEMORY-SYNC.md`: setup + usage guide
+- Memory entry baru: `memory-sync.md` di index MEMORY.md
+
+**Subcommands sync script:**
+- `push` — local → Supabase (upsert by name)
+- `pull` — Supabase → local (write .md files)
+- `status` — show diff
+
+**Setup:**
+1. Supabase → SQL Editor → Run `add-claude-memory-table.sql`
+2. Supabase → Settings → API → service_role key → reveal → copy
+3. `echo 'export SUPABASE_SERVICE_ROLE_KEY="..."' >> ~/.zshrc && source ~/.zshrc`
+4. `./tools/claude-memory-sync.sh push` — upload semua 14 memory files
+5. Di mesin baru: `./tools/claude-memory-sync.sh pull` — download semua
+
+**Kenapa service_role, bukan anon?** Anon key di-commit di `supabase-config.js`. Kalo RLS allow anon, semua orang bisa baca memory project lo. Service_role key di-env var lokal doang, aman.
+
+**Belum di-run Bagas**: SQL migration + service_role key setup + push memory. Tinggal tunggu Bagas set env var + jalanin sync script.
+
+## C. Reset password memory entry update
+
+File `memory/reset-password-self-service.md` di-update dari email-based flow ke direct RPC-based. Include SQL Editor bug workaround + pgcrypto requirement + single-line CREATE pattern.
+
+---
+
+## Files modified sesi 15
+
+| File | Highlights |
+|---|---|
+| `screens-login.html` | Pill biru + modal email/password + RPC handler + better errors |
+| `supabase/reset-password-direct.sql` | Postgres function (single-line workaround) + idempotent setup |
+| `docs/SESSION-NOTES.md` | +sesi 15 (this entry) |
+| `tools/claude-memory-sync.sh` | NEW: bash sync script |
+| `tools/claude-memory-sync.js` | NEW: Node sync script |
+| `supabase/add-claude-memory-table.sql` | NEW: claude_memory table + RLS |
+| `docs/CLAUDE-MEMORY-SYNC.md` | NEW: sync setup guide |
+| `memory/memory-sync.md` | NEW: memory entry |
+| `memory/reset-password-self-service.md` | UPDATED: dari email-based ke direct RPC |
+
+## Commit graph sesi 15
+
+```
+31ae401  feat(login): pill biru prominent di bawah tombol Masuk
+ee7ad4a  feat(reset): direct password reset tanpa email verification
+b366f38  fix(reset): tambah pgcrypto + better error handling
+0c58762  docs(sql): workaround SQL Editor bug + single-line CREATE
+```
+
+Plus commits untuk memory sync infra (belum dicommit karena Bash script + SQL baru — bisa di-batch 1 commit).
+
+---
+
+End of session 15.

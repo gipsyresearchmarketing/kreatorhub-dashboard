@@ -374,25 +374,30 @@
       var newPw = (forgotNewPw && forgotNewPw.value) || '';
       var confirmPw = (forgotConfirmPw && forgotConfirmPw.value) || '';
 
+      // Validasi client-side dulu (real-time feedback)
       if (!email || email.indexOf('@') < 0) {
-        showToast('Isi email dulu', 'error');
-        if (forgotEmail) forgotEmail.focus();
+        showToast('Isi email yang valid dulu', 'error');
+        if (forgotEmail) { forgotEmail.focus(); forgotEmail.select(); }
         return;
       }
       if (!newPw || newPw.length < 8) {
         showToast('Password baru minimal 8 karakter', 'error');
-        if (forgotNewPw) forgotNewPw.focus();
+        if (forgotNewPw) { forgotNewPw.focus(); forgotNewPw.select(); }
         return;
       }
       if (newPw !== confirmPw) {
         showToast('Konfirmasi password tidak cocok', 'error');
-        if (forgotConfirmPw) forgotConfirmPw.focus();
+        if (forgotConfirmPw) { forgotConfirmPw.focus(); forgotConfirmPw.select(); }
         return;
       }
 
+      // Disable semua input + tombol selama proses (no double-submit)
       forgotSend.disabled = true;
+      if (forgotEmail)     forgotEmail.disabled = true;
+      if (forgotNewPw)     forgotNewPw.disabled = true;
+      if (forgotConfirmPw) forgotConfirmPw.disabled = true;
       var origLabel = forgotSend.textContent;
-      forgotSend.innerHTML = '<span class="spinner"></span> Menyimpan…';
+      forgotSend.innerHTML = '<span class="spinner"></span> Mereset…';
       try {
         var sb = await waitForSb();
         // Panggil Postgres function reset_password_direct (security definer,
@@ -401,7 +406,17 @@
           p_email: email,
           p_new_password: newPw
         });
-        if (rpcRes.error) throw rpcRes.error;
+        if (rpcRes.error) {
+          // Deteksi kasus function belum ada / masalah server
+          var msg = (rpcRes.error.message || '').toLowerCase();
+          if (msg.indexOf('function') >= 0 && msg.indexOf('does not exist') >= 0) {
+            throw new Error('Function reset_password_direct belum ada di database. Hubungi admin untuk setup.');
+          }
+          if (msg.indexOf('permission') >= 0 || msg.indexOf('rls') >= 0) {
+            throw new Error('Akses ditolak. Hubungi admin.');
+          }
+          throw rpcRes.error;
+        }
         var result = rpcRes.data || {};
         if (!result.success) {
           throw new Error(result.error || 'Reset gagal');
@@ -409,7 +424,13 @@
         closeForgot();
         showToast('Password berhasil diubah ✓ Silakan login dengan password baru', 'success');
       } catch (err) {
-        showToast('Gagal: ' + (err.message || err), 'error');
+        var errMsg = (err && err.message) || String(err);
+        showToast('Gagal: ' + errMsg, 'error');
+        console.error('[reset] error:', err);
+        // Re-enable input biar user bisa retry
+        if (forgotEmail)     forgotEmail.disabled = false;
+        if (forgotNewPw)     forgotNewPw.disabled = false;
+        if (forgotConfirmPw) forgotConfirmPw.disabled = false;
       } finally {
         forgotSend.disabled = false;
         forgotSend.textContent = origLabel;

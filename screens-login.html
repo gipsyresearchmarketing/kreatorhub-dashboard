@@ -211,18 +211,41 @@
 
     <footer class="pagefoot">© 2026 Gipsy Group · Internal tool</footer>
 
-    <!-- ===== MODAL LUPA SANDI ===== -->
+    <!-- ===== MODAL LUPA SANDI (DIRECT RESET, ga kirim email) ===== -->
     <div class="modal-backdrop" id="forgot-modal" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgot-title">
         <button type="button" class="modal-close" id="forgot-close" aria-label="Tutup">×</button>
         <p class="eyebrow" style="margin-bottom: 4px; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; font-weight: 600;">RESET KATA SANDI</p>
-        <h2 class="modal-title" id="forgot-title">Lupa kata sandi?</h2>
-        <p class="modal-lead">Masukkan username kamu. Kami kirim link reset ke email yang terdaftar. Cek inbox (atau folder Spam).</p>
+        <h2 class="modal-title" id="forgot-title">Reset password langsung</h2>
+        <p class="modal-lead">Masukkan email kamu + password baru. Langsung jadi, ga perlu cek inbox.</p>
+
         <div class="field">
-          <label for="forgot-username">Username</label>
-          <input type="text" class="input" id="forgot-username" placeholder="mis. sasa.id" autocomplete="username" autocapitalize="none" spellcheck="false" />
+          <label for="forgot-email">Email</label>
+          <input type="email" class="input" id="forgot-email" placeholder="mis. cherly@gmail.com" autocomplete="email" autocapitalize="none" spellcheck="false" />
         </div>
-        <button type="button" class="btn btn-primary" id="forgot-send">Kirim link reset</button>
+
+        <div class="field">
+          <label for="forgot-new-pw">Password baru</label>
+          <div class="password-wrap">
+            <input type="password" class="input" id="forgot-new-pw" placeholder="Minimal 8 karakter" autocomplete="new-password" minlength="8" required />
+            <button type="button" class="password-toggle" id="forgot-pw-toggle-new" aria-label="Lihat atau sembunyikan" title="Lihat/sembunyikan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="forgot-confirm-pw">Konfirmasi password baru</label>
+          <div class="password-wrap">
+            <input type="password" class="input" id="forgot-confirm-pw" placeholder="Ketik ulang password baru" autocomplete="new-password" minlength="8" required />
+            <button type="button" class="password-toggle" id="forgot-pw-toggle-confirm" aria-label="Lihat atau sembunyikan" title="Lihat/sembunyikan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="forgot-send">Reset password sekarang</button>
+
         <div class="modal-helper">
           Sudah ingat? <button type="button" class="link-like" id="forgot-back">Kembali ke login</button>
         </div>
@@ -306,57 +329,87 @@
       });
     }
 
-    // ===== modal lupa sandi =====
-    var forgotLink   = document.getElementById('forgot-link');
-    var forgotModal  = document.getElementById('forgot-modal');
-    var forgotClose  = document.getElementById('forgot-close');
-    var forgotSend   = document.getElementById('forgot-send');
-    var forgotInput  = document.getElementById('forgot-username');
-    var forgotBack   = document.getElementById('forgot-back');
+    // ===== modal lupa sandi (DIRECT RESET — ga kirim email) =====
+    var forgotLink       = document.getElementById('forgot-link');
+    var forgotModal      = document.getElementById('forgot-modal');
+    var forgotClose      = document.getElementById('forgot-close');
+    var forgotSend       = document.getElementById('forgot-send');
+    var forgotEmail      = document.getElementById('forgot-email');
+    var forgotNewPw      = document.getElementById('forgot-new-pw');
+    var forgotConfirmPw  = document.getElementById('forgot-confirm-pw');
+    var forgotBack       = document.getElementById('forgot-back');
 
     function openForgot() {
       if (!forgotModal) return;
       forgotModal.hidden = false;
-      forgotInput.value = '';
-      setTimeout(function () { forgotInput.focus(); }, 50);
+      if (forgotEmail) forgotEmail.value = '';
+      if (forgotNewPw) forgotNewPw.value = '';
+      if (forgotConfirmPw) forgotConfirmPw.value = '';
+      setTimeout(function () { if (forgotEmail) forgotEmail.focus(); }, 50);
     }
     function closeForgot() {
       if (!forgotModal) return;
       forgotModal.hidden = true;
-      forgotInput.value = '';
+      if (forgotEmail) forgotEmail.value = '';
+      if (forgotNewPw) forgotNewPw.value = '';
+      if (forgotConfirmPw) forgotConfirmPw.value = '';
     }
 
+    // Toggle lihat/sembunyikan untuk password field di modal
+    function bindForgotPwToggle(toggleId, inputId) {
+      var tgl = document.getElementById(toggleId);
+      var inp = document.getElementById(inputId);
+      if (!tgl || !inp) return;
+      tgl.addEventListener('click', function () {
+        var isPw = inp.type === 'password';
+        inp.type = isPw ? 'text' : 'password';
+        inp.focus();
+      });
+    }
+    bindForgotPwToggle('forgot-pw-toggle-new',     'forgot-new-pw');
+    bindForgotPwToggle('forgot-pw-toggle-confirm', 'forgot-confirm-pw');
+
     async function doForgot() {
-      var username = (forgotInput.value || '').trim().toLowerCase();
-      if (!username) {
-        showToast('Isi username dulu', 'error');
-        forgotInput.focus();
+      var email = (forgotEmail && forgotEmail.value || '').trim().toLowerCase();
+      var newPw = (forgotNewPw && forgotNewPw.value) || '';
+      var confirmPw = (forgotConfirmPw && forgotConfirmPw.value) || '';
+
+      if (!email || email.indexOf('@') < 0) {
+        showToast('Isi email dulu', 'error');
+        if (forgotEmail) forgotEmail.focus();
         return;
       }
+      if (!newPw || newPw.length < 8) {
+        showToast('Password baru minimal 8 karakter', 'error');
+        if (forgotNewPw) forgotNewPw.focus();
+        return;
+      }
+      if (newPw !== confirmPw) {
+        showToast('Konfirmasi password tidak cocok', 'error');
+        if (forgotConfirmPw) forgotConfirmPw.focus();
+        return;
+      }
+
       forgotSend.disabled = true;
       var origLabel = forgotSend.textContent;
-      forgotSend.innerHTML = '<span class="spinner"></span> Mengirim…';
+      forgotSend.innerHTML = '<span class="spinner"></span> Menyimpan…';
       try {
         var sb = await waitForSb();
-        // Sama kayak login: coba 3 suffix supaya gak perlu hafalin domain email.
-        // Supabase silently drop email yang gak ada → aman kirim ke semua suffix.
-        var suffixes = ['@gipsyresearch.id', '@gipsy.id', ''];
-        var redirectTo = new URL('screens-reset-password.html', window.location.href).href;
-        var sentAtLeastOne = false;
-        for (var i = 0; i < suffixes.length; i++) {
-          var email = username + suffixes[i];
-          var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
-          // resetPasswordForEmail balikin { data, error }. Kalau email invalid, error.message
-          // berisi "Email address ... is invalid" — skip suffix ini, lanjut.
-          if (!res.error) { sentAtLeastOne = true; continue; }
-          if (/invalid email/i.test(res.error.message || '')) continue;
-          // Error lain (rate limit, network) → stop loop
-          throw res.error;
+        // Panggil Postgres function reset_password_direct (security definer,
+        // update auth.users.encrypted_password via bcrypt hash).
+        var rpcRes = await sb.rpc('reset_password_direct', {
+          p_email: email,
+          p_new_password: newPw
+        });
+        if (rpcRes.error) throw rpcRes.error;
+        var result = rpcRes.data || {};
+        if (!result.success) {
+          throw new Error(result.error || 'Reset gagal');
         }
         closeForgot();
-        showToast('Kalau username terdaftar, link reset sudah dikirim ke email kamu ✓', 'success');
+        showToast('Password berhasil diubah ✓ Silakan login dengan password baru', 'success');
       } catch (err) {
-        showToast('Gagal kirim link: ' + (err.message || err), 'error');
+        showToast('Gagal: ' + (err.message || err), 'error');
       } finally {
         forgotSend.disabled = false;
         forgotSend.textContent = origLabel;
@@ -367,12 +420,13 @@
     if (forgotClose)  forgotClose.addEventListener('click', closeForgot);
     if (forgotBack)   forgotBack.addEventListener('click', closeForgot);
     if (forgotSend)   forgotSend.addEventListener('click', doForgot);
-    if (forgotInput) {
-      forgotInput.addEventListener('keydown', function (e) {
+    [forgotEmail, forgotNewPw, forgotConfirmPw].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); doForgot(); }
         if (e.key === 'Escape') { closeForgot(); }
       });
-    }
+    });
     if (forgotModal) {
       forgotModal.addEventListener('click', function (e) {
         if (e.target === forgotModal) closeForgot();

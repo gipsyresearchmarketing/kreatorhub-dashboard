@@ -3313,7 +3313,8 @@
       tbody.innerHTML = kreators.map(p => {
         const items = A.data.progress.filter(i => i.kreator === p.username);
         const displayName = p.display_name || p.username;
-        return `<tr data-creator="${escapeHtml(p.username)}">
+        const href = 'screens-admin-kreator-detail.html?kreator=' + encodeURIComponent(p.username);
+        return `<tr data-creator="${escapeHtml(p.username)}" class="kreator-row" style="cursor: pointer;" onclick="window.location.href='${href}'" title="Klik untuk lihat detail kreator">
           <td>
             <div class="row-creator">
               <div class="avatar">${avatarFor(p.username, displayName)}</div>

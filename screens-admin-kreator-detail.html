@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detail kreator · Admin · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="admin-common.js"></script>
+  <style>
+    :root {
+      --bg: oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(18% 0.012 250);
+      --muted: oklch(54% 0.012 250);
+      --border: oklch(92% 0.005 250);
+      --accent: oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --warn: oklch(72% 0.14 70);
+      --danger: oklch(58% 0.18 25);
+      --done: oklch(58% 0.12 195);
+      --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --fs-h1: clamp(24px, 3vw, 32px);
+      --fs-h2: clamp(20px, 2.4vw, 26px);
+      --fs-h3: 16px;
+      --fs-body: 14px;
+      --fs-meta: 11px;
+      --gap-md: 16px;
+      --gap-lg: 24px;
+      --gap-xl: 36px;
+      --gutter: 24px;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    p { text-wrap: pretty; margin: 0; }
+    h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
+    .topnav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .topnav-inner { max-width: 1080px; margin-inline: auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav .back { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+    .topnav .back:hover { color: var(--fg); }
+    .wrap { max-width: 1080px; margin-inline: auto; padding: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: var(--gap-md); }
+    .card h2 { font-size: var(--fs-h2); margin-bottom: 12px; }
+    .card h2 small { font-weight: 400; font-size: var(--fs-meta); color: var(--muted); margin-left: 8px; }
+    .profile-grid { display: grid; grid-template-columns: auto 1fr; gap: var(--gap-md) var(--gap-lg); align-items: start; }
+    .avatar-lg { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; }
+    .profile-name { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .profile-username { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+    .meta-row { display: grid; grid-template-columns: 140px 1fr; gap: 6px var(--gap-md); padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .meta-row:last-child { border-bottom: 0; }
+    .meta-label { color: var(--muted); }
+    .meta-value { color: var(--fg); font-family: var(--font-mono); }
+    .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ds-table th { color: var(--muted); font-weight: 500; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .ds-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    .ds-table tr:last-child td { border-bottom: 0; }
+    .status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
+    .status.draft { background: var(--fg-soft); color: var(--muted); }
+    .status.review { background: color-mix(in oklch, var(--warn) 14%, transparent); color: var(--warn); }
+    .status.revisi { background: var(--accent-soft); color: var(--accent); }
+    .status.approved { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); }
+    .status.rejected { background: color-mix(in oklch, var(--danger) 14%, transparent); color: var(--danger); }
+    .status.selesai { background: color-mix(in oklch, var(--done) 14%, transparent); color: var(--done); }
+    .status.pending { background: color-mix(in oklch, var(--warn) 14%, transparent); color: var(--warn); }
+    .status.paid { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); }
+    .empty { padding: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+    .num-col { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .brief-link { color: var(--accent); }
+    .brief-link:hover { text-decoration: underline; }
+    .helper { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+    .loading { padding: 32px; text-align: center; color: var(--muted); }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid color-mix(in oklch, var(--accent) 25%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-size: 13px; font-family: inherit; cursor: pointer; transition: background 0.15s ease; }
+    .btn:hover { background: var(--fg-soft); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+  </style>
+</head>
+<body>
+
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a href="screens-admin1.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <a href="screens-admin1.html" class="back">← Kembali ke dasbor admin</a>
+    </div>
+  </header>
+
+  <div class="wrap" id="page-content">
+    <div class="loading"><span class="spinner"></span> Memuat data kreator…</div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function fmtRp(n) {
+      n = Number(n || 0);
+      return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+    }
+    function initialsFor(username, displayName) {
+      const src = (displayName || username || '?').trim();
+      const parts = src.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return src.slice(0, 2).toUpperCase();
+    }
+    function statusBadge(status) {
+      return `<span class="status ${escapeHtml(status)}">${escapeHtml(status)}</span>`;
+    }
+
+    function renderError(msg) {
+      document.getElementById('page-content').innerHTML = `
+        <div class="card">
+          <h2>Error</h2>
+          <p>${escapeHtml(msg)}</p>
+          <a class="btn" href="screens-admin1.html">← Kembali ke dasbor</a>
+        </div>`;
+    }
+
+    function renderPage(kreator, progress, payments, briefs) {
+      const displayName = kreator.display_name || kreator.username;
+      const progCount   = progress.length;
+      const paidTotal   = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.fee || 0), 0);
+      const pendingTotal = payments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.fee || 0), 0);
+      const brands = Array.from(new Set(progress.map(p => p.brand).filter(Boolean)));
+      const initials = initialsFor(kreator.username, displayName);
+
+      document.getElementById('page-content').innerHTML = `
+        <!-- PROFILE -->
+        <div class="card">
+          <div class="profile-grid">
+            <div class="avatar-lg">${escapeHtml(initials)}</div>
+            <div>
+              <div class="profile-name">${escapeHtml(displayName)}</div>
+              <div class="profile-username">@${escapeHtml(kreator.username)}</div>
+              <div style="margin-top: 8px;">
+                <span class="status ${escapeHtml(kreator.role || 'kreator')}">${escapeHtml(kreator.role || 'kreator')}</span>
+                ${brands.map(b => `<span class="status draft" style="margin-left: 4px;">${escapeHtml(b)}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATS RINGKASAN -->
+        <div class="card">
+          <h2>Ringkasan<small>akumulasi semua brand</small></h2>
+          <div class="meta-row"><span class="meta-label">Total video</span><span class="meta-value">${progCount}</span></div>
+          <div class="meta-row"><span class="meta-label">Total dibayar</span><span class="meta-value">${fmtRp(paidTotal)}</span></div>
+          <div class="meta-row"><span class="meta-label">Menunggu bayar</span><span class="meta-value">${fmtRp(pendingTotal)}</span></div>
+        </div>
+
+        <!-- KONTAK -->
+        <div class="card">
+          <h2>Kontak &amp; Pembayaran</h2>
+          <div class="meta-row"><span class="meta-label">Email</span><span class="meta-value">${escapeHtml(kreator.email || '—')}</span></div>
+          <div class="meta-row"><span class="meta-label">WhatsApp</span><span class="meta-value">${escapeHtml(kreator.phone || '—')}</span></div>
+          <div class="meta-row"><span class="meta-label">Bank / e-wallet</span><span class="meta-value">${escapeHtml(kreator.bank_name || '—')}</span></div>
+          <div class="meta-row"><span class="meta-label">Nomor rekening / HP</span><span class="meta-value">${escapeHtml(kreator.bank_account || '—')}</span></div>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="card">
+          <h2>Video<small>${progCount} total</small></h2>
+          ${progress.length === 0 ? '<div class="empty">Belum ada video.</div>' : `
+            <table class="ds-table">
+              <thead>
+                <tr>
+                  <th>Judul</th>
+                  <th>Brand</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${progress.map(v => `
+                  <tr>
+                    <td>
+                      ${v.brief_id
+                        ? `<a class="brief-link" href="screens-admin-brief-detail.html?id=${encodeURIComponent(v.brief_id)}">${escapeHtml(v.title || '—')}</a>`
+                        : escapeHtml(v.title || '—')}
+                    </td>
+                    <td>${escapeHtml(v.brand || '—')}</td>
+                    <td>${statusBadge(v.status || 'draft')}</td>
+                    <td>${escapeHtml(v.updated_at ? new Date(v.updated_at).toLocaleDateString('id-ID') : '—')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <!-- PEMBAYARAN -->
+        <div class="card">
+          <h2>Pembayaran<small>${payments.length} entri</small></h2>
+          ${payments.length === 0 ? '<div class="empty">Belum ada pembayaran.</div>' : `
+            <table class="ds-table">
+              <thead>
+                <tr>
+                  <th>Video</th>
+                  <th>Brand</th>
+                  <th>Nominal</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${payments.map(p => `
+                  <tr>
+                    <td>${escapeHtml(p.video_title || '—')}</td>
+                    <td>${escapeHtml(p.brand || '—')}</td>
+                    <td class="num-col">${fmtRp(p.fee)}</td>
+                    <td>${statusBadge(p.status || 'pending')}</td>
+                    <td>${escapeHtml(p.submitted_at ? new Date(p.submitted_at).toLocaleDateString('id-ID') : '—')}</td>
+                    <td>${escapeHtml(p.paid_at ? new Date(p.paid_at).toLocaleDateString('id-ID') : '—')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <div class="helper">
+          Halaman ini read-only. Aksi (mark paid, edit fee, upload bukti) ada di <a class="brief-link" href="screens-admin1.html">dasbor admin</a> → Fee panel.
+        </div>
+      `;
+    }
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const username = (params.get('kreator') || '').trim();
+      if (!username) {
+        renderError('Parameter ?kreator=username tidak ada di URL.');
+        return;
+      }
+
+      // Tunggu AdminApp siap (admin-common.js async)
+      let tries = 0;
+      while (!window.AdminApp && tries < 50) {
+        await new Promise(r => setTimeout(r, 60));
+        tries++;
+      }
+      const A = window.AdminApp;
+      if (!A) { renderError('AdminApp belum siap. Refresh halaman.'); return; }
+
+      const kreator = (A.data.profiles || []).find(p => p.username === username);
+      if (!kreator) { renderError('Kreator @' + username + ' tidak ditemukan di database.'); return; }
+      if (kreator.role !== 'kreator') {
+        renderError('@' + username + ' bukan kreator (role: ' + kreator.role + ').');
+        return;
+      }
+
+      const progress = (A.data.progress || []).filter(p => p.kreator === username);
+      const payments = (A.data.payments || []).filter(p => p.kreator === username);
+      const briefs   = A.data.briefs || [];
+
+      renderPage(kreator, progress, payments, briefs);
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>

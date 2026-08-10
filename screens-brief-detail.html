@@ -220,14 +220,11 @@
 
             <div class="field">
               <label>Status script</label>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span>
-                <span class="meta" style="font-family: var(--font-mono); font-size: 11px;">
-                  · diatur oleh admin
-                </span>
-              </div>
+              <div><span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span></div>
               <span class="field-hint">
-                Status hanya diatur oleh admin. Video tetap bisa di-upload terpisah kapan saja (gak harus nunggu script approved).
+                <strong>Lo</strong> trigger perubahan dengan klik "Tandai siap review" (Draft → Siap review).
+                <strong>Admin</strong> yang vote approve / revisi / tolak setelah lo submit.
+                Video bisa di-upload terpisah kapan saja.
               </span>
             </div>
 
@@ -235,7 +232,7 @@
               <span class="cta-label">Aksi cepat</span>
               ${state.status === 'review' || state.status === 'revisi' || isKreatorFinal
                 ? `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Sudah dikirim untuk review</button>
-                   <span class="cta-hint">Script ini menunggu admin review (atau sudah final). Status berikutnya diatur oleh admin. Video bisa di-upload terpisah di bawah.</span>`
+                   <span class="cta-hint">Script udah lo submit. Admin lagi review / vote. Status berikutnya (approve / revisi / tolak) ditentukan admin.</span>`
                 : hasScript
                   ? `<button type="button" class="btn btn-primary" id="btn-submit-review">Tandai script siap review →</button>
                      <span class="cta-hint">Setelah klik ini, script akan terkunci untuk diedit sampai admin beri feedback. Video tetap bisa di-upload terpisah.</span>`
@@ -252,9 +249,9 @@
                 </div>
               </div>` : ''}
 
-            ${/* Tombol "Simpan status" DIHAPUS — kreator tidak boleh ubah status sendiri.
-                 Status hanya diatur oleh admin. Kreator cukup nulis script + klik
-                 "Tandai siap review" untuk submit. */ ''}
+            ${/* Status flow: Kreator nulis → klik submit → status review.
+                 Admin vote → approve/reject/revisi. Kreator tidak bisa pilih
+                 status sendiri di dropdown, tapi bisa trigger perubahan via submit. */ ''}
           </div>
 
           ${renderUploadCard(brief, state.status)}

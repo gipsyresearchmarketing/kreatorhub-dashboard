@@ -119,13 +119,15 @@
 
       const progressListEl = document.getElementById('progress-list');
 
-      // map label dropdown (Indonesia) ke key status (lowercase)
-      const STATUS_VALUE_MAP = {
-        'Draft':            'draft',
-        'Sedang diedit':    'editing',
-        'Menunggu review':  'review',
-        'Disetujui':        'approved',
-        'Selesai':          'selesai'
+      // map key status (lowercase) ke label Indonesia — buat badge status readonly
+      const STATUS_LABELS = {
+        'draft':    'Draft',
+        'editing':  'Sedang diedit',
+        'review':   'Menunggu review',
+        'revisi':   'Perlu revisi',
+        'approved': 'Disetujui',
+        'rejected': 'Ditolak',
+        'selesai':  'Selesai'
       };
 
       function renderProgress() {
@@ -153,26 +155,14 @@
               <strong>${item.title}</strong>
               <small>${item.brand} · ${item.meta}</small>
             </div>
-            <select class="progress-select">
-              <option ${item.status === 'draft' ? 'selected' : ''}>Draft</option>
-              <option ${item.status === 'editing' ? 'selected' : ''}>Sedang diedit</option>
-              <option ${item.status === 'review' ? 'selected' : ''}>Menunggu review</option>
-              <option ${item.status === 'approved' ? 'selected' : ''}>Disetujui</option>
-              <option ${item.status === 'selesai' ? 'selected' : ''}>Selesai</option>
-            </select>
+            <span class="status ${item.status || 'draft'}" title="Status di-update realtime dari admin (kreator gabisa ubah manual)">${STATUS_LABELS[item.status] || item.status || 'Draft'}</span>
             <button type="button" class="btn btn-ghost">Detail →</button>
           `;
           row.querySelector('.btn-ghost').addEventListener('click', () => {
             window.location.href = 'screens-progres-detail.html?id=' + encodeURIComponent(item.id);
           });
-          row.querySelector('select').addEventListener('change', (e) => {
-            const newStatus = STATUS_VALUE_MAP[e.target.value] || e.target.value;
-            A.setStatusOverride(item.id, newStatus);
-            // mutate in-memory supaya render ulang setelah filter berubah konsisten
-            const idx = A.data.progress.findIndex(p => p.id === item.id);
-            if (idx >= 0) A.data.progress[idx] = Object.assign({}, A.data.progress[idx], { status: newStatus });
-            A.showToast('Status ' + item.title + ' diubah ke "' + e.target.value + '".');
-          });
+          // Status badge readonly — di-update realtime dari admin via Supabase subscription
+          // Kreator gabisa ubah manual (ga ada dropdown)
           progressListEl.appendChild(row);
         });
       }

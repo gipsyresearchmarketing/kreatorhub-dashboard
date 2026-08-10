@@ -1362,16 +1362,8 @@
       filterStatus.addEventListener('change', applyFilter);
 
       // Type filter (Semua / Video / Script) — toggle pill, re-render table
-      const queueTypeFilter = document.getElementById('queue-type-filter');
-      queueTypeFilter?.addEventListener('click', (e) => {
-        const pill = e.target.closest('.filter-pill');
-        if (!pill) return;
-        queueTypeFilter.querySelectorAll('.filter-pill').forEach(p => {
-          p.classList.toggle('active', p === pill);
-        });
-        const A = window.AdminApp;
-        if (A) renderQueueTable(A);
-      });
+      // NOTE: renderQueueTable ada di IIFE #2 jadi handler ini ada di situ juga
+      // (lihat bagian bawah di IIFE #2). Handler di sini dihapus biar ga duplikat.
 
       const briefSearch = document.getElementById('brief-search');
       briefSearch.addEventListener('input', () => {
@@ -3236,6 +3228,20 @@
       tbody.querySelectorAll('[data-act]').forEach(btn => {
         btn.addEventListener('click', () => handleDecision(btn.closest('tr'), btn.dataset.act));
       });
+      // Wire type-filter pill clicks (Semua / Video / Script)
+      const queueTypeFilter = document.getElementById('queue-type-filter');
+      if (queueTypeFilter && !queueTypeFilter._wired) {
+        queueTypeFilter._wired = true;
+        queueTypeFilter.addEventListener('click', (e) => {
+          const pill = e.target.closest('.filter-pill');
+          if (!pill) return;
+          queueTypeFilter.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.toggle('active', p === pill);
+          });
+          const A = window.AdminApp;
+          if (A) renderQueueTable(A);
+        });
+      }
       // Wire video link clicks
       tbody.querySelectorAll('[data-video-link]').forEach(titleEl => {
         titleEl.addEventListener('click', () => {

@@ -412,7 +412,7 @@ a.progress-row:hover .row-arrow { transform: translateX(2px); color: var(--accen
 
 /* ===== DASHBOARD OVERVIEW (status + fee side-by-side) ===== */
 .dashboard-overview {
-  --font-display: 'Plus Jakarta Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 .dashboard-overview h2,
 .dashboard-overview h3 {

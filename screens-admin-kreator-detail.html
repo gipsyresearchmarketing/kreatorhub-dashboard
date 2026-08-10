@@ -257,7 +257,7 @@
         return;
       }
 
-      // Tunggu AdminApp siap (admin-common.js async)
+      // Tunggu AdminApp script loaded
       let tries = 0;
       while (!window.AdminApp && tries < 50) {
         await new Promise(r => setTimeout(r, 60));
@@ -266,18 +266,46 @@
       const A = window.AdminApp;
       if (!A) { renderError('AdminApp belum siap. Refresh halaman.'); return; }
 
-      const kreator = (A.data.profiles || []).find(p => p.username === username);
-      if (!kreator) { renderError('Kreator @' + username + ' tidak ditemukan di database.'); return; }
-      if (kreator.role !== 'kreator') {
-        renderError('@' + username + ' bukan kreator (role: ' + kreator.role + ').');
-        return;
+      // Tunggu data populated — admin-common.js async refresh selesai
+      // dispatch event 'adminapp:ready' setelah A.data terisi
+      function doRender() {
+        const kreator = (A.data.profiles || []).find(p => p.username === username);
+        if (!kreator) { renderError('Kreator @' + username + ' tidak ditemukan di database.'); return; }
+        if (kreator.role !== 'kreator') {
+          renderError('@' + username + ' bukan kreator (role: ' + kreator.role + ').');
+          return;
+        }
+        const progress = (A.data.progress || []).filter(p => p.kreator === username);
+        const payments = (A.data.payments || []).filter(p => p.kreator === username);
+        const briefs   = A.data.briefs || [];
+        renderPage(kreator, progress, payments, briefs);
       }
 
-      const progress = (A.data.progress || []).filter(p => p.kreator === username);
-      const payments = (A.data.payments || []).filter(p => p.kreator === username);
-      const briefs   = A.data.briefs || [];
-
-      renderPage(kreator, progress, payments, briefs);
+      if ((A.data.profiles || []).length > 0) {
+        // Data sudah ready (race: admin-common.js kelar duluan)
+        doRender();
+      } else {
+        // Listen event ready (atau data-changed)
+        var done = false;
+        function tryRender() {
+          if (done) return;
+          if ((A.data.profiles || []).length > 0) {
+            done = true;
+            doRender();
+          }
+        }
+        document.addEventListener('adminapp:ready', tryRender, { once: true });
+        document.addEventListener('adminapp:data-changed', tryRender);
+        // Safety timeout 5 detik
+        setTimeout(function () {
+          if (!done) {
+            done = true;
+            renderError('Data kreator belum dimuat setelah 5 detik. Coba refresh halaman.');
+          }
+        }, 5000);
+        // Trigger refresh kalau data masih kosong (edge case: cache stale)
+        try { A.refresh && A.refresh(); } catch (_) {}
+      }
     }
 
     init();

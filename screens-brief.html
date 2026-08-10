@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="creator-common.css">
+  <style>
+    /* Status legend (Arti status) di halaman Brief & script */
+    .status-legend .legend-lead { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.55; }
+    .status-legend .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 24px; }
+    .status-legend .legend-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .status-legend .legend-item:last-child { border-bottom: 0; }
+    .status-legend .legend-item p { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0; }
+    .status-legend .legend-item strong { color: var(--fg); font-weight: 500; }
+    .status-legend .legend-item .status { flex-shrink: 0; min-width: 92px; text-align: center; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="supabase-client.js"></script>
@@ -78,6 +88,42 @@
           <button type="button" class="brand-chip" data-brand="Jamuzen"><span class="dot"></span>Jamuzen</button>
           <button type="button" class="brand-chip" data-brand="Convictio.id"><span class="dot"></span>Convictio.id</button>
           <button type="button" class="brand-chip" data-brand="CalmadeAI"><span class="dot"></span>CalmadeAI</button>
+        </div>
+      </div>
+
+      <!-- Status legend — jelasin tiap status artinya di workflow -->
+      <div class="card status-legend" data-od-id="status-legend">
+        <p class="eyebrow">ARTI STATUS</p>
+        <p class="legend-lead">Tiap status nandain tahap brief &amp; script lo. Klik status pill di brief card buat liat di tahap mana lo sekarang.</p>
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="status draft">Draft</span>
+            <p><strong>Draft</strong> — Brief baru, belum ditulis script-nya. Mulai nulis sekarang.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status editing">Sedang ditulis</span>
+            <p><strong>Sedang ditulis</strong> — Lagi nulis script. Belum disubmit ke admin.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status review">Siap review</span>
+            <p><strong>Siap review</strong> — Script udah lo submit. Admin lagi review / voting.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status revisi">Perlu revisi</span>
+            <p><strong>Perlu revisi</strong> — Admin minta revisi. Edit script sesuai feedback, submit ulang.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status approved">Disetujui</span>
+            <p><strong>Disetujui</strong> — Script di-acc admin. Lanjut upload video.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status rejected">Ditolak</span>
+            <p><strong>Ditolak</strong> — Script ditolak admin. Hubungi admin kalo mau diskusi.</p>
+          </div>
+          <div class="legend-item">
+            <span class="status selesai">Selesai</span>
+            <p><strong>Selesai</strong> — Video published / final. Brief closed.</p>
+          </div>
         </div>
       </div>
 

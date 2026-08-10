@@ -470,6 +470,12 @@
 
     .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
 
+    /* type badge (Script / Video) di kolom Tipe antrian review */
+    .type-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+    .type-badge svg { stroke: currentColor; }
+    .type-script { background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 25%, transparent); }
+    .type-video  { background: color-mix(in oklch, var(--warn)   14%, transparent); color: color-mix(in oklch, var(--warn) 70%, var(--fg)); border: 1px solid color-mix(in oklch, var(--warn) 28%, transparent); }
+
     /* bar chart (laporan) */
     .bar-chart { display: flex; flex-direction: column; gap: 12px; }
     .bar-row { display: grid; grid-template-columns: 160px 1fr 56px; gap: 12px; align-items: center; }
@@ -700,6 +706,7 @@
                 <th style="width: 28%;">Video</th>
                 <th>Brand</th>
                 <th>Kreator</th>
+                <th>Tipe</th>
                 <th>Status</th>
                 <th class="num-col">Deadline</th>
                 <th style="text-align: right;">Aksi</th>
@@ -3173,10 +3180,10 @@
         } else {
           linkHtml = '<span style="color: var(--muted);">—</span>';
         }
-        // Type badge
+        // Type badge (lebih prominent di kolom sendiri)
         const typeBadge = item.type === 'script'
-          ? `<span class="pill" style="background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); font-size: 10px; padding: 2px 7px; border-radius: 999px; margin-left: 6px;">Script</span>`
-          : `<span class="pill" style="background: var(--fg-soft); color: var(--muted); font-size: 10px; padding: 2px 7px; border-radius: 999px; margin-left: 6px;">Video</span>`;
+          ? `<span class="type-badge type-script" title="Script perlu di-approve via voting quorum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>Script</span>`
+          : `<span class="type-badge type-video" title="Video perlu di-approve (single-admin)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Video</span>`;
         // Actions: untuk video pakai single-admin (legacy), untuk script pakai "Buka brief" link
         let actionsHtml;
         if (item.type === 'script') {
@@ -3197,7 +3204,7 @@
           <td>
             <div class="row-title">
               <div>
-                <strong ${item.type === 'video' ? 'data-video-link tabindex="0"' : ''}>${escapeHtml(item.title)}${typeBadge}</strong>
+                <strong ${item.type === 'video' ? 'data-video-link tabindex="0"' : ''}>${escapeHtml(item.title)}</strong>
                 <small>${escapeHtml(item.meta || '')}</small>
               </div>
             </div>
@@ -3210,6 +3217,7 @@
               <div class="name">${escapeHtml(displayName)}<small>${escapeHtml(item.kreator)}</small></div>
             </div>
           </td>
+          <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
           <td class="num-col">${escapeHtml(briefDeadline)}</td>
           <td>${actionsHtml}</td>

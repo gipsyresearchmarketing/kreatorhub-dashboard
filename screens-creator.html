@@ -198,14 +198,14 @@
       <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="roas-perf">
         <div class="section-title">
           <h2 class="h2">Performa ROAS</h2>
-          <span class="meta">gross revenue ÷ ad spend</span>
+          <span class="meta">auto-ROAS coming soon · formula pending</span>
         </div>
 
         <div class="roas-grid">
           <div class="roas-hero">
             <span class="roas-label">Overall ROAS</span>
-            <span class="roas-value" id="roas-overall">3,0×</span>
-            <span class="roas-meta" id="roas-meta">—</span>
+            <span class="roas-value" id="roas-overall">0,0×</span>
+            <span class="roas-meta" id="roas-meta">Menunggu integrasi Meta API</span>
             <span class="roas-formula">Σ grossRev ÷ Σ adSpend</span>
           </div>
           <div class="roas-list" id="roas-list"></div>
@@ -643,35 +643,26 @@
       });
       renderKomisiChart(30);
 
-      // ---- ROAS performance ----
-      const overallRoas = totalAdSpend > 0 ? (totalGrossRev / totalAdSpend) : 0;
-      document.getElementById('roas-overall').textContent = overallRoas.toFixed(2).replace('.', ',') + '×';
-      document.getElementById('roas-meta').textContent = fmtRp.format(totalGrossRev) + ' dari ' + fmtRp.format(totalAdSpend) + ' spend';
+      // ---- ROAS performance (placeholder: zero semua sampai formula auto-ROAS dari Meta ready) ----
+      // TODO: ganti dengan auto-fetch dari Meta API (formula lagi disusun Bagas)
+      document.getElementById('roas-overall').textContent = '0,0×';
+      document.getElementById('roas-meta').textContent = 'Menunggu integrasi Meta API';
 
-      const brandData = {};
-      payments.forEach(p => {
-        if (!brandData[p.brand]) brandData[p.brand] = { adSpend: 0, grossRev: 0, fee: 0, count: 0 };
-        brandData[p.brand].adSpend   += p.adSpend;
-        brandData[p.brand].grossRev  += p.grossRevenue;
-        brandData[p.brand].fee       += p.fee;
-        brandData[p.brand].count     += 1;
-      });
-      const brandList = Object.keys(brandData).map(b => ({
+      const brandList = ['Jamuzen', 'CalmadeAI', 'Convictio.id', 'Gipsy Research'].map(b => ({
         brand: b,
-        ...brandData[b],
-        roas: brandData[b].adSpend > 0 ? (brandData[b].grossRev / brandData[b].adSpend) : 0
-      })).sort((a, b) => b.roas - a.roas);
-      const maxRoas = Math.max.apply(null, brandList.map(b => b.roas));
+        adSpend: 0,
+        grossRev: 0,
+        roas: 0
+      }));
       document.getElementById('roas-list').innerHTML = brandList.map(b => {
-        const w = maxRoas > 0 ? (b.roas / maxRoas * 100) : 0;
         return `
           <div class="roas-row">
             <div class="row-top">
               <span class="brand-name">${b.brand}</span>
-              <span class="roas-num">${b.roas.toFixed(2).replace('.', ',')}×</span>
-              <span class="spend">${fmtRp.format(b.adSpend)}</span>
+              <span class="roas-num">0,00×</span>
+              <span class="spend">—</span>
             </div>
-            <div class="row-bar"><span style="width: ${w}%"></span></div>
+            <div class="row-bar"><span style="width: 0%"></span></div>
           </div>`;
       }).join('');
 

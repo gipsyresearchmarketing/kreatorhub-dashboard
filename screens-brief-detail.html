@@ -170,6 +170,25 @@
         const isKreatorFinal = ['approved', 'rejected', 'selesai'].includes(state.status);
 
         contentEl.innerHTML = `
+          <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-info">
+            <div class="section-title">
+              <h2 class="h2">Detail brief</h2>
+              <span class="meta brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand.toUpperCase())}</span>
+            </div>
+            <div class="field">
+              <label>Judul brief</label>
+              <div class="form-readonly">${escapeHtml(brief.title)}</div>
+            </div>
+            <div class="field">
+              <label>Requirement</label>
+              <div class="form-readonly">${escapeHtml(brief.meta)}</div>
+            </div>
+            <div class="field">
+              <label>Deadline</label>
+              <div class="form-readonly currency">${escapeHtml(brief.deadline)}</div>
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-script">
             <div class="section-title">
               <h2 class="h2">Script video ${scriptEditable ? '' : '<span class="meta" style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warn);">· dikunci</span>'}</h2>

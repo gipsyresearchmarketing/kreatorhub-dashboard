@@ -3112,8 +3112,11 @@
       const typeFilter = document.querySelector('#queue-type-filter .filter-pill.active')?.dataset.type || '';
 
       // Build unified items array: video (progress) + script (brief_scripts with status 'review'/'revisi')
+      // Video: cuma status 'review' atau 'revisi' yang nongol di antrian. Begitu
+      // admin approve/reject, row otomatis hilang dari antrian (UX queue ideal).
       const videoItems = (A.data.progress || [])
         .filter(p => inScope(p.brand) || inScope(briefsById[p.brief_id]))
+        .filter(p => p.status === 'review' || p.status === 'revisi')
         .map(p => ({
           type: 'video',
           id: p.id,

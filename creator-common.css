@@ -13,8 +13,8 @@
   --danger:  oklch(58% 0.18 25);
   --done:    oklch(50% 0.13 195);
 
-  --font-display: 'Poppins', system-ui, sans-serif;
-  --font-body:    'Poppins', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
   --fs-h1: clamp(24px, 3vw, 32px);
@@ -412,7 +412,7 @@ a.progress-row:hover .row-arrow { transform: translateX(2px); color: var(--accen
 
 /* ===== DASHBOARD OVERVIEW (status + fee side-by-side) ===== */
 .dashboard-overview {
-  --font-display: 'Plus Jakarta Sans', 'Poppins', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 .dashboard-overview h2,
 .dashboard-overview h3 {

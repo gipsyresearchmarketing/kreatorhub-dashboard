@@ -53,8 +53,10 @@
     .brand-logo { display: flex; align-items: center; gap: 10px; }
     .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
     .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
-    .topnav .back { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+    .topnav .back { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
     .topnav .back:hover { color: var(--fg); }
+    .topnav .back { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--accent); font-weight: 500; transition: background 0.15s ease; }
+    .topnav .back:hover { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in oklch, var(--accent) 30%, transparent); }
     .wrap { max-width: 1080px; margin-inline: auto; padding: 24px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: var(--gap-md); }
     .card h2 { font-size: var(--fs-h2); margin-bottom: 12px; }
@@ -102,7 +104,10 @@
         <span class="logo-mark">G</span>
         <span class="logo-text">Gipsy Group</span>
       </a>
-      <a href="screens-admin1.html" class="back">← Kembali ke dasbor admin</a>
+      <a href="screens-admin1.html" class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        Kembali ke dasbor admin
+      </a>
     </div>
   </header>
 

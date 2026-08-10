@@ -54,6 +54,12 @@
     .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
     .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
     .brand-badge-pill { font-family: var(--font-mono); font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); letter-spacing: 0.02em; }
+
+    /* type-filter pills (Semua / Video / Script di antrian review) */
+    .filter-pills.type-filter { display: inline-flex; gap: 2px; padding: 3px; background: var(--fg-soft); border-radius: 999px; margin-left: 8px; }
+    .filter-pills.type-filter .filter-pill { padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); border-radius: 999px; }
+    .filter-pills.type-filter .filter-pill:hover { color: var(--fg); }
+    .filter-pills.type-filter .filter-pill.active { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px color-mix(in oklch, var(--fg) 12%, transparent); }
     .topnav-right { display: flex; align-items: center; gap: var(--gap-md); }
     .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
     .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; }
@@ -692,10 +698,10 @@
             <option value="revision">Revisi</option>
             <option value="draft">Draft</option>
           </select>
-          <div class="filter-pills" id="queue-type-filter" style="display: flex; gap: 4px; padding: 2px; background: var(--fg-soft); border-radius: 999px; margin-left: 8px;">
-            <button type="button" class="filter-pill active" data-type="" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Semua</button>
-            <button type="button" class="filter-pill" data-type="video" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Video</button>
-            <button type="button" class="filter-pill" data-type="script" style="border-radius: 999px; padding: 5px 12px; font-size: 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer;">Script</button>
+          <div class="filter-pills type-filter" id="queue-type-filter">
+            <button type="button" class="filter-pill active" data-type="">Semua</button>
+            <button type="button" class="filter-pill" data-type="video">Video</button>
+            <button type="button" class="filter-pill" data-type="script">Script</button>
           </div>
         </div>
 
@@ -1362,9 +1368,6 @@
         if (!pill) return;
         queueTypeFilter.querySelectorAll('.filter-pill').forEach(p => {
           p.classList.toggle('active', p === pill);
-          p.style.background = p === pill ? 'var(--surface)' : 'transparent';
-          p.style.color = p === pill ? 'var(--fg)' : 'var(--muted)';
-          p.style.fontWeight = p === pill ? '500' : '400';
         });
         const A = window.AdminApp;
         if (A) renderQueueTable(A);

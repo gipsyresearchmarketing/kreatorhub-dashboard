@@ -28,6 +28,18 @@
 
   const DEFAULT_FEE = 300000;   // nominal fee default per video di-approve (editable di fee panel)
 
+  // Resolve fee untuk auto-create payment:
+  // 1) fields.fee (admin override pas vote, kalo ada) → 2) brief.fee (kalo brief
+  //    punya nominal) → 3) DEFAULT_FEE=300000 fallback
+  function resolveFeeForItem(item, fieldsFee) {
+    if (fieldsFee != null) return Number(fieldsFee);
+    if (item && item.brief_id) {
+      const brief = (data.briefs || []).find(b => b.id === item.brief_id);
+      if (brief && brief.fee != null) return Number(brief.fee);
+    }
+    return DEFAULT_FEE;
+  }
+
   // ---- session: single source of truth = Supabase Auth + profiles table ----
   // Tidak pakai localStorage mirror. sb.auth manage token, profiles simpan role/username/displayName.
 
@@ -142,11 +154,22 @@
     return data;
   }
 
-  // ---- approvals (multi-admin quorum 3/5) ----
-  // Quorum untuk script & video: 3/5 admin harus vote approve (atau reject) untuk status final berubah.
+  // ---- approvals (multi-admin quorum, varies per brand) ----
+  // Gipsy Research: 3/5 admin quorum (sesuai agreement awal).
+  // CalmadeAI / Jamuzen / Convictio.id: 1 admin (single-admin acc).
   // Fee: single-admin (tidak pakai quorum), tetap pakai updatePayment.
-  const APPROVAL_QUORUM = 3;
+  const BRAND_QUORUM = {
+    'Gipsy Research': 3,
+    'CalmadeAI':      1,
+    'Jamuzen':        1,
+    'Convictio.id':   1
+  };
+  const APPROVAL_QUORUM = 3;  // legacy default — actual lookup via getBrandQuorum(brand)
   const TOTAL_ADMINS = 5;
+
+  function getBrandQuorum(brand) {
+    return (BRAND_QUORUM && BRAND_QUORUM[brand]) || APPROVAL_QUORUM;
+  }
 
   function voteCounts(targetType, targetId) {
     const rows = (data.approvals || []).filter(a => a.target_type === targetType && a.target_id === targetId);
@@ -182,12 +205,14 @@
     }));
     return res.data[0];
   }
-  function quorumReached(counts) {
-    return counts.approve >= APPROVAL_QUORUM || counts.reject >= APPROVAL_QUORUM;
+  function quorumReached(counts, brand) {
+    const q = getBrandQuorum(brand);
+    return counts.approve >= q || counts.reject >= q;
   }
-  function finalDecision(counts) {
-    if (counts.approve >= APPROVAL_QUORUM) return 'approved';
-    if (counts.reject >= APPROVAL_QUORUM) return 'rejected';
+  function finalDecision(counts, brand) {
+    const q = getBrandQuorum(brand);
+    if (counts.approve >= q) return 'approved';
+    if (counts.reject >= q) return 'rejected';
     return null;
   }
 
@@ -291,13 +316,15 @@
     // 3) Approve → auto-create baris fee (status pending, nominal default).
     //    id deterministik + ignoreDuplicates → aman kalau video di-approve ulang
     //    setelah revisi (fee yang udah dikoreksi admin nggak ke-reset).
+    //    Fee priority: fields.fee (override) > brief.fee > DEFAULT_FEE.
     if (decision === 'approve') {
+      const fee = resolveFeeForItem(item, null);
       const payRes = await sb.from('payments').upsert({
         id: 'pay-' + progressId,
         kreator: item.kreator,
         video_title: item.title,
         brand: item.brand,
-        fee: DEFAULT_FEE,
+        fee,
         status: 'pending',
         submitted_at: new Date().toISOString(),
         note: ''
@@ -356,15 +383,7 @@
       const item = data.progress.find(p => p.id === id);
       if (item) {
         const payId = 'pay-' + id;
-        // Fee priority:
-        // 1) fields.fee (admin override pas vote) → 2) briefs.fee (kalo brief
-        // punya nominal) → 3) DEFAULT_FEE=300000 fallback
-        let fee = 300000;
-        if (fields.fee != null) fee = Number(fields.fee);
-        else if (item.brief_id) {
-          const sb = data.briefs.find(b => b.id === item.brief_id);
-          if (sb && sb.fee != null) fee = Number(sb.fee);
-        }
+        const fee = resolveFeeForItem(item, fields.fee);
         const payRes = await sb.from('payments').upsert({
           id: payId,
           kreator: item.kreator,

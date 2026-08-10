@@ -1069,8 +1069,8 @@
         const scriptKey = briefId; // target_id untuk approvals.script
         const sc = A0 && A0.voteCounts ? A0.voteCounts('script', scriptKey) : { approve: 0, reject: 0, voters: [] };
         const myScriptVote = A0 && A0.myVote ? A0.myVote('script', scriptKey) : null;
-        const scriptLocked = A0 && A0.quorumReached ? A0.quorumReached(sc) : false;
-        const scriptFinal = A0 && A0.finalDecision ? A0.finalDecision(sc) : null;
+        const scriptLocked = A0 && A0.quorumReached ? A0.quorumReached(sc, brief.brand) : false;
+        const scriptFinal = A0 && A0.finalDecision ? A0.finalDecision(sc, brief.brand) : null;
         const scriptCounterHtml = `
           <div class="vote-counter" id="script-vote-counter">
             <div class="vote-bar">
@@ -1118,8 +1118,8 @@
               const A0 = window.AdminApp;
               const vc = A0 && A0.voteCounts ? A0.voteCounts('video', v.progress_id) : { approve: 0, reject: 0, voters: [] };
               const myV = A0 && A0.myVote ? A0.myVote('video', v.progress_id) : null;
-              const locked = A0 && A0.quorumReached ? A0.quorumReached(vc) : false;
-              const finalDec = A0 && A0.finalDecision ? A0.finalDecision(vc) : null;
+              const locked = A0 && A0.quorumReached ? A0.quorumReached(vc, v.brand || brief.brand) : false;
+              const finalDec = A0 && A0.finalDecision ? A0.finalDecision(vc, v.brand || brief.brand) : null;
               // Status display: kalau locked pakai finalDec, kalau belum pakai v.status (pending)
               const effectiveStatus = locked ? (finalDec === 'approved' ? 'paid' : finalDec) : v.status;
               const stLabel = effectiveStatus === 'paid' ? 'Disetujui' : effectiveStatus === 'rejected' ? 'Ditolak' : effectiveStatus === 'pending' ? 'Menunggu' : effectiveStatus;
@@ -1298,7 +1298,8 @@
             await A.castVote('script', briefId, decision);
             // Cek quorum → kalau tercapai, update status brief_scripts
             const counts = A.voteCounts('script', briefId);
-            const final = A.finalDecision(counts);
+            const scriptBrief = A.data.briefs.find(b => b.id === briefId);
+            const final = A.finalDecision(counts, scriptBrief && scriptBrief.brand);
             if (final && A.updateScript) {
               const sbBrief = A.data.briefs.find(b => b.id === briefId);
               const creator = sbBrief && sbBrief.assigned_to;
@@ -1449,7 +1450,8 @@
           try {
             await A.castVote('video', progressId, decision);
             const counts = A.voteCounts('video', progressId);
-            const final = A.finalDecision(counts);
+            const progItem = A.data.progress.find(p => p.id === progressId);
+            const final = A.finalDecision(counts, progItem && progItem.brand);
             if (final && A.updateProgress) {
               // Map final decision → progress.status
               const newStatus = final === 'approved' ? 'approved' : 'rejected';

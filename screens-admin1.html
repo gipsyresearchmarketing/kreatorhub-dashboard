@@ -3025,7 +3025,9 @@
     'use strict';
 
     function brandTag(name) {
-      return (name || '').toUpperCase().slice(0, 12);
+      // Truncate dengan ellipsis kalo > 18 char (Gipsy Research = 14 char aman)
+      const s = (name || '').toUpperCase();
+      return s.length > 18 ? s.slice(0, 17) + '…' : s;
     }
     function statusPill(status) {
       const map = {

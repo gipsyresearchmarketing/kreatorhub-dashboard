@@ -355,57 +355,102 @@
         const existing = (A.data.progress || []).find(p =>
           p.brief_id === brief.id && p.kreator === A.session.username
         );
-        if (existing) {
-          // Sudah pernah upload → tampilin status, bukan form
+        // Hitung nomor revisi: ada berapa revisi note sebelumnya + 1
+        const revisiCount = (existing && existing.note && existing.note.match(/\[Revisi #(\d+)\]/))
+          ? Number(existing.note.match(/\[Revisi #(\d+)\]/)[1]) + 1
+          : 1;
+        const isRevisi = existing && (existing.status === 'revisi' || existing.status === 'rejected');
+        const isFinal = existing && (existing.status === 'approved' || existing.status === 'selesai');
+
+        // Inline styles buat comparison/revisi blocks (gak perlu nambah CSS global)
+        const prevStyle = 'margin: 12px 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in oklch, var(--fg) 4%, transparent);';
+        const bannerStyle = 'margin-bottom: 16px; padding: 10px 12px; background: color-mix(in oklch, var(--warn) 14%, transparent); border: 1px dashed color-mix(in oklch, var(--warn) 40%, transparent); border-radius: 8px; color: var(--fg); font-size: 13px;';
+        const headStyle = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;';
+
+        // Render video sebelumnya (untuk comparison / history)
+        function renderPreviousVideoHtml() {
+          if (!existing) return '';
+          const revisiTag = existing.note && existing.note.match(/\[Revisi #\d+\]/) ? existing.note.match(/\[Revisi #\d+\]/)[0] : '';
+          return `
+            <div class="previous-video-block" style="${prevStyle}">
+              <div class="previous-video-head" style="${headStyle}">
+                <span class="meta">${revisiTag ? revisiTag + ' — ' : ''}video sebelumnya</span>
+                <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
+              </div>
+              <div class="field">
+                <label>Judul sebelumnya</label>
+                <div class="form-readonly">${escapeHtml(existing.title || '—')}</div>
+              </div>
+              ${existing.video_url ? `<div class="field"><label>Link video sebelumnya</label><div class="form-readonly"><a href="${escapeHtml(existing.video_url)}" target="_blank" rel="noopener" style="color: var(--accent);">${escapeHtml(existing.video_url)}</a></div></div>` : '<div class="field"><label>File video sebelumnya</label><div class="form-readonly">[file: ' + escapeHtml((existing.video_storage_path || '').split('/').pop() || '—') + ']</div></div>'}
+              ${existing.note ? `<div class="field"><label>Catatan revisi sebelumnya</label><div class="form-readonly" style="white-space: pre-wrap;">${escapeHtml(existing.note)}</div></div>` : ''}
+            </div>`;
+        }
+
+        if (isFinal) {
+          // Approved / selesai → read-only
           return `
             <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
               <div class="section-title">
                 <h2 class="h2">Video kamu</h2>
                 <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
               </div>
-              <div class="field">
-                <label>Judul</label>
-                <div class="form-readonly">${escapeHtml(existing.title || brief.title)}</div>
-              </div>
-              ${existing.video_url ? `<div class="field"><label>Link video</label><div class="form-readonly"><a href="${escapeHtml(existing.video_url)}" target="_blank" rel="noopener" style="color: var(--accent);">${escapeHtml(existing.video_url)}</a></div></div>` : ''}
-              <span class="field-hint">Untuk revisi / upload ulang, hubungi admin atau gunakan halaman Progres.</span>
+              ${renderPreviousVideoHtml()}
+              <span class="field-hint">Video udah final. Hubungi admin kalo perlu diskusi lebih lanjut.</span>
             </div>`;
         }
+
+        if (existing && !isRevisi) {
+          // Submitted, nunggu review (status='review') → show info + waiting note
+          return `
+            <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
+              <div class="section-title">
+                <h2 class="h2">Video kamu</h2>
+                <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
+              </div>
+              ${renderPreviousVideoHtml()}
+              <span class="field-hint">Video udah lo submit. Admin lagi review / vote. Status berikutnya (approve / revisi / tolak) ditentukan admin.</span>
+            </div>`;
+        }
+
+        // Form mode: initial upload, revisi, atau rejected
+        const isRevisiMode = isRevisi && existing;
         return `
           <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
             <div class="section-title">
-              <h2 class="h2">Upload video</h2>
-              <span class="meta">${hasPreFilledScript ? 'Admin sudah sediakan script (optional) — langsung upload video bisa' : 'Bisa upload langsung — gak perlu nunggu script'}</span>
+              <h2 class="h2">${isRevisiMode ? '🔄 Upload revisi #' + revisiCount : 'Upload video'}</h2>
+              <span class="meta">${isRevisiMode ? 'Ganti video lama dengan versi baru' : (hasPreFilledScript ? 'Admin sudah sediakan script (optional) — langsung upload video bisa' : 'Bisa upload langsung — gak perlu nunggu script')}</span>
             </div>
-            <form id="brief-upload-form">
+            ${renderPreviousVideoHtml()}
+            <form id="brief-upload-form" data-revision="${revisiCount}">
+              ${isRevisiMode ? '<div class="revisi-banner" style="' + bannerStyle + '">⚠️ Video sebelumnya akan <strong>diganti</strong> dengan yang baru. Riwayat revisi ada di Progres page.</div>' : ''}
               <div class="field">
-                <label for="brief-vid-link">Link video <small style="color: var(--muted); font-weight: 400;">(YouTube / TikTok / drive)</small></label>
+                <label for="brief-vid-link">Link video ${isRevisiMode ? '(revisi baru)' : ''} <small style="color: var(--muted); font-weight: 400;">(YouTube / TikTok / drive)</small></label>
                 <input type="url" class="input" id="brief-vid-link" placeholder="https://…" />
                 <span class="field-hint">Atau upload file di bawah — pilih salah satu.</span>
               </div>
               <div class="field">
-                <label for="brief-vid-file">File video <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <label for="brief-vid-file">File video ${isRevisiMode ? '(revisi baru)' : ''} <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
                 <input type="file" class="input" id="brief-vid-file" accept="video/mp4,video/quicktime,video/webm" />
                 <span class="field-hint">Format .mp4/.mov/.webm — maks 200MB.</span>
               </div>
               <div class="field">
-                <label for="brief-vid-thumb">Thumbnail <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <label for="brief-vid-thumb">Thumbnail ${isRevisiMode ? '(opsional)' : ''} <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
                 <input type="file" class="input" id="brief-vid-thumb" accept="image/png,image/jpeg,image/webp" />
               </div>
               <div class="field">
-                <label for="brief-vid-title">Judul untuk admin</label>
+                <label for="brief-vid-title">Judul ${isRevisiMode ? '(revisi)' : ''} untuk admin</label>
                 <input type="text" class="input" id="brief-vid-title" value="${escapeHtml(brief.title)}" />
               </div>
               <div class="field">
-                <label for="brief-vid-notes">Catatan untuk admin <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
-                <textarea class="textarea" id="brief-vid-notes" rows="2" placeholder="Hal yang perlu admin perhatikan?"></textarea>
+                <label for="brief-vid-notes">Catatan untuk admin ${isRevisiMode ? '(revisi)' : ''} <small style="color: var(--muted); font-weight: 400;">(opsional)</small></label>
+                <textarea class="textarea" id="brief-vid-notes" rows="2" placeholder="${isRevisiMode ? 'Apa yang berubah dari versi sebelumnya?' : 'Hal yang perlu admin perhatikan?'}"></textarea>
               </div>
               <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 14px;">
                 <input type="checkbox" id="brief-vid-ready" />
                 Saya siap kirim untuk review admin sekarang.
               </label>
               <div style="display: flex; gap: 8px;">
-                <button type="submit" class="btn btn-primary" id="brief-btn-submit">Kirim untuk review</button>
+                <button type="submit" class="btn btn-primary" id="brief-btn-submit">${isRevisiMode ? 'Kirim revisi untuk review' : 'Kirim untuk review'}</button>
                 <button type="button" class="btn btn-secondary" id="brief-btn-draft">Simpan draft</button>
               </div>
             </form>
@@ -421,13 +466,19 @@
         const notesEl = document.getElementById('brief-vid-notes');
         const submitBtn = document.getElementById('brief-btn-submit');
         const draftBtn = document.getElementById('brief-btn-draft');
+        const formEl = document.getElementById('brief-upload-form');
         if (!linkEl || !titleEl) return;
 
         const link = linkEl.value.trim();
         const file = fileEl.files[0];
         const thumb = thumbEl.files[0];
         const title = titleEl.value.trim();
-        const notes = notesEl ? notesEl.value.trim() : '';
+        const notesRaw = notesEl ? notesEl.value.trim() : '';
+        // Revisi: prepend [Revisi #N] marker ke note biar trackable
+        const revisiN = formEl ? Number(formEl.dataset.revision || 1) : 1;
+        const notes = revisiN > 1
+          ? '[Revisi #' + revisiN + '] ' + (notesRaw || 'Upload revisi #' + revisiN)
+          : notesRaw;
 
         if (!link && !file) {
           A.showToast('Lengkapi link video atau upload file.', 'error');
@@ -465,7 +516,7 @@
             thumbnail_path: thumbPath,
             brief_id: brief.id
           });
-          A.showToast(status === 'review' ? 'Terkirim untuk review admin ✓' : 'Draft tersimpan.', 'success');
+          A.showToast(status === 'review' ? (revisiN > 1 ? 'Revisi #' + revisiN + ' terkirim ✓' : 'Terkirim untuk review admin ✓') : 'Draft tersimpan.', 'success');
           render();
         } catch (err) {
           A.showToast('Upload gagal: ' + err.message, 'error');

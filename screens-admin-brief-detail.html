@@ -1074,12 +1074,12 @@
         const scriptCounterHtml = `
           <div class="vote-counter" id="script-vote-counter">
             <div class="vote-bar">
-              <span class="vote-bar-approve" style="width: ${(sc.approve / A0.TOTAL_ADMINS) * 100}%"></span>
-              <span class="vote-bar-reject"  style="width: ${(sc.reject  / A0.TOTAL_ADMINS) * 100}%"></span>
+              <span class="vote-bar-approve" style="width: ${(sc.approve / A0.getBrandTotalAdmins(brief.brand)) * 100}%"></span>
+              <span class="vote-bar-reject"  style="width: ${(sc.reject  / A0.getBrandTotalAdmins(brief.brand)) * 100}%"></span>
             </div>
             <div class="vote-counts">
-              <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${sc.approve}/${A0.TOTAL_ADMINS}</strong></span>
-              <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${sc.reject}/${A0.TOTAL_ADMINS}</strong></span>
+              <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${sc.approve}/${A0.getBrandTotalAdmins(brief.brand)}</strong></span>
+              <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${sc.reject}/${A0.getBrandTotalAdmins(brief.brand)}</strong></span>
             </div>
             ${scriptLocked ? `<div class="vote-final" style="color: ${scriptFinal === 'approved' ? 'var(--success)' : 'var(--danger)'};">Quorum tercapai → <strong>${scriptFinal === 'approved' ? 'DISETUJUI' : 'DITOLAK'}</strong> (locked)</div>` : ''}
           </div>`;
@@ -1129,12 +1129,12 @@
               const videoVoteCounterHtml = `
                 <div class="vote-counter">
                   <div class="vote-bar">
-                    <span class="vote-bar-approve" style="width: ${(vc.approve / A0.TOTAL_ADMINS) * 100}%"></span>
-                    <span class="vote-bar-reject"  style="width: ${(vc.reject / A0.TOTAL_ADMINS) * 100}%"></span>
+                    <span class="vote-bar-approve" style="width: ${(vc.approve / A0.getBrandTotalAdmins(v.brand || brief.brand)) * 100}%"></span>
+                    <span class="vote-bar-reject"  style="width: ${(vc.reject / A0.getBrandTotalAdmins(v.brand || brief.brand)) * 100}%"></span>
                   </div>
                   <div class="vote-counts">
-                    <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${vc.approve}/${A0.TOTAL_ADMINS}</strong></span>
-                    <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${vc.reject}/${A0.TOTAL_ADMINS}</strong></span>
+                    <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${vc.approve}/${A0.getBrandTotalAdmins(v.brand || brief.brand)}</strong></span>
+                    <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${vc.reject}/${A0.getBrandTotalAdmins(v.brand || brief.brand)}</strong></span>
                   </div>
                   ${locked ? `<div class="vote-final" style="color: ${finalDec === 'approved' ? 'var(--success)' : 'var(--danger)'};">Quorum tercapai → <strong>${finalDec === 'approved' ? 'DISETUJUI' : 'DITOLAK'}</strong> (locked)</div>` : ''}
                 </div>`;
@@ -1306,7 +1306,7 @@
               if (creator) await A.updateScript(briefId, creator, { status: final });
             }
             const myV = A.myVote('script', briefId);
-            showToast(`Vote "${myV === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
+            showToast(`Vote "${myV === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.getBrandTotalAdmins(scriptBrief && scriptBrief.brand)} approve, ${counts.reject}/${A.getBrandTotalAdmins(scriptBrief && scriptBrief.brand)} reject`);
             renderBriefDetail(brief);
           } catch (err) {
             showToast('Vote gagal: ' + err.message);
@@ -1458,7 +1458,7 @@
               await A.updateProgress(progressId, { status: newStatus });
               showToast(`Quorum tercapai — video ditandai ${newStatus}.`);
             } else {
-              showToast(`Vote "${decision === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.TOTAL_ADMINS} approve, ${counts.reject}/${A.TOTAL_ADMINS} reject`);
+              showToast(`Vote "${decision === 'approve' ? 'Setujui' : 'Tolak'}" tersimpan · ${counts.approve}/${A.getBrandTotalAdmins(progItem && progItem.brand)} approve, ${counts.reject}/${A.getBrandTotalAdmins(progItem && progItem.brand)} reject`);
             }
             renderBriefDetail(brief);
           } catch (err) {

@@ -164,11 +164,22 @@
     'Jamuzen':        1,
     'Convictio.id':   1
   };
+  // Total admin per brand (untuk display "X/N" + vote bar width).
+  // Single-admin brand: 1 vote = 100% bar. Multi-admin Gipsy: 5 total.
+  const BRAND_TOTAL_ADMINS = {
+    'Gipsy Research': 5,
+    'CalmadeAI':      1,
+    'Jamuzen':        1,
+    'Convictio.id':   1
+  };
   const APPROVAL_QUORUM = 3;  // legacy default — actual lookup via getBrandQuorum(brand)
-  const TOTAL_ADMINS = 5;
+  const TOTAL_ADMINS = 5;     // legacy default — actual lookup via getBrandTotalAdmins(brand)
 
   function getBrandQuorum(brand) {
     return (BRAND_QUORUM && BRAND_QUORUM[brand]) || APPROVAL_QUORUM;
+  }
+  function getBrandTotalAdmins(brand) {
+    return (BRAND_TOTAL_ADMINS && BRAND_TOTAL_ADMINS[brand]) || TOTAL_ADMINS;
   }
 
   function voteCounts(targetType, targetId) {
@@ -499,6 +510,10 @@
     finalDecision,
     APPROVAL_QUORUM,
     TOTAL_ADMINS,
+    BRAND_QUORUM,
+    BRAND_TOTAL_ADMINS,
+    getBrandQuorum,
+    getBrandTotalAdmins,
     getProofs,
     uploadPaymentProof,
     deletePaymentProof,

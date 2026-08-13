@@ -80,6 +80,10 @@
     .side-nav a.sub.active svg { opacity: 0.85; }
     .side-nav .role-tag { padding: 0 10px 12px; font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
     .side-nav .signout { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); }
+    .side-nav .side-nav-footer { margin-top: auto; padding: 10px; border-top: 1px solid var(--border); }
+    .side-nav .side-nav-footer a { font-size: 12px; color: var(--muted); }
+    .side-nav .side-nav-footer a:hover { color: var(--accent); background: transparent; }
+    .side-nav .side-nav-footer a svg { width: 14px; height: 14px; opacity: 0.6; }
     .side-nav .signout a { padding: 4px 0; }
 
     .main { padding: 28px var(--gutter) 64px; max-width: 100%; }
@@ -631,18 +635,21 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
         Kreator
       </a>
-      <a href="screens-reports.html#disetujui" data-od-id="nav-disetujui">
+      <a href="#" data-od-id="nav-disetujui">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
         Disetujui
-      </a>
-      <a href="screens-reports.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
-        Laporan detail
       </a>
       <a href="#" data-od-id="nav-fee">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
         Fee kreator
       </a>
+
+      <div class="side-nav-footer">
+        <a href="screens-reports.html" class="link-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+          Laporan detail →
+        </a>
+      </div>
     </aside>
 
     <main class="main" id="content">
@@ -869,6 +876,38 @@
               <p class="meta" style="padding: 8px 0;">Memuat…</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- panel: disetujui -->
+      <section class="panel" data-panel="disetujui" data-od-id="panel-disetujui">
+        <div class="page-head" style="margin-bottom: var(--gap-md);">
+          <div>
+            <h1 class="h2" style="margin: 0;">Video disetujui</h1>
+            <p class="meta">Daftar video yang udah di-approve admin. Status pembayaran (sudah/belum dibayar) ikut ditampilkan.</p>
+          </div>
+        </div>
+        <div class="metric-strip" style="margin-bottom: var(--gap-md);">
+          <div class="left">
+            <div class="label">Total disetujui</div>
+            <div class="value" id="disetujui-panel-value">—</div>
+          </div>
+          <div class="right" id="disetujui-panel-meta">—</div>
+        </div>
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="ds-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Video</th>
+                <th>Brand</th>
+                <th>Kreator</th>
+                <th class="num-col">Fee</th>
+                <th>Status pembayaran</th>
+                <th style="text-align: right;">Diupdate</th>
+              </tr>
+            </thead>
+            <tbody id="disetujui-panel-tbody"></tbody>
+          </table>
         </div>
       </section>
 
@@ -1485,6 +1524,7 @@
         'nav-queue': 'queue',
         'nav-briefs': 'briefs',
         'nav-creators': 'creators',
+        'nav-disetujui': 'disetujui',
         'nav-fee': 'fee'
       };
       document.querySelectorAll('.side-nav a').forEach(a => {
@@ -3345,6 +3385,43 @@
       if (subEl && sub) subEl.innerHTML = sub;
     }
 
+    // Render Disetujui panel: list approved videos + payment status
+    function renderDisetujuiPanel(A) {
+      const tbody = document.getElementById('disetujui-panel-tbody');
+      const valueEl = document.getElementById('disetujui-panel-value');
+      const metaEl  = document.getElementById('disetujui-panel-meta');
+      if (!tbody) return;
+      const access = (A && A.brandAccess && A.brandAccess()) || [];
+      const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+      const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+      const progress = A.data.progress || [];
+      const pays     = A.data.payments || [];
+      const approved = progress.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
+      const payByVideo = {};
+      pays.forEach(p => { if (inScope(p.brand)) payByVideo[p.id.replace(/^pay-/, '')] = p.status; });
+      const belum = approved.filter(p => payByVideo[p.id] !== 'paid').length;
+      const sudah = approved.filter(p => payByVideo[p.id] === 'paid').length;
+      if (valueEl) valueEl.textContent = approved.length;
+      if (metaEl) metaEl.textContent = approved.length === 0 ? 'belum ada video disetujui' : `${belum} belum dibayar · ${sudah} sudah dibayar`;
+      tbody.innerHTML = approved.length === 0
+        ? '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada video disetujui.</td></tr>'
+        : approved.map(p => {
+            const isPaid = payByVideo[p.id] === 'paid';
+            const payStatus = isPaid ? 'paid' : 'pending';
+            const payLabel = isPaid ? 'Sudah dibayar' : 'Belum dibayar';
+            const updated = p.updated_at ? new Date(p.updated_at).toLocaleDateString('id-ID') : '—';
+            const brand = p.brand || '—';
+            return `<tr data-row data-status="${escapeHtml(p.status)}" data-brand="${escapeHtml(brand)}">
+              <td><strong>${escapeHtml(p.title || '—')}</strong></td>
+              <td><span class="brand-tag">${escapeHtml(brand.toUpperCase().slice(0, 18))}</span></td>
+              <td>${escapeHtml(p.kreator || '—')}</td>
+              <td class="num-col">${formatRp(p.fee || 0)}</td>
+              <td><span class="status ${payStatus}">${payLabel}</span></td>
+              <td class="num-col">${updated}</td>
+            </tr>`;
+          }).join('');
+    }
+
     function renderTopStats(A) {
       const profiles   = A.data.profiles || [];
       const progress   = A.data.progress || [];
@@ -3656,6 +3733,7 @@
       renderQueueTable(A);
       renderBriefsTable(A);
       renderCreatorsTable(A);
+      renderDisetujuiPanel(A);
       renderTopStats(A);
       renderMetricsStats(A);
       wireNewBriefButton(A);
@@ -3667,6 +3745,7 @@
       renderQueueTable(A);
       renderBriefsTable(A);
       renderCreatorsTable(A);
+      renderDisetujuiPanel(A);
       renderTopStats(A);
       renderMetricsStats(A);
     });

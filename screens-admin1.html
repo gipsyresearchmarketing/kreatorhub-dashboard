@@ -3370,13 +3370,28 @@
     function renderTopStats(A) {
       const profiles   = A.data.profiles || [];
       const progress   = A.data.progress || [];
+      const scripts    = A.data.scripts  || [];
       const briefs     = A.data.briefs   || [];
+
+      // Brand scope (sama kayak antrian review biar konsisten)
+      const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+      const access  = (A && A.brandAccess && A.brandAccess()) || [];
+      const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+      const briefsById = {};
+      (briefs || []).forEach(b => { briefsById[b.id] = b.brand; });
 
       const kreatorCount = profiles.filter(p => p.role === 'kreator').length;
       setStat('kreator-aktif', kreatorCount, kreatorCount === 0 ? '&nbsp;' : `${kreatorCount} akun terdaftar`);
 
-      const reviewQ = progress.filter(p => p.status === 'review' || p.status === 'revisi').length;
-      setStat('menunggu-review', reviewQ, reviewQ === 0 ? 'antrian kosong' : `${reviewQ} video perlu keputusan`);
+      // Menunggu review: progress (review/revisi) + script (review/revisi),
+      // di-scope brand sesuai admin (konsisten dengan antrian review).
+      const reviewQ = progress.filter(p =>
+        inScope(p.brand) && (p.status === 'review' || p.status === 'revisi')
+      ).length
+        + scripts.filter(s =>
+          inScope(briefsById[s.brief_id]) && (s.status === 'review' || s.status === 'revisi')
+        ).length;
+      setStat('menunggu-review', reviewQ, reviewQ === 0 ? 'antrian kosong' : `${reviewQ} perlu keputusan`);
 
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const approvedThisWeek = progress.filter(p =>
@@ -3392,17 +3407,25 @@
       const progress = A.data.progress || [];
       const payments = A.data.payments || [];
 
-      const approved = progress.filter(p => p.status === 'approved' || p.status === 'selesai').length;
+      // Brand scope (sama seperti renderTopStats biar konsisten)
+      const isSuperM = A && A.isSuperAdmin && A.isSuperAdmin();
+      const accessM  = (A && A.brandAccess && A.brandAccess()) || [];
+      const inScopeM = (brand) => isSuperM || accessM.indexOf(brand) >= 0;
+
+      const scopedProg = progress.filter(p => inScopeM(p.brand));
+      const scopedPays = payments.filter(p => inScopeM(p.brand));
+
+      const approved = scopedProg.filter(p => p.status === 'approved' || p.status === 'selesai').length;
       setStat('disetujui', approved, approved === 0 ? '&nbsp;' : `${approved} total disetujui`);
 
-      const revisi = progress.filter(p => p.status === 'revisi').length;
+      const revisi = scopedProg.filter(p => p.status === 'revisi').length;
       setStat('revisi-diminta', revisi, revisi === 0 ? 'tidak ada' : `${revisi} butuh perbaikan`);
 
-      const ditolak = progress.filter(p => p.status === 'rejected').length;
+      const ditolak = scopedProg.filter(p => p.status === 'rejected').length;
       setStat('ditolak', ditolak, ditolak === 0 ? 'tidak ada' : `${ditolak} video ditolak`);
 
-      const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (Number(p.fee) || 0), 0);
-      const paidCount = payments.filter(p => p.status === 'paid').length;
+      const totalPaid = scopedPays.filter(p => p.status === 'paid').reduce((s, p) => s + (Number(p.fee) || 0), 0);
+      const paidCount = scopedPays.filter(p => p.status === 'paid').length;
       setStat('pendapatan-dibayarkan', formatRp(totalPaid) || '—', paidCount === 0 ? '&nbsp;' : `ke ${paidCount} kreator`);
     }
 

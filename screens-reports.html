@@ -1204,12 +1204,11 @@
       }
       document.addEventListener('adminapp:ready', () => {
         const A = window.AdminApp;
-        if (!A || !A.data) return;
-        const prog = A.data.progress || [];
-        const hist = A.data.history || [];
-        const pays = A.data.payments || [];
-        const briefs = A.data.briefs || [];
-        const profiles = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        const prog = A && A.data ? (A.data.progress || []) : [];
+        const hist = A && A.data ? (A.data.history || []) : [];
+        const pays = A && A.data ? (A.data.payments || []) : [];
+        const briefs = A && A.data ? (A.data.briefs || []) : [];
+        const profiles = A && A.data ? (A.data.profiles || []).filter(p => p.role === 'kreator') : [];
 
         // Brief aktif (count + list)
         setVal('brief-aktif-value', briefs.length);
@@ -1284,20 +1283,19 @@
         const menungguEl = document.querySelector('#menunggu-review .value');
         if (menungguEl) menungguEl.textContent = prog.filter(p => p.status === 'review').length;
 
-        // Render functions yg baru fix (pakai A.data real + filter brand_access)
+        // Render functions (semua handle A fallback sendiri)
         renderKreatorAktif();
         renderDisetujuiMinggu();
         renderDisetujui();
-        renderHero(A);
+        renderHero();
 
-        A.showToast('Laporan dimuat dari database ✓');
+        if (A && A.showToast) A.showToast('Laporan dimuat dari database ✓');
       });
       document.addEventListener('adminapp:data-changed', () => {
-        const A = window.AdminApp;
         renderKreatorAktif();
         renderDisetujuiMinggu();
         renderDisetujui();
-        if (A) renderHero(A);
+        renderHero();
       });
 
       // scroll to hash on load

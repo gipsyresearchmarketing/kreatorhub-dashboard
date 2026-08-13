@@ -1066,6 +1066,8 @@
         return 'Rp ' + n;
       }
       function renderHero(A) {
+        if (!A) A = window.AdminApp;
+        if (!A) return;
         const access = (A && A.brandAccess && A.brandAccess()) || [];
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;

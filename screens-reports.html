@@ -844,7 +844,8 @@
           progress.forEach(p => usernamesInBrand.add(p.kreator));
           profiles = allProfiles.filter(p => usernamesInBrand.has(p.username));
         }
-        document.getElementById('kreator-aktif-value').textContent = profiles.length;
+        const kreatorValEl = document.getElementById('kreator-aktif-value');
+        if (kreatorValEl) kreatorValEl.textContent = profiles.length;
         // Group: count kreator yg punya progress di brand admin (kreator "aktif" = pernah handle progress)
         const progByKreator = {};
         progress.forEach(p => {
@@ -1289,9 +1290,9 @@
         const menungguEl = document.querySelector('#menunggu-review .value');
         if (menungguEl) menungguEl.textContent = prog.filter(p => p.status === 'review').length;
 
-        // Render functions (semua handle A fallback sendiri)
-        renderKreatorAktif();
-        renderDisetujuiMinggu();
+        // Render functions (cuma yg relevan — Overview section udah dihapus,
+        // jd renderKreatorAktif/MenungguReview/DisetujuiMinggu/BriefAktif
+        // ga dipanggil lagi biar ga null element error)
         renderDisetujui();
         renderHero();
 
@@ -1308,8 +1309,6 @@
         document.addEventListener('adminapp:ready', initReportRender);
       }
       document.addEventListener('adminapp:data-changed', () => {
-        renderKreatorAktif();
-        renderDisetujuiMinggu();
         renderDisetujui();
         renderHero();
       });

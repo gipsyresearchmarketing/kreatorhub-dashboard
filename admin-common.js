@@ -461,6 +461,38 @@
     }
     const updRes = await sb.from('payments').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update payment gagal: ' + updRes.error.message);
+
+    // Kalau baru di-mark paid → auto-transition progress.status ke 'selesai'
+    // + insert history row biar kreator ngeliat flow jelas: approve → paid → selesai
+    if (fields && fields.status === 'paid') {
+      const payRow = data.payments.find(p => p.id === id);
+      if (payRow) {
+        const progressId = payRow.id.replace(/^pay-/, '');
+        const progRow = data.progress.find(p => p.id === progressId);
+        if (progRow && progRow.status !== 'selesai' && progRow.status !== 'rejected') {
+          const progUpd = await sb.from('progress').update({
+            status: 'selesai',
+            updated_at: new Date().toISOString()
+          }).eq('id', progressId);
+          if (progUpd.error) console.warn('[updatePayment] progress update gagal', progUpd.error);
+          const histId = 'h-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          const adminName = session.displayName || session.username;
+          await sb.from('history').insert({
+            id: histId,
+            progress_id: progressId,
+            kreator: progRow.kreator,
+            title: progRow.title,
+            brand: progRow.brand,
+            status: 'selesai',
+            link: progRow.video_url || (progRow.video_storage_path ? '[storage] ' + progRow.video_storage_path : ''),
+            admin: adminName,
+            feedback: 'Pembayaran lunas — fee ' + (Number(payRow.fee) || 0).toLocaleString('id-ID') + ' udah ditransfer.',
+            reviewed_at: new Date().toISOString()
+          });
+        }
+      }
+    }
+
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
       detail: { type: 'payment', id, fields }

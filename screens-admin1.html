@@ -639,17 +639,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
         Disetujui
       </a>
+      <a href="screens-reports.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Laporan detail
+      </a>
       <a href="#" data-od-id="nav-fee">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
         Fee kreator
       </a>
-
-      <div class="side-nav-footer">
-        <a href="screens-reports.html" class="link-secondary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
-          Laporan detail →
-        </a>
-      </div>
     </aside>
 
     <main class="main" id="content">
@@ -881,12 +878,6 @@
 
       <!-- panel: disetujui -->
       <section class="panel" data-panel="disetujui" data-od-id="panel-disetujui">
-        <div class="page-head" style="margin-bottom: var(--gap-md);">
-          <div>
-            <h1 class="h2" style="margin: 0;">Video disetujui</h1>
-            <p class="meta">Daftar video yang udah di-approve admin. Status pembayaran (sudah/belum dibayar) ikut ditampilkan.</p>
-          </div>
-        </div>
         <div class="metric-strip" style="margin-bottom: var(--gap-md);">
           <div class="left">
             <div class="label">Total disetujui</div>
@@ -1527,6 +1518,13 @@
         'nav-disetujui': 'disetujui',
         'nav-fee': 'fee'
       };
+      // Laporan detail (nav tanpa data-od-id) → navigate ke reports.html
+      document.querySelectorAll('.side-nav a:not([data-od-id])').forEach(a => {
+        a.addEventListener('click', (e) => {
+          if (a.closest('.signout') || a.closest('.side-nav-footer')) return;
+          // biarkan default link behaviour
+        });
+      });
       document.querySelectorAll('.side-nav a').forEach(a => {
         a.addEventListener('click', (e) => {
           if (a.closest('.signout')) return;
@@ -2287,6 +2285,7 @@
       const STAT_PANEL = {
         'kreator-aktif': 'creators',
         'menunggu-review': 'queue',
+        'disetujui': 'disetujui',
         'brief-aktif': 'briefs',
         'pendapatan-dibayarkan': 'fee',
         'fee-total': 'fee',
@@ -2295,9 +2294,7 @@
         'fee-rata-rata': 'fee'
       };
       // Stat cards yg klik → navigate ke reports.html (pakai hash section)
-      const STAT_NAVIGATES = {
-        'disetujui': 'disetujui'
-      };
+      const STAT_NAVIGATES = {};
       document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
         card.onclick = null;  // matiin navigasi inline lama
         const stat = card.dataset.stat;

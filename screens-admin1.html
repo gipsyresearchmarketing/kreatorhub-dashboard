@@ -811,24 +811,6 @@
           </div>
 
           <div class="grid-4" style="margin-bottom: var(--gap-lg);" data-od-id="report-stats">
-            <div class="card stat-card" data-stat="disetujui" onclick="window.location.href='screens-reports.html#disetujui'" role="link" tabindex="0">
-              <span class="stat-hint">klik →</span>
-              <div class="stat-label">Disetujui</div>
-              <div class="stat-num num">—</div>
-              <div class="stat-sub">&nbsp;</div>
-            </div>
-            <div class="card stat-card" data-stat="revisi-diminta" onclick="window.location.href='screens-reports.html#revisi-diminta'" role="link" tabindex="0">
-              <span class="stat-hint">klik →</span>
-              <div class="stat-label">Revisi diminta</div>
-              <div class="stat-num num">—</div>
-              <div class="stat-sub">&nbsp;</div>
-            </div>
-            <div class="card stat-card" data-stat="ditolak" onclick="window.location.href='screens-reports.html#ditolak'" role="link" tabindex="0">
-              <span class="stat-hint">klik →</span>
-              <div class="stat-label">Ditolak</div>
-              <div class="stat-num num">—</div>
-              <div class="stat-sub">&nbsp;</div>
-            </div>
             <div class="card stat-card" data-stat="pendapatan-dibayarkan" onclick="window.location.href='screens-reports.html#pendapatan-dibayarkan'" role="link" tabindex="0">
               <span class="stat-hint">klik →</span>
               <div class="stat-label">Pendapatan dibayarkan</div>
@@ -2287,12 +2269,7 @@
         'fee-rata-rata': 'fee'
       };
       // Stat cards yg klik → navigate ke reports.html (pakai hash section)
-      const STAT_NAVIGATES = {
-        'disetujui-minggu': 'disetujui-minggu',
-        'disetujui': 'disetujui',
-        'revisi-diminta': 'revisi-diminta',
-        'ditolak': 'ditolak'
-      };
+      const STAT_NAVIGATES = {};
       document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
         card.onclick = null;  // matiin navigasi inline lama
         const stat = card.dataset.stat;
@@ -3425,17 +3402,7 @@
       const accessM  = (A && A.brandAccess && A.brandAccess()) || [];
       const inScopeM = (brand) => isSuperM || accessM.indexOf(brand) >= 0;
 
-      const scopedProg = progress.filter(p => inScopeM(p.brand));
       const scopedPays = payments.filter(p => inScopeM(p.brand));
-
-      const approved = scopedProg.filter(p => p.status === 'approved' || p.status === 'selesai').length;
-      setStat('disetujui', approved, approved === 0 ? '&nbsp;' : `${approved} total disetujui`);
-
-      const revisi = scopedProg.filter(p => p.status === 'revisi').length;
-      setStat('revisi-diminta', revisi, revisi === 0 ? 'tidak ada' : `${revisi} butuh perbaikan`);
-
-      const ditolak = scopedProg.filter(p => p.status === 'rejected').length;
-      setStat('ditolak', ditolak, ditolak === 0 ? 'tidak ada' : `${ditolak} video ditolak`);
 
       const totalPaid = scopedPays.filter(p => p.status === 'paid').reduce((s, p) => s + (Number(p.fee) || 0), 0);
       const paidCount = scopedPays.filter(p => p.status === 'paid').length;

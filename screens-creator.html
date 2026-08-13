@@ -97,6 +97,11 @@
           <span class="stat-value currency" id="stat-total-fee">—</span>
           <span class="stat-meta" id="stat-total-fee-meta">akumulasi semua video</span>
         </div>
+        <div class="stat-tile done" style="border-color: color-mix(in oklch, var(--success) 40%, transparent); background: color-mix(in oklch, var(--success) 8%, transparent);">
+          <span class="stat-label" style="color: var(--success);">✓ Selesai bulan ini</span>
+          <span class="stat-value" id="stat-done-month">—</span>
+          <span class="stat-meta">video udah dibayar admin</span>
+        </div>
       </div>
 
       <!-- KPI TICKER -->
@@ -261,12 +266,20 @@
       const totalFee = payments.reduce((s, p) => s + p.fee, 0);
       const fmtRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
+      // Selesai bulan ini = video dgn status 'selesai' yang updated bulan ini
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+      const doneThisMonth = progress.filter(p =>
+        p.status === 'selesai' && p.updated_at && new Date(p.updated_at) >= monthStart
+      ).length;
+
       document.getElementById('stat-brief').textContent = visibleBriefs.length;
       document.getElementById('stat-progress').textContent = progress.length;
       document.getElementById('stat-review').textContent = waitingReview;
       document.getElementById('stat-approved').textContent = approved;
       document.getElementById('stat-total-fee').textContent = fmtRp.format(totalFee);
       document.getElementById('stat-total-fee-meta').textContent = `dari ${payments.length} video`;
+      const doneEl = document.getElementById('stat-done-month');
+      if (doneEl) doneEl.textContent = doneThisMonth;
 
       // stat tile diklik → ke halaman/list terkait
       [

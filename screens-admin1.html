@@ -878,13 +878,6 @@
 
       <!-- panel: disetujui -->
       <section class="panel" data-panel="disetujui" data-od-id="panel-disetujui">
-        <div class="metric-strip" style="margin-bottom: var(--gap-md);">
-          <div class="left">
-            <div class="label">Total disetujui</div>
-            <div class="value" id="disetujui-panel-value">—</div>
-          </div>
-          <div class="right" id="disetujui-panel-meta">—</div>
-        </div>
         <div class="card" style="padding: 0; overflow: hidden;">
           <table class="ds-table">
             <thead>
@@ -3385,8 +3378,6 @@
     // Render Disetujui panel: list approved videos + payment status
     function renderDisetujuiPanel(A) {
       const tbody = document.getElementById('disetujui-panel-tbody');
-      const valueEl = document.getElementById('disetujui-panel-value');
-      const metaEl  = document.getElementById('disetujui-panel-meta');
       if (!tbody) return;
       const access = (A && A.brandAccess && A.brandAccess()) || [];
       const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
@@ -3396,10 +3387,6 @@
       const approved = progress.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
       const payByVideo = {};
       pays.forEach(p => { if (inScope(p.brand)) payByVideo[p.id.replace(/^pay-/, '')] = p.status; });
-      const belum = approved.filter(p => payByVideo[p.id] !== 'paid').length;
-      const sudah = approved.filter(p => payByVideo[p.id] === 'paid').length;
-      if (valueEl) valueEl.textContent = approved.length;
-      if (metaEl) metaEl.textContent = approved.length === 0 ? 'belum ada video disetujui' : `${belum} belum dibayar · ${sudah} sudah dibayar`;
       tbody.innerHTML = approved.length === 0
         ? '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada video disetujui.</td></tr>'
         : approved.map(p => {

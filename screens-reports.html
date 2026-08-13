@@ -164,6 +164,139 @@
       margin-top: 12px; margin-bottom: -8px; padding-left: 4px;
     }
     .report-category:not(:first-child) { margin-top: 32px; }
+
+    /* === HERO DASHBOARD === */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 900px) { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
+    .hero-tile {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 18px 16px;
+      overflow: hidden;
+    }
+    .hero-tile::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--tile-color, var(--accent));
+      opacity: 0.85;
+    }
+    .hero-tile .hero-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: color-mix(in oklch, var(--tile-color, var(--accent)) 14%, transparent);
+      color: var(--tile-color, var(--accent));
+      display: grid; place-items: center;
+      margin-bottom: 12px;
+    }
+    .hero-tile .hero-icon svg { width: 16px; height: 16px; }
+    .hero-tile .hero-label {
+      font-size: 12px; color: var(--muted); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .hero-tile .hero-value {
+      font-family: var(--font-display);
+      font-size: 32px; line-height: 1.05; font-weight: 600;
+      margin-top: 4px; color: var(--fg);
+      letter-spacing: -0.02em;
+    }
+    .hero-tile .hero-sub {
+      font-size: 11px; color: var(--muted); margin-top: 6px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .hero-tile .hero-sub .delta-up { color: var(--success); }
+    .hero-tile .hero-sub .delta-down { color: var(--danger); }
+    .hero-tile .hero-sub .delta-flat { color: var(--muted); }
+
+    /* === CHART GRID (donut + bar) === */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 18px 14px;
+    }
+    .chart-card .chart-title {
+      font-size: 14px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chart-card .chart-title small {
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+      font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .chart-card .chart-subtitle {
+      font-size: 11px; color: var(--muted); margin-top: 2px; margin-bottom: 14px;
+    }
+
+    /* Donut chart (status distribution) */
+    .donut-wrap {
+      position: relative; width: 220px; height: 220px;
+      margin: 0 auto;
+    }
+    .donut-wrap svg { width: 100%; height: 100%; display: block; }
+    .donut-center {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      pointer-events: none;
+    }
+    .donut-center .donut-total {
+      font-family: var(--font-display); font-size: 28px; font-weight: 600;
+      color: var(--fg); line-height: 1;
+    }
+    .donut-center .donut-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-top: 4px; text-align: center;
+    }
+    .donut-legend {
+      display: flex; flex-wrap: wrap; gap: 8px 14px;
+      margin-top: 14px; justify-content: center;
+      font-size: 11px;
+    }
+    .donut-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .donut-legend-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .donut-legend-label { color: var(--muted); }
+    .donut-legend-value { font-family: var(--font-mono); color: var(--fg); font-weight: 500; }
+
+    /* Donut segment hover */
+    .donut-segment { transition: opacity 0.15s ease; cursor: default; }
+    .donut-segment:hover { opacity: 0.78; }
+
+    /* Bar chart (per brand) */
+    .bar-chart-wrap { margin-top: 4px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 70px 50px;
+      gap: 10px; align-items: center;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    .bar-row + .bar-row { border-top: 1px solid var(--border); }
+    .bar-row .bar-label { color: var(--fg); font-weight: 500; }
+    .bar-row .bar-track {
+      height: 10px; background: var(--fg-soft); border-radius: 999px; overflow: hidden;
+    }
+    .bar-row .bar-fill {
+      height: 100%; border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    .bar-row .bar-value { font-family: var(--font-mono); color: var(--fg); text-align: right; }
+    .bar-row .bar-pct { font-family: var(--font-mono); color: var(--muted); font-size: 10px; text-align: right; }
+
+    /* Hero sub-card second (kpi grid for second row) */
+    .hero-secondary {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 600px) { .hero-secondary { grid-template-columns: 1fr; } }
     .report-section .section-head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       flex-wrap: wrap; margin-bottom: 4px;
@@ -330,6 +463,57 @@
           <a href="#fee-rata-rata">Rata-rata</a>
         </span>
       </nav>
+
+      <!-- HERO: 4 KPI tiles + 2 secondary -->
+      <div class="hero-grid">
+        <div class="hero-tile" style="--tile-color: oklch(58% 0.18 255);">
+          <div class="hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+          </div>
+          <div class="hero-label">Kreator aktif</div>
+          <div class="hero-value" id="hero-kreator">—</div>
+          <div class="hero-sub" id="hero-kreator-sub">&nbsp;</div>
+        </div>
+        <div class="hero-tile" style="--tile-color: oklch(72% 0.14 70);">
+          <div class="hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <div class="hero-label">Menunggu review</div>
+          <div class="hero-value" id="hero-review">—</div>
+          <div class="hero-sub" id="hero-review-sub">&nbsp;</div>
+        </div>
+        <div class="hero-tile" style="--tile-color: oklch(62% 0.14 150);">
+          <div class="hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="hero-label">Disetujui (7 hari)</div>
+          <div class="hero-value" id="hero-approved">—</div>
+          <div class="hero-sub" id="hero-approved-sub">&nbsp;</div>
+        </div>
+        <div class="hero-tile" style="--tile-color: oklch(50% 0.13 195);">
+          <div class="hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </div>
+          <div class="hero-label">Pendapatan dibayar</div>
+          <div class="hero-value" id="hero-pendapatan">—</div>
+          <div class="hero-sub" id="hero-pendapatan-sub">&nbsp;</div>
+        </div>
+      </div>
+
+      <!-- CHARTS: donut status + bar per brand -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Status video <small>distribusi</small></div>
+          <div class="chart-subtitle">Semua video berdasarkan status workflow</div>
+          <div class="donut-wrap" id="donut-wrap"></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Per brand <small>disetujui</small></div>
+          <div class="chart-subtitle">Jumlah video disetujui (approved + selesai) per brand</div>
+          <div class="bar-chart-wrap" id="brand-bar-wrap"></div>
+        </div>
+      </div>
 
       <div class="reports-grid">
 
@@ -959,12 +1143,128 @@
         })).join('');
       }
 
+      // ---- HERO: 4 KPI tiles + 2 secondary cards ----
+      function fmtRpShort(n) {
+        n = Number(n || 0);
+        if (n >= 1_000_000) return 'Rp ' + (n / 1_000_000).toFixed(1).replace('.', ',') + 'jt';
+        if (n >= 1_000)     return 'Rp ' + Math.round(n / 1_000) + 'rb';
+        return 'Rp ' + n;
+      }
+      function renderHero(A) {
+        const access = (A && A.brandAccess && A.brandAccess()) || [];
+        const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
+        const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
+        const profiles = (A && A.data && A.data.profiles) || [];
+        const progress = (A && A.data && A.data.progress) || [];
+        const pays     = (A && A.data && A.data.payments) || [];
+        const briefs   = (A && A.data && A.data.briefs) || [];
+
+        // 1. Kreator aktif (brand-scoped: kreator yang punya progress di brand admin)
+        const kreatorIds = new Set(progress.filter(p => inScope(p.brand)).map(p => p.kreator));
+        const kreatorCount = [...kreatorIds].length || profiles.filter(p => p.role === 'kreator').length;
+        document.getElementById('hero-kreator').textContent = kreatorCount;
+
+        // 2. Menunggu review (progress review/revisi)
+        const reviewQ = progress.filter(p => inScope(p.brand) && (p.status === 'review' || p.status === 'revisi')).length;
+        document.getElementById('hero-review').textContent = reviewQ;
+        document.getElementById('hero-review-sub').innerHTML = reviewQ === 0 ? '<span class="delta-flat">antrian kosong</span>' : `<span class="delta-up">↑ ${reviewQ} perlu keputusan</span>`;
+
+        // 3. Disetujui 7 hari (approved + selesai dalam 7 hari)
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const approved7d = progress.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai') && p.updated_at && new Date(p.updated_at).getTime() >= weekAgo).length;
+        document.getElementById('hero-approved').textContent = approved7d;
+        document.getElementById('hero-approved-sub').innerHTML = `<span class="delta-up">↑ ${approved7d} minggu ini</span>`;
+
+        // 4. Pendapatan dibayar (total fee paid)
+        const totalPaid = pays.filter(p => inScope(p.brand) && p.status === 'paid').reduce((s, p) => s + (Number(p.fee) || 0), 0);
+        document.getElementById('hero-pendapatan').textContent = fmtRpShort(totalPaid);
+        document.getElementById('hero-pendapatan-sub').innerHTML = totalPaid === 0 ? '<span class="delta-flat">belum ada</span>' : `<span class="delta-up">sudah lunas</span>`;
+
+        // ---- DONUT: status distribution ----
+        const STATUS_COLORS = {
+          draft:    'oklch(54% 0.012 250)',  // muted
+          editing:  'oklch(58% 0.18 255)',   // accent (blue)
+          review:   'oklch(72% 0.14 70)',     // warn (amber)
+          revisi:   'oklch(58% 0.13 230)',    // accent2 (lighter blue)
+          approved: 'oklch(62% 0.14 150)',    // success (green)
+          rejected: 'oklch(58% 0.18 25)',     // danger (red)
+          selesai:  'oklch(50% 0.13 195)'     // done (teal)
+        };
+        const STATUS_LABELS = {
+          draft: 'Draft', editing: 'Editing', review: 'Review', revisi: 'Revisi',
+          approved: 'Disetujui', rejected: 'Ditolak', selesai: 'Selesai'
+        };
+        const counts = { draft: 0, editing: 0, review: 0, revisi: 0, approved: 0, rejected: 0, selesai: 0 };
+        progress.filter(p => inScope(p.brand)).forEach(p => {
+          if (counts[p.status] !== undefined) counts[p.status]++;
+        });
+        const total = Object.values(counts).reduce((s, v) => s + v, 0);
+        const donutEl = document.getElementById('donut-wrap');
+        const legendEl = document.getElementById('donut-legend');
+        if (donutEl && total > 0) {
+          // SVG donut: 2 concentric arcs, each segment 4px gap via stroke
+          const r = 80, cx = 110, cy = 110, c = 2 * Math.PI * r;
+          let acc = 0;
+          const segments = Object.entries(counts)
+            .filter(([, v]) => v > 0)
+            .map(([key, v]) => {
+              const pct = v / total;
+              const dash = pct * c;
+              const offset = c - acc;
+              acc += dash;
+              return `<circle class="donut-segment" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${STATUS_COLORS[key]}" stroke-width="22" stroke-dasharray="${dash - 4} ${c - dash + 4}" stroke-dashoffset="${offset}" transform="rotate(-90 ${cx} ${cy})"><title>${STATUS_LABELS[key]}: ${v}</title></circle>`;
+            }).join('');
+          donutEl.innerHTML = `<svg viewBox="0 0 220 220"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--fg-soft)" stroke-width="22"/>${segments}</svg><div class="donut-center"><div><div class="donut-total">${total}</div><div class="donut-label">total video</div></div></div>`;
+          // Legend (sorted by count desc, exclude zero)
+          const legendItems = Object.entries(counts)
+            .filter(([, v]) => v > 0)
+            .sort((a, b) => b[1] - a[1])
+            .map(([key, v]) => `<span class="donut-legend-item"><span class="donut-legend-swatch" style="background:${STATUS_COLORS[key]}"></span><span class="donut-legend-label">${STATUS_LABELS[key]}</span><span class="donut-legend-value">${v}</span></span>`)
+            .join('');
+          legendEl.innerHTML = legendItems;
+        } else if (donutEl) {
+          donutEl.innerHTML = '<div class="empty" style="padding:32px;text-align:center;color:var(--muted);">Belum ada video</div>';
+          legendEl.innerHTML = '';
+        }
+
+        // ---- BAR: per brand approved ----
+        const BRAND_COLORS = {
+          'Gipsy Research': 'oklch(58% 0.18 255)',  // accent blue
+          'CalmadeAI':      'oklch(62% 0.14 150)',  // success green
+          'Jamuzen':        'oklch(72% 0.14 70)',    // warn amber
+          'Convictio.id':   'oklch(50% 0.13 195)'   // done teal
+        };
+        const allBrands = ['Gipsy Research', 'CalmadeAI', 'Jamuzen', 'Convictio.id'];
+        const brandApproved = allBrands.map(b => ({
+          brand: b,
+          count: progress.filter(p => p.brand === b && (p.status === 'approved' || p.status === 'selesai')).length
+        }));
+        const max = Math.max(1, ...brandApproved.map(b => b.count));
+        const totalApproved = brandApproved.reduce((s, b) => s + b.count, 0);
+        const barEl = document.getElementById('brand-bar-wrap');
+        if (barEl) {
+          barEl.innerHTML = totalApproved === 0
+            ? '<div class="empty" style="padding:32px;text-align:center;color:var(--muted);">Belum ada video disetujui</div>'
+            : brandApproved.map(b => {
+                const pct = (b.count / max) * 100;
+                const share = totalApproved > 0 ? Math.round((b.count / totalApproved) * 100) : 0;
+                return `<div class="bar-row">
+                  <span class="bar-label">${b.brand}</span>
+                  <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${BRAND_COLORS[b.brand] || 'var(--accent)'}"></div></div>
+                  <span class="bar-value">${b.count}</span>
+                  <span class="bar-pct">${share}%</span>
+                </div>`;
+              }).join('');
+        }
+      }
+
       // render all
       renderKreatorAktif();
       renderMenungguReview();
       renderDisetujuiMinggu();
       renderBriefAktif();
       renderDisetujui();
+      renderHero(A);
       renderRevisiDiminta();
       renderDitolak();
       renderPendapatanDibayarkan();
@@ -1071,13 +1371,16 @@
         renderKreatorAktif();
         renderDisetujuiMinggu();
         renderDisetujui();
+        renderHero(A);
 
         A.showToast('Laporan dimuat dari database ✓');
       });
       document.addEventListener('adminapp:data-changed', () => {
+        const A = window.AdminApp;
         renderKreatorAktif();
         renderDisetujuiMinggu();
         renderDisetujui();
+        if (A) renderHero(A);
       });
 
       // scroll to hash on load

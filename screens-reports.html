@@ -326,7 +326,7 @@
             <h2 class="h2">Disetujui minggu ini</h2>
             <span class="meta">dari dasbor Antrian review</span>
           </div>
-          <p class="section-lead">Video yang disetujui admin dalam 7 hari terakhir, lengkap dengan fee yang dibayarkan per video.</p>
+          <p class="section-lead">Fee yang dibayarkan ke kreator dalam 7 hari terakhir (payment.status = 'paid').</p>
           <div class="metric-strip">
             <div class="left">
               <div class="label">Total disetujui</div>
@@ -719,13 +719,15 @@
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
         const cutoff = Date.now() - 7 * 86400000;
-        const all = (A && A.data && A.data.progress) || [];
-        const items = all.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai') && p.updated_at && new Date(p.updated_at).getTime() >= cutoff);
+        // Sama dengan stat 'disetujui-minggu' di admin1: payments paid dalam 7 hari
+        // (uang yg udah dibayarkan, bukan video approved — biar konsisten).
+        const all = (A && A.data && A.data.payments) || [];
+        const items = all.filter(p => inScope(p.brand) && p.status === 'paid' && p.paid_at && new Date(p.paid_at).getTime() >= cutoff);
         const total = items.reduce((s, p) => s + (Number(p.fee) || 0), 0);
         document.getElementById('disetujui-minggu-value').textContent = items.length;
-        document.getElementById('disetujui-minggu-meta').textContent = items.length ? `${items.length} video · ${fmtRp(total)}` : 'belum ada';
+        document.getElementById('disetujui-minggu-meta').textContent = items.length ? `${items.length} dibayar · ${fmtRp(total)}` : 'belum ada';
         document.getElementById('disetujui-minggu-list').innerHTML = items.length ? items.map(p => rowItem({
-          title: p.title || '—',
+          title: p.video_title || '—',
           meta: `<span style="color: var(--muted);">Kreator:</span> ${escapeHtml(p.kreator)} · <span style="color: var(--muted);">Brand:</span> ${escapeHtml(p.brand)}`,
           right: `<span class="item-value">${fmtRp(p.fee || 0)}</span>`
         })).join('') : '<p class="meta" style="padding: 8px 0;">Tidak ada video disetujui dalam 7 hari terakhir.</p>';

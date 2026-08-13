@@ -2251,7 +2251,9 @@
         'fee-rata-rata': 'fee'
       };
       // Stat cards yg klik → navigate ke reports.html (pakai hash section)
-      const STAT_NAVIGATES = {};
+      const STAT_NAVIGATES = {
+        'disetujui': 'disetujui'
+      };
       document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
         card.onclick = null;  // matiin navigasi inline lama
         const stat = card.dataset.stat;

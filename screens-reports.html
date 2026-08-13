@@ -752,25 +752,32 @@
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
         const prog = (A && A.data && A.data.progress) || [];
         const pays = (A && A.data && A.data.payments) || [];
-        // Disetujui = progress yg approved/selesai (by brand filter) + payments yg paid
+        // Approved videos (status approved / selesai), brand-scoped
         const approvedProg = prog.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
-        const paidPays = pays.filter(p => inScope(p.brand) && p.status === 'paid');
-        const total = approvedProg.length + paidPays.length;
-        document.getElementById('disetujui-value').textContent = total;
-        document.getElementById('disetujui-meta').textContent = `${approvedProg.length} disetujui · ${paidPays.length} sudah dibayar`;
-        // List: gabung history approved + payments paid (10 teratas)
-        const hist = (A && A.data && A.data.history) || [];
-        const items = [
-          ...approvedProg.slice(0, 10).map(p => ({ title: p.title || '—', brand: p.brand, kreator: p.kreator, fee: p.fee || 0, _kind: 'progress' })),
-          ...paidPays.slice(0, 10).map(p => ({ title: p.video_title || '—', brand: p.brand, kreator: p.kreator, fee: p.fee || 0, _kind: 'paid' }))
-        ].slice(0, 10);
-        document.getElementById('disetujui-list').innerHTML = items.length === 0
+        // Map payment_id -> status biar tau per-video udah dibayar atau belum
+        const paymentByVideoId = {};
+        pays.forEach(pay => {
+          if (inScope(pay.brand)) paymentByVideoId[pay.id.replace(/^pay-/, '')] = pay.status;
+        });
+        const belumBayar = approvedProg.filter(p => paymentByVideoId[p.id] !== 'paid').length;
+        const sudahBayar = approvedProg.filter(p => paymentByVideoId[p.id] === 'paid').length;
+        document.getElementById('disetujui-value').textContent = approvedProg.length;
+        document.getElementById('disetujui-meta').textContent = approvedProg.length === 0
+          ? 'belum ada video disetujui'
+          : `${belumBayar} belum dibayar · ${sudahBayar} sudah dibayar`;
+        // List: tiap approved video dengan status badge (paid/pending)
+        document.getElementById('disetujui-list').innerHTML = approvedProg.length === 0
           ? '<div class="meta">Belum ada video disetujui.</div>'
-          : items.map(it => rowItem({
-              title: escapeHtml(it.title),
-              meta: `<span style="color: var(--muted);">Brand:</span> ${escapeHtml(it.brand)} · <span style="color: var(--muted);">Kreator:</span> ${escapeHtml(it.kreator)}`,
-              right: it._kind === 'paid' ? `<span class="item-value">${fmtRp(it.fee)}</span>` : statusBadge('approved')
-            })).join('');
+          : approvedProg.slice(0, 10).map(p => {
+            const isPaid = paymentByVideoId[p.id] === 'paid';
+            const payStatus = isPaid ? 'paid' : 'pending';
+            const payLabel = isPaid ? 'Sudah dibayar' : 'Belum dibayar';
+            return rowItem({
+              title: escapeHtml(p.title || '—'),
+              meta: `<span style="color: var(--muted);">Brand:</span> ${escapeHtml(p.brand)} · <span style="color: var(--muted);">Kreator:</span> ${escapeHtml(p.kreator)} · <span style="color: var(--muted);">Fee:</span> <span class="currency">${fmtRp(p.fee || 0)}</span>`,
+              right: `<span class="status ${payStatus}">${payLabel}</span>`
+            });
+          }).join('');
       }
 
       function renderRevisiDiminta() {

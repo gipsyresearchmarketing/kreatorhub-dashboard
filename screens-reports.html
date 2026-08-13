@@ -364,7 +364,7 @@
             <h2 class="h2">Disetujui (periode laporan)</h2>
             <span class="meta">dari panel Laporan</span>
           </div>
-          <p class="section-lead">Video yang disetujui admin dalam periode laporan. Gabungan antrian review yang sudah disetujui + fee yang sudah lunas.</p>
+          <p class="section-lead">Video yang disetujui admin dalam periode laporan. Tiap row nampilin status pembayaran (sudah dibayar / belum dibayar).</p>
           <div class="metric-strip">
             <div class="left">
               <div class="label">Total disetujui</div>
@@ -372,8 +372,20 @@
             </div>
             <div class="right" id="disetujui-meta">—</div>
           </div>
-          <div class="card">
-            <div class="item-list" id="disetujui-list"></div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <table class="ds-table" id="disetujui-table">
+              <thead>
+                <tr>
+                  <th style="width: 28%;">Video</th>
+                  <th>Brand</th>
+                  <th>Kreator</th>
+                  <th class="num-col">Fee</th>
+                  <th>Status pembayaran</th>
+                  <th style="text-align: right;">Diupdate</th>
+                </tr>
+              </thead>
+              <tbody id="disetujui-tbody"></tbody>
+            </table>
           </div>
         </section>
 
@@ -766,17 +778,23 @@
           ? 'belum ada video disetujui'
           : `${belumBayar} belum dibayar · ${sudahBayar} sudah dibayar`;
         // List: tiap approved video dengan status badge (paid/pending)
-        document.getElementById('disetujui-list').innerHTML = approvedProg.length === 0
-          ? '<div class="meta">Belum ada video disetujui.</div>'
-          : approvedProg.slice(0, 10).map(p => {
+        const tbody = document.getElementById('disetujui-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = approvedProg.length === 0
+          ? '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada video disetujui.</td></tr>'
+          : approvedProg.map(p => {
             const isPaid = paymentByVideoId[p.id] === 'paid';
             const payStatus = isPaid ? 'paid' : 'pending';
             const payLabel = isPaid ? 'Sudah dibayar' : 'Belum dibayar';
-            return rowItem({
-              title: escapeHtml(p.title || '—'),
-              meta: `<span style="color: var(--muted);">Brand:</span> ${escapeHtml(p.brand)} · <span style="color: var(--muted);">Kreator:</span> ${escapeHtml(p.kreator)} · <span style="color: var(--muted);">Fee:</span> <span class="currency">${fmtRp(p.fee || 0)}</span>`,
-              right: `<span class="status ${payStatus}">${payLabel}</span>`
-            });
+            const updated = p.updated_at ? new Date(p.updated_at).toLocaleDateString('id-ID') : '—';
+            return `<tr data-row data-status="${escapeHtml(p.status)}" data-brand="${escapeHtml(p.brand)}">
+              <td><strong>${escapeHtml(p.title || '—')}</strong></td>
+              <td><span class="brand-tag">${escapeHtml((p.brand || '—').toUpperCase().slice(0, 18))}</span></td>
+              <td>${escapeHtml(p.kreator || '—')}</td>
+              <td class="num-col">${fmtRp(p.fee || 0)}</td>
+              <td><span class="status ${payStatus}">${payLabel}</span></td>
+              <td class="num-col">${updated}</td>
+            </tr>`;
           }).join('');
       }
 

@@ -3385,12 +3385,22 @@
       const progress = A.data.progress || [];
       const pays     = A.data.payments || [];
       const approved = progress.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
+      // Map payment_id -> { fee, status } dari payments (source of truth)
       const payByVideo = {};
-      pays.forEach(p => { if (inScope(p.brand)) payByVideo[p.id.replace(/^pay-/, '')] = p.status; });
+      pays.forEach(p => {
+        if (inScope(p.brand)) {
+          const vid = p.id.replace(/^pay-/, '');
+          payByVideo[vid] = { fee: Number(p.fee) || 0, status: p.status };
+        }
+      });
       tbody.innerHTML = approved.length === 0
         ? '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada video disetujui.</td></tr>'
         : approved.map(p => {
-            const isPaid = payByVideo[p.id] === 'paid';
+            const pay = payByVideo[p.id];
+            const isPaid = pay && pay.status === 'paid';
+            // Fee dari payments (source of truth) — kalo payment belum ada
+            // (misal progress approved sebelum fee di-set), fallback ke progress.fee
+            const fee = pay ? pay.fee : (Number(p.fee) || 0);
             const payStatus = isPaid ? 'paid' : 'pending';
             const payLabel = isPaid ? 'Sudah dibayar' : 'Belum dibayar';
             const updated = p.updated_at ? new Date(p.updated_at).toLocaleDateString('id-ID') : '—';
@@ -3399,7 +3409,7 @@
               <td><strong>${escapeHtml(p.title || '—')}</strong></td>
               <td><span class="brand-tag">${escapeHtml(brand.toUpperCase().slice(0, 18))}</span></td>
               <td>${escapeHtml(p.kreator || '—')}</td>
-              <td class="num-col">${formatRp(p.fee || 0)}</td>
+              <td class="num-col">${formatRp(fee)}</td>
               <td><span class="status ${payStatus}">${payLabel}</span></td>
               <td class="num-col">${updated}</td>
             </tr>`;

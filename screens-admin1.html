@@ -670,13 +670,6 @@
           <div class="stat-sub">&nbsp;</div>
         </div>
         <span class="stat-arrow" aria-hidden="true">›</span>
-        <div class="card stat-card" data-stat="disetujui-minggu" onclick="window.location.href='screens-reports.html#disetujui-minggu'" role="link" tabindex="0">
-          <span class="stat-hint">klik →</span>
-          <div class="stat-label">Disetujui minggu ini</div>
-          <div class="stat-num num">—</div>
-          <div class="stat-sub">&nbsp;</div>
-        </div>
-        <span class="stat-arrow" aria-hidden="true">›</span>
         <div class="card stat-card" data-stat="brief-aktif" onclick="window.location.href='screens-reports.html#brief-aktif'" role="link" tabindex="0">
           <span class="stat-hint">klik →</span>
           <div class="stat-label">Brief aktif</div>
@@ -2012,24 +2005,6 @@
               const isOverdue = /Kemarin|terlambat/i.test(deadline);
               const stat = statusMap[status] || statusMap.review;
               items.push({ title, meta: [{ label: '', value: `${brand} · ${creator}` }, { label: 'Deadline:', value: deadline }], badge: { cls: isOverdue ? 'rejected' : stat.cls, label: isOverdue ? 'Terlambat' : stat.label } });
-            });
-            return items;
-          }
-        },
-        'disetujui-minggu': {
-          title: 'Disetujui minggu ini',
-          lead: 'Video yang disetujui dalam 7 hari terakhir.',
-          valueLabel: 'Total disetujui',
-          getValue: () => FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7).length,
-          getMeta: () => {
-            const recs = FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7);
-            const income = recs.reduce((s, r) => s + r.fee, 0);
-            return `${recs.length} video · ${formatRp(income)}`;
-          },
-          getItems: () => {
-            const items = [];
-            FEE_DATA.filter(r => r.status === 'paid' && r.daysAgo <= 7).forEach(r => {
-              items.push({ title: r.title, meta: [{ label: '', value: `${r.creatorNm} · ${r.brand}` }, { label: 'Disubmit:', value: r.submittedText }], value: formatRp(r.fee) });
             });
             return items;
           }
@@ -3388,7 +3363,8 @@
         (p.status === 'approved' || p.status === 'selesai') &&
         p.updated_at && new Date(p.updated_at).getTime() >= weekAgo
       ).length;
-      setStat('disetujui-minggu', approvedThisWeek, approvedThisWeek === 0 ? 'belum ada' : `dari 7 hari terakhir`);
+      // approvedThisWeek dihitung tapi ga dipake lagi (stat card dihapus)
+      void approvedThisWeek; // suppress unused warning
 
       setStat('brief-aktif', briefs.length, briefs.length === 0 ? 'belum ada brief' : `${briefs.length} brief berjalan`);
     }

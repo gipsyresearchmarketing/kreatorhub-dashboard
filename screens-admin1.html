@@ -2279,30 +2279,43 @@
       const STAT_PANEL = {
         'kreator-aktif': 'creators',
         'menunggu-review': 'queue',
-        'disetujui-minggu': 'queue',
         'brief-aktif': 'briefs',
-        'disetujui': 'queue',
-        'revisi-diminta': 'queue',
-        'ditolak': 'queue',
         'pendapatan-dibayarkan': 'fee',
         'fee-total': 'fee',
         'fee-sudah-dibayar': 'fee',
         'fee-menunggu-approval': 'fee',
         'fee-rata-rata': 'fee'
       };
+      // Stat cards yg klik → navigate ke reports.html (pakai hash section)
+      const STAT_NAVIGATES = {
+        'disetujui-minggu': 'disetujui-minggu',
+        'disetujui': 'disetujui',
+        'revisi-diminta': 'revisi-diminta',
+        'ditolak': 'ditolak'
+      };
       document.querySelectorAll('.stat-card[data-stat]').forEach(card => {
-        card.onclick = null;  // matiin navigasi inline lama ke screens-reports.html
-        const panel = STAT_PANEL[card.dataset.stat];
-        if (!panel) return;
-        const go = () => activateAdminPanel(panel);
-        card.addEventListener('click', (e) => { e.preventDefault(); go(); });
-        card.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
-        });
+        card.onclick = null;  // matiin navigasi inline lama
+        const stat = card.dataset.stat;
+        // Prioritas: kalau ada di STAT_NAVIGATES → navigate ke reports.html
+        if (STAT_NAVIGATES[stat]) {
+          const go = () => { window.location.href = 'screens-reports.html#' + STAT_NAVIGATES[stat]; };
+          card.addEventListener('click', (e) => { e.preventDefault(); go(); });
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+          });
+        } else {
+          const panel = STAT_PANEL[stat];
+          if (!panel) return;
+          const go = () => activateAdminPanel(panel);
+          card.addEventListener('click', (e) => { e.preventDefault(); go(); });
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+          });
+        }
         card.style.cursor = 'pointer';
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
-        card.setAttribute('aria-label', 'Buka ' + (card.querySelector('.stat-label')?.textContent || panel));
+        card.setAttribute('aria-label', 'Buka ' + (card.querySelector('.stat-label')?.textContent || stat));
       });
 
       // ---- laporan: eksport + period change (simulated) ----

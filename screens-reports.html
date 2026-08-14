@@ -1176,10 +1176,10 @@
       }
 
       // render all
-      renderKreatorAktif();
-      renderMenungguReview();
-      renderDisetujuiMinggu();
-      renderBriefAktif();
+      // (renderKreatorAktif/renderMenungguReview/renderDisetujuiMinggu/renderBriefAktif dihapus dari sini —
+      //  target elemen mereka udah gak ada di HTML sejak Overview section lama dihapus, dan manggil mereka
+      //  bikin script crash sebelum sempat load data asli dari Supabase. Kreator aktif & menunggu review
+      //  sekarang dihandle oleh renderHero() di bawah.)
       renderDisetujui();
       renderHero();
       renderRevisiDiminta();

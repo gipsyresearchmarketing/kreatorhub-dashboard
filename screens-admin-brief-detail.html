@@ -1053,9 +1053,16 @@
           return '';
         }
           
-        // script actions: compact strip placed inside the Script section (Section 2)
+        // script actions: vote count display + 4-button strip
+        // Tiap button = castVote('script', briefId, 'approve'/'revisi'/'reject'/'selesai')
+        // Setelah quorum (3/5) tercapai, finalDecision apply status
+        const scriptVote = A0 && A0.voteCounts ? A0.voteCounts('script', briefId) : { approve: 0, revisi: 0, reject: 0, selesai: 0 };
+        const myScriptVote = A0 && A0.myVote ? A0.myVote('script', briefId) : null;
+        const scriptQuorum = A0 && A0.quorumReached ? A0.quorumReached(scriptVote, brief.brand) : false;
+        const scriptFinal = A0 && A0.finalDecision ? A0.finalDecision(scriptVote, brief.brand) : null;
+        const voteBtnLabel = (action) => `${action} (${scriptVote[action.toLowerCase()] || 0}/${getBrandQuorum(brief.brand)})`;
         const scriptActionsStrip = actions.map(a =>
-          `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${a} script</button>`
+          `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${voteBtnLabel(a)}</button>`
         ).join('');
 
         const paidVideos = brief.videos.filter(v => v.status === 'paid');

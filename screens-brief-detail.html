@@ -249,8 +249,13 @@
         // (otomatis set ke 'review'), atau via admin action (Setujui/Minta revisi/Tolak).
 
         const ctaBtn = document.getElementById('btn-submit-review');
-        if (ctaBtn && !ctaBtn.disabled && state.status !== 'review' && state.status !== 'revisi' && !isKreatorFinal) {
+        if (ctaBtn) {
           ctaBtn.addEventListener('click', async () => {
+            // Guard di dalam handler (bukan di attach listener-nya) — biar listener selalu
+            // ke-pasang walau tombol awalnya disabled (misal script masih kosong pas render pertama).
+            const liveHasScript = ta.value.trim().length > 0;
+            const liveFinal = ['approved', 'rejected', 'selesai'].includes(state.status);
+            if (!scriptEditable || !liveHasScript || state.status === 'review' || state.status === 'revisi' || liveFinal) return;
             state.script = ta.value; // auto-save script first
             state.status = 'review';
             scriptDirty = false;

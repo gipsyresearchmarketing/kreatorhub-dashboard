@@ -1057,14 +1057,23 @@
         // Tiap button = castVote('script', briefId, 'approve'/'revisi'/'reject'/'selesai')
         // Setelah quorum (3/5) tercapai, finalDecision apply status
         // (A0 didefine di bawah di line 1083, jd panggil via window.AdminApp langsung biar ga TDZ error)
-        const _A0pre = window.AdminApp;
-        const scriptVote = _A0pre && _A0pre.voteCounts ? _A0pre.voteCounts('script', briefId) : { approve: 0, revisi: 0, reject: 0, selesai: 0 };
-        const myScriptVote = _A0pre && _A0pre.myVote ? _A0pre.myVote('script', briefId) : null;
-        const scriptQuorum = _A0pre && _A0pre.quorumReached ? _A0pre.quorumReached(scriptVote, brief.brand) : false;
-        const scriptFinal = _A0pre && _A0pre.finalDecision ? _A0pre.finalDecision(scriptVote, brief.brand) : null;
-        const _brandQuorum = _A0pre && _A0pre.getBrandTotalAdmins ? _A0pre.getBrandTotalAdmins(brief.brand) : 3;
-        const voteBtnLabel = (action) => `${action} (${scriptVote[action.toLowerCase()] || 0}/${_brandQuorum})`;
-        const scriptActionsStrip = actions.map(a =>
+        let scriptVote = { approve: 0, revisi: 0, reject: 0, selesai: 0, voters: [] };
+        let myScriptVote = null;
+        let scriptQuorum = false;
+        let scriptFinal = null;
+        let _brandQuorum = 3;
+        try {
+          const _A0pre = window.AdminApp;
+          if (_A0pre) {
+            if (_A0pre.voteCounts) scriptVote = _A0pre.voteCounts('script', briefId);
+            if (_A0pre.myVote) myScriptVote = _A0pre.myVote('script', briefId);
+            if (_A0pre.quorumReached) scriptQuorum = _A0pre.quorumReached(scriptVote, brief.brand);
+            if (_A0pre.finalDecision) scriptFinal = _A0pre.finalDecision(scriptVote, brief.brand);
+            if (_A0pre.getBrandTotalAdmins) _brandQuorum = _A0pre.getBrandTotalAdmins(brief.brand);
+          }
+        } catch (e) { console.warn('[script-actions]', e); }
+        const voteBtnLabel = (action) => `${action} (${(scriptVote && scriptVote[action.toLowerCase()]) || 0}/${_brandQuorum})`;
+        const scriptActionsStrip = (actions || []).map(a =>
           `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${voteBtnLabel(a)}</button>`
         ).join('');
 

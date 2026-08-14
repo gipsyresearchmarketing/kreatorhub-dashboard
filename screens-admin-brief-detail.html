@@ -622,39 +622,6 @@
     </div>
   </div>
 
-  <!-- assign brand modal (reassign brief ke brand lain) -->
-  <div class="modal-backdrop" id="assign-brand-modal" data-od-id="assign-brand-modal">
-    <div class="modal" style="max-width: 480px;">
-      <h3>Assign ulang brand</h3>
-      <p class="lead">Pindahkan brief ini ke brand lain. Kreator dari brand lama akan kehilangan akses, kreator dari brand baru bisa lihat &amp; kerjakan.</p>
-
-      <div style="background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px;">
-        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
-          <span style="color: var(--muted);">Brief</span>
-          <strong id="assign-brand-brief-title">—</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
-          <span style="color: var(--muted);">Brand saat ini</span>
-          <span id="assign-brand-current">—</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="assign-brand-select">Assign ke brand</label>
-        <select class="filter-select" id="assign-brand-select" style="width: 100%;"></select>
-      </div>
-
-      <p class="field-hint" style="margin-top: -8px;">
-        ⚠️ Video/video yang udah di-submit kreator brand lama tetap ada, tapi admin brand baru yg punya akses ke brief ini selanjutnya.
-      </p>
-
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="assign-brand-cancel">Batal</button>
-        <button class="btn btn-primary" id="assign-brand-save">Pindahkan brand</button>
-      </div>
-    </div>
-  </div>
-
   <!-- script editor modal (admin tulis/edit script untuk kreator) -->
   <div class="modal-backdrop" id="script-editor-modal">
     <div class="modal" style="max-width: 620px;">
@@ -1510,6 +1477,29 @@
           
         actionModalCancel?.addEventListener('click', () => actionModal.classList.remove('show'));
         actionModal?.addEventListener('click', (e) => { if (e.target === actionModal) actionModal.classList.remove('show'); });
+
+        // Action modal trigger: button dengan data-action di script strip
+        // ("Setujui" / "Minta revisi" / "Tolak" / "Tandai selesai")
+        // Sebelumnya ga ada handler-nya — button ada tapi klik ga buka modal.
+        document.getElementById('script-actions')?.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          e.preventDefault();
+          const actionLabel = btn.dataset.action;
+          const A = window.AdminApp;
+          if (!A) return;
+          const briefObj = BRIEFS[briefId];
+          if (!briefObj) return;
+          pendingAction = { scope: 'script', target: briefId, label: actionLabel };
+          actionModalTitle.textContent = actionLabel + ' script';
+          actionModalLead.textContent = 'Kirim catatan ke kreator (opsional tapi sangat membantu)';
+          actionModalCreator.textContent = briefObj.creator || '—';
+          actionModalBrand.textContent = briefObj.brand || '—';
+          actionModalTitle2.textContent = briefObj.title || '—';
+          actionModalNote.value = '';
+          actionModal.classList.add('show');
+          setTimeout(() => actionModalNote.focus(), 50);
+        });
         actionModalConfirm?.addEventListener('click', async () => {
           if (!pendingAction) return;
           const note = actionModalNote.value.trim();

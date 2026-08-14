@@ -205,47 +205,6 @@
             </div>
           </div>
 
-          <div class="card" data-od-id="brief-status">
-            <div class="section-title">
-              <h2 class="h2">Status brief</h2>
-              <span class="meta">${hasScript ? '' : 'Script & video bisa ditulis/di-upload terpisah'}</span>
-            </div>
-
-            <div class="field">
-              <label>Status sekarang</label>
-              <div><span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span></div>
-            </div>
-
-            <div class="field">
-              <label>Status script</label>
-              <div><span class="status ${state.status}">${escapeHtml(STATUS_LABEL[state.status] || state.status)}</span></div>
-            </div>
-
-            <div class="brief-status-cta">
-              <span class="cta-label">Aksi cepat</span>
-              ${state.status === 'review' || state.status === 'revisi' || isKreatorFinal
-                ? `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Sudah dikirim untuk review</button>
-                   <span class="cta-hint">Script udah lo submit. Admin lagi review / vote. Status berikutnya (approve / revisi / tolak) ditentukan admin.</span>`
-                : hasScript
-                  ? `<button type="button" class="btn btn-primary" id="btn-submit-review">Tandai script siap review →</button>
-                     <span class="cta-hint">Setelah klik ini, script akan terkunci untuk diedit sampai admin beri feedback. Video tetap bisa di-upload terpisah.</span>`
-                  : `<button type="button" class="btn btn-secondary" id="btn-submit-review" disabled>Script belum ditulis</button>`}
-            </div>
-
-            ${!scriptEditable ? `
-              <div class="brief-status-locked">
-                <span>🔒</span>
-                <div>
-                  <strong>Script dikunci</strong> — status sudah <em>${escapeHtml(STATUS_LABEL[state.status] || state.status)}</em>.
-                  Kontrol script sekarang di sisi admin.
-                </div>
-              </div>` : ''}
-
-            ${/* Status flow: Kreator nulis → klik submit → status review.
-                 Admin vote → approve/reject/revisi. Kreator tidak bisa pilih
-                 status sendiri di dropdown, tapi bisa trigger perubahan via submit. */ ''}
-          </div>
-
           ${renderUploadCard(brief, state.status)}
         `;
 

@@ -1507,6 +1507,16 @@
           const scope    = pendingAction.scope;
           const target   = pendingAction.target;
           const label    = pendingAction.label;
+          // Map label button ke actual status enum
+          const LABEL_TO_STATUS = {
+            'Setujui': 'approved',
+            'Minta revisi': 'revisi',
+            'Tolak': 'rejected',
+            'Tandai selesai': 'selesai',
+            'Kembalikan ke draft': 'draft',
+            'Buka kembali': 'review'
+          };
+          const newStatus = LABEL_TO_STATUS[label] || label;
           let targetTxt;
           // Video actions udah pakai vote (multi-admin quorum) — ga lewat modal ini.
           // Modal cuma handle script actions.
@@ -1516,7 +1526,7 @@
             const scriptKreator = sbBrief && sbBrief.assigned_to;
             if (A && A.updateScript && scriptKreator) {
               try {
-                await A.updateScript(briefId, scriptKreator, { status: target });
+                await A.updateScript(briefId, scriptKreator, { status: newStatus });
               } catch (err) {
                 showToast('Sync script gagal: ' + err.message);
               }

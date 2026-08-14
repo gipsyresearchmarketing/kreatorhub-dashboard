@@ -201,13 +201,12 @@
               </span>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary" id="btn-save-script" ${scriptEditable ? '' : 'disabled'}>Simpan draft script</button>
               <button type="button" class="btn btn-primary" id="btn-submit-review" ${scriptEditable && hasScript && state.status !== 'review' && state.status !== 'revisi' && !isKreatorFinal ? '' : 'disabled'}>
                 ${state.status === 'review' || state.status === 'revisi'
                   ? 'Sudah dikirim ✓'
                   : isKreatorFinal
                     ? 'Sudah final ✓'
-                    : 'Upload script untuk review'}
+                    : 'Kirim script untuk review'}
               </button>
             </div>
           </div>

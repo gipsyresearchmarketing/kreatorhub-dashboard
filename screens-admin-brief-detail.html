@@ -1068,7 +1068,13 @@
             if (_A0pre.getBrandTotalAdmins) _brandQuorum = _A0pre.getBrandTotalAdmins(brief.brand);
           }
         } catch (e) { console.warn('[script-actions]', e); }
-        const voteBtnLabel = (action) => `${action} (${(scriptVote && scriptVote[action.toLowerCase()]) || 0}/${_brandQuorum})`;
+        const LABEL_TO_DECISION = { 'Setujui': 'approve', 'Minta revisi': 'revisi', 'Tolak': 'reject', 'Tandai selesai': 'selesai' };
+        const VOTE_LABEL = { approve: 'Setujui', revisi: 'Minta revisi', reject: 'Tolak', selesai: 'Tandai selesai' };
+        const FINAL_LABEL = { approved: 'DISETUJUI', revisi: 'PERLU REVISI', rejected: 'DITOLAK', selesai: 'SELESAI' };
+        const voteBtnLabel = (action) => {
+          const decisionKey = LABEL_TO_DECISION[action];
+          return `${action} (${(decisionKey && scriptVote && scriptVote[decisionKey]) || 0}/${_brandQuorum})`;
+        };
         const scriptActionsStrip = (actions || []).map(a =>
           `<button type="button" class="btn ${actionVariant(a)}" data-action="${a}">${voteBtnLabel(a)}</button>`
         ).join('');
@@ -1104,10 +1110,10 @@
               <span class="vote-count-approve"><span class="dot dot-approve"></span>Setujui <strong>${sc.approve}/${A0.getBrandTotalAdmins(brief.brand)}</strong></span>
               <span class="vote-count-reject"><span class="dot dot-reject"></span>Tolak <strong>${sc.reject}/${A0.getBrandTotalAdmins(brief.brand)}</strong></span>
             </div>
-            ${scriptLocked ? `<div class="vote-final" style="color: ${scriptFinal === 'approved' ? 'var(--success)' : 'var(--danger)'};">Quorum tercapai → <strong>${scriptFinal === 'approved' ? 'DISETUJUI' : 'DITOLAK'}</strong> (locked)</div>` : ''}
+            ${scriptLocked ? `<div class="vote-final" style="color: ${scriptFinal === 'approved' ? 'var(--success)' : (scriptFinal === 'rejected' ? 'var(--danger)' : 'var(--accent)')};">Quorum tercapai → <strong>${FINAL_LABEL[scriptFinal] || String(scriptFinal || '').toUpperCase()}</strong> (locked)</div>` : ''}
           </div>`;
         const myVoteHint = myScriptVote
-          ? `<span class="meta" style="margin-left: 10px;">· vote kamu: <strong style="color: ${myScriptVote === 'approve' ? 'var(--success)' : 'var(--danger)'};">${myScriptVote === 'approve' ? 'Setujui' : 'Tolak'}</strong> (klik tombol lain untuk ganti)</span>`
+          ? `<span class="meta" style="margin-left: 10px;">· vote kamu: <strong style="color: ${myScriptVote === 'approve' ? 'var(--success)' : (myScriptVote === 'reject' ? 'var(--danger)' : 'var(--accent)')};">${VOTE_LABEL[myScriptVote] || myScriptVote}</strong> (klik tombol lain untuk ganti)</span>`
           : `<span class="meta" style="margin-left: 10px;">· kamu belum vote</span>`;
         const scriptActionsHtml = `
           <div class="script-actions" id="script-actions">
@@ -1531,15 +1537,36 @@
             const A = window.AdminApp;
             const sbBrief = A && A.data && A.data.briefs && A.data.briefs.find(b => b.id === briefId);
             const scriptKreator = sbBrief && sbBrief.assigned_to;
-            if (A && A.updateScript && scriptKreator) {
+            const decision = LABEL_TO_DECISION[label]; // 'approve' | 'revisi' | 'reject' | 'selesai', or undefined for reset actions
+            if (decision && A && A.castVote) {
+              // Setujui / Minta revisi / Tolak / Tandai selesai → catat sebagai vote (quorum), BUKAN langsung ganti status
+              try {
+                await A.castVote('script', briefId, decision, note || null);
+                const counts = A.voteCounts ? A.voteCounts('script', briefId) : null;
+                const final = counts && A.finalDecision ? A.finalDecision(counts, sbBrief && sbBrief.brand) : null;
+                if (final) {
+                  // quorum tercapai → baru status brief beneran ke-update
+                  if (A.updateScript && scriptKreator) {
+                    try {
+                      await A.updateScript(briefId, scriptKreator, { status: final });
+                    } catch (err) {
+                      showToast('Sync script gagal: ' + err.message);
+                    }
+                  }
+                  currentStatus = final;
+                }
+              } catch (err) {
+                showToast('Vote gagal: ' + err.message);
+              }
+            } else if (A && A.updateScript && scriptKreator) {
+              // "Kembalikan ke draft" / "Buka kembali" — reset manual, bukan vote quorum
               try {
                 await A.updateScript(briefId, scriptKreator, { status: newStatus });
+                currentStatus = target;
               } catch (err) {
                 showToast('Sync script gagal: ' + err.message);
               }
             }
-            // saveScriptStatus(target) removed — Supabase udah update via updateScript di atas
-            currentStatus = target;
             targetTxt = 'script';
           }
           actionModal.classList.remove('show');

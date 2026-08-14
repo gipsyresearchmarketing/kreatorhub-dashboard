@@ -196,7 +196,7 @@
                         ${scriptEditable ? '' : 'disabled'}></textarea>
               <span class="field-hint">
                 ${scriptEditable
-                  ? 'Script tersimpan saat klik tombol Simpan di bawah. Video bisa di-upload terpisah di card Upload video.'
+                  ? 'Klik "Kirim script untuk review" di bawah kalau udah siap. Video bisa di-upload terpisah di card Upload video.'
                   : 'Status sudah final (approved/ditolak/selesai) — script dikunci. Hubungi admin kalau perlu perubahan.'}
               </span>
             </div>
@@ -240,28 +240,9 @@
           }
         });
 
-        document.getElementById('btn-save-script').addEventListener('click', async () => {
-          state.script = ta.value;
-          scriptDirty = false;
-          const btn = document.getElementById('btn-save-script');
-          const orig = btn.textContent;
-          btn.disabled = true; btn.textContent = 'Menyimpan…';
-          try {
-            const res = await persistState(briefId, state);
-            if (res.source === 'supabase') {
-              A.showToast('Script tersinkron ke cloud ✓');
-            } else if (res.source === 'local' && res.error) {
-              A.showToast('Supabase error: ' + res.error + ' (fallback lokal)', 'error');
-            } else {
-              A.showToast('Script tersimpan di lokal (offline).');
-            }
-          } catch (err) {
-            A.showToast('Gagal: ' + err.message, 'error');
-          } finally {
-            btn.disabled = false; btn.textContent = orig;
-            render();
-          }
-        });
+        // Catatan: dulu ada tombol "Simpan" (btn-save-script) terpisah dari "Kirim script untuk review",
+        // tapi sekarang digabung jadi satu tombol (btn-submit-review) — handler lama sudah dihapus di sini
+        // karena elemennya udah gak ada di HTML (bikin render() crash & btn-submit-review gak ke-wire).
 
         // btn-save-status: DIHAPUS — kreator tidak boleh ubah status sendiri,
         // itu domain admin. Status cuma bisa berubah via "Tandai siap review" di bawah

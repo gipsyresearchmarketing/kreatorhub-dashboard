@@ -184,10 +184,9 @@
 
   function voteCounts(targetType, targetId) {
     const rows = (data.approvals || []).filter(a => a.target_type === targetType && a.target_id === targetId);
-    const counts = { approve: 0, reject: 0, voters: [] };
+    const counts = { approve: 0, revisi: 0, reject: 0, selesai: 0, voters: [] };
     rows.forEach(r => {
-      if (r.decision === 'approve') counts.approve++;
-      else if (r.decision === 'reject') counts.reject++;
+      if (counts[r.decision] !== undefined) counts[r.decision]++;
       counts.voters.push(r.admin_username);
     });
     return counts;
@@ -201,6 +200,8 @@
   }
   async function castVote(targetType, targetId, decision, comment) {
     if (!session || !session.username) throw new Error('Session admin tidak ditemukan');
+    const VALID_DECISIONS = ['approve', 'revisi', 'reject', 'selesai'];
+    if (!VALID_DECISIONS.includes(decision)) throw new Error('Decision tidak valid: ' + decision);
     const payload = {
       target_type: targetType,
       target_id: targetId,
@@ -218,12 +219,17 @@
   }
   function quorumReached(counts, brand) {
     const q = getBrandQuorum(brand);
-    return counts.approve >= q || counts.reject >= q;
+    return counts.approve >= q
+        || counts.revisi >= q
+        || counts.reject >= q
+        || counts.selesai >= q;
   }
   function finalDecision(counts, brand) {
     const q = getBrandQuorum(brand);
     if (counts.approve >= q) return 'approved';
+    if (counts.revisi >= q) return 'revisi';
     if (counts.reject >= q) return 'rejected';
+    if (counts.selesai >= q) return 'selesai';
     return null;
   }
 

@@ -227,6 +227,16 @@
           state.script = ta.value;
           const meta = document.getElementById('script-meta');
           if (meta) meta.textContent = '● ada perubahan belum disimpan';
+          // Live update button disabled state — biar btn-submit-review bisa di-klik
+          // segera setelah user ngetik (render() ga dipanggil biar ga ngehilangin teks)
+          const ctaLive = document.getElementById('btn-submit-review');
+          if (ctaLive) {
+            const liveHasScript = ta.value.trim().length > 0;
+            const liveStatus = state.status;
+            const liveFinal = ['approved', 'rejected', 'selesai'].includes(liveStatus);
+            const shouldBeEnabled = scriptEditable && liveHasScript && liveStatus !== 'review' && liveStatus !== 'revisi' && !liveFinal;
+            ctaLive.disabled = !shouldBeEnabled;
+          }
         });
 
         document.getElementById('btn-save-script').addEventListener('click', async () => {

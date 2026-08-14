@@ -1108,6 +1108,9 @@
               </button>
               ${myVoteHint}
             </div>
+            <div class="action-strip" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+              ${scriptActionsStrip}
+            </div>
           </div>`;
         const scriptBlock = (hasScript
           ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>

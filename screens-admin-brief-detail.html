@@ -1058,17 +1058,13 @@
         // Setelah quorum (3/5) tercapai, finalDecision apply status
         // (A0 didefine di bawah di line 1083, jd panggil via window.AdminApp langsung biar ga TDZ error)
         let scriptVote = { approve: 0, revisi: 0, reject: 0, selesai: 0, voters: [] };
-        let myScriptVote = null;
         let scriptQuorum = false;
-        let scriptFinal = null;
         let _brandQuorum = 3;
         try {
           const _A0pre = window.AdminApp;
           if (_A0pre) {
             if (_A0pre.voteCounts) scriptVote = _A0pre.voteCounts('script', briefId);
-            if (_A0pre.myVote) myScriptVote = _A0pre.myVote('script', briefId);
             if (_A0pre.quorumReached) scriptQuorum = _A0pre.quorumReached(scriptVote, brief.brand);
-            if (_A0pre.finalDecision) scriptFinal = _A0pre.finalDecision(scriptVote, brief.brand);
             if (_A0pre.getBrandTotalAdmins) _brandQuorum = _A0pre.getBrandTotalAdmins(brief.brand);
           }
         } catch (e) { console.warn('[script-actions]', e); }

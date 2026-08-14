@@ -264,7 +264,7 @@
             scriptDirty = false;
             try {
               await persistState(briefId, state);
-              A.showToast('Brief ditandai siap review. Menunggu admin.');
+              A.showToast('Kirim untuk di review ✓');
             } catch (err) {
               A.showToast('Gagal: ' + err.message, 'error');
             }

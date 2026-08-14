@@ -202,7 +202,7 @@
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" id="btn-save-script" ${scriptEditable ? '' : 'disabled'}>Simpan draft script</button>
-              <button type="button" class="btn btn-primary" id="btn-submit-review" ${scriptEditable && hasScript ? '' : 'disabled'}>
+              <button type="button" class="btn btn-primary" id="btn-submit-review" ${scriptEditable && hasScript && state.status !== 'review' && state.status !== 'revisi' && !isKreatorFinal ? '' : 'disabled'}>
                 ${state.status === 'review' || state.status === 'revisi' || isKreatorFinal
                   ? 'Kirim untuk di review'
                   : 'Upload script untuk review'}

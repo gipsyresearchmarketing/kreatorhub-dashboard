@@ -378,9 +378,7 @@
         // Banner kontekstual: kalau script status='review' (sudah di-submit kreator),
         // kasih hint bahwa video sekarang bisa di-upload TERPISAH dari script review.
         const scriptInReview = state.status === 'review';
-        const uploadContextBanner = (scriptInReview && !existing && !isRevisiMode)
-          ? '<div style="background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid color-mix(in oklch, var(--accent) 25%, transparent); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; color: var(--fg);">✓ Script lo udah di-submit untuk review admin. Sekarang bisa upload video-nya secara terpisah — gak harus nunggu script approved dulu.</div>'
-          : '';
+        const uploadContextBanner = '';
         return `
           <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
             <div class="section-title">

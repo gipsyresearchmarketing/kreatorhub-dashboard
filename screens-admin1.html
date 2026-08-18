@@ -715,7 +715,7 @@
           </div>
         </div>
 
-        <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="card" style="padding: 0; overflow-x: auto; overflow-y: hidden;">
           <table class="ds-table" id="queue-table">
             <thead>
               <tr>
@@ -3117,7 +3117,7 @@
       if (!iso) return '—';
       const d = new Date(iso);
       if (isNaN(d.getTime())) return '—';
-      const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       return dateStr + ', ' + timeStr;
     }
@@ -3248,7 +3248,7 @@
           </td>
           <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
-          <td class="num-col" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
+          <td class="num-col" style="white-space: nowrap;" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
           <td class="num-col">${escapeHtml(briefDeadline)}</td>
           <td>${actionsHtml}</td>
         </tr>`;

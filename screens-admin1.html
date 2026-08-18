@@ -724,6 +724,7 @@
                 <th>Kreator</th>
                 <th>Tipe</th>
                 <th>Status</th>
+                <th class="num-col">Diupload</th>
                 <th class="num-col">Deadline</th>
                 <th style="text-align: right;">Aksi</th>
               </tr>
@@ -3111,6 +3112,16 @@
       modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     })();
 
+    // Format tanggal+jam upload video/script — dipakai kolom "Diupload" di tabel antrian review.
+    function fmtUploadDateTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '—';
+      const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      return dateStr + ', ' + timeStr;
+    }
+
     function renderQueueTable(A) {
       const tbody = document.querySelector('#queue-table tbody');
       if (!tbody) return;
@@ -3176,7 +3187,7 @@
           : typeFilter === 'video'
             ? 'Belum ada video yang perlu review.'
             : 'Belum ada progres atau script dari kreator. Kreator perlu submit dari halaman Brief & script (setelah script di-approve admin).';
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
         return;
       }
       tbody.innerHTML = items.map(item => {
@@ -3237,6 +3248,7 @@
           </td>
           <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
+          <td class="num-col" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
           <td class="num-col">${escapeHtml(briefDeadline)}</td>
           <td>${actionsHtml}</td>
         </tr>`;

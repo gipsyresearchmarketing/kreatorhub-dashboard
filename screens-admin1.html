@@ -3260,24 +3260,11 @@
           if (A) renderQueueTable(A);
         });
       }
-      // Wire video link clicks
-      tbody.querySelectorAll('[data-video-link]').forEach(titleEl => {
-        titleEl.addEventListener('click', () => {
-          const tr = titleEl.closest('tr');
-          const item = A.data.progress.find(p => p.id === tr.dataset.progressId);
-          if (!item) return;
-          if (item.video_url) {
-            window.open(item.video_url, '_blank', 'noopener');
-          } else if (item.video_storage_path) {
-            // Generate signed URL on-demand
-            A.sb.storage.from('videos').createSignedUrl(item.video_storage_path, 3600)
-              .then(({ data: signed }) => {
-                if (signed && signed.signedUrl) window.open(signed.signedUrl, '_blank', 'noopener');
-                else A.showToast('File tidak bisa dibuka.', 'error');
-              });
-          }
-        });
-      });
+      // Catatan: video title click dihandle via event delegation di #queue-table (attached sekali,
+      // di luar fungsi ini) — navigasi ke brief-detail di tab yang sama. Wiring "buka video di tab
+      // baru" yang dulu ada di sini SUDAH DIHAPUS karena bikin double-action (2 tab kebuka sekaligus
+      // tiap klik judul). Kalau admin mau lihat videonya, klik link Google Drive mentah di bawah judul,
+      // atau buka dari halaman brief-detail-nya.
     }
 
     function renderBriefsTable(A) {

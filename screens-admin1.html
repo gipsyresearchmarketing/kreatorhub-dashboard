@@ -1665,7 +1665,7 @@
             <a href="screens-reports.html#brief-aktif" class="brief-row link" data-link-reports="brief-aktif" title="Lihat rincian di Laporan detail">
               <div>
                 <strong>${b.title}</strong>
-                <small class="row-meta">${b.brand} · ${b.creator} · deadline ${fmtDateDDMMYYYY(b.deadline)}</small>
+                <small class="row-meta">${b.brand} · ${b.creator} · deadline ${b.deadline}</small>
               </div>
             </a>
           `).join('');
@@ -2072,7 +2072,7 @@
           getItems: () => {
             const items = [];
             BRIEFS.filter(b => b.status === 'aktif').forEach(b => {
-              items.push({ title: b.title, meta: [{ label: 'Brand:', value: b.brand }, { label: 'Kreator:', value: b.creator }, { label: 'Deadline:', value: fmtDateDDMMYYYY(b.deadline) }], badge: { cls: 'review', label: 'Aktif' } });
+              items.push({ title: b.title, meta: [{ label: 'Brand:', value: b.brand }, { label: 'Kreator:', value: b.creator }, { label: 'Deadline:', value: b.deadline }], badge: { cls: 'review', label: 'Aktif' } });
             });
             return items;
           }

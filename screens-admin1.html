@@ -3112,6 +3112,29 @@
       modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     })();
 
+    // Format tanggal string "13 Agustus 2026" → "13/08/2026" (DD/MM/YYYY)
+    // String disimpan dgn format panjang di DB (dari admin input),
+    // tapi display kita ringkas jadi DD/MM/YYYY biar konsisten.
+    const ID_MONTHS = { januari:1, februari:2, maret:3, april:4, mei:5, juni:6, juli:7, agustus:8, september:9, oktober:10, november:11, desember:12 };
+    function fmtDateDDMMYYYY(str) {
+      if (!str || str === '—') return '—';
+      // Format "13 Agustus 2026" → "13/08/2026"
+      const m = String(str).match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+      if (m) {
+        const d = String(m[1]).padStart(2, '0');
+        const mon = String(ID_MONTHS[m[2].toLowerCase()] || '01').padStart(2, '0');
+        return `${d}/${mon}/${m[3]}`;
+      }
+      // ISO date "2026-08-13" atau "2026-08-13T..."
+      const iso = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+      // fallback: toLocaleDateString (id-ID default = DD/MM/YYYY)
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return str;
+      const pad = (n) => String(n).padStart(2, '0');
+      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
+    }
+
     // Format tanggal+jam upload video/script — dipakai kolom "Diupload" di tabel antrian review.
     function fmtUploadDateTime(iso) {
       if (!iso) return '—';
@@ -3251,7 +3274,7 @@
           <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
           <td class="num-col" style="white-space: nowrap;" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
-          <td class="num-col">${escapeHtml(briefDeadline)}</td>
+          <td class="num-col">${escapeHtml(fmtDateDDMMYYYY(briefDeadline))}</td>
           <td>${actionsHtml}</td>
         </tr>`;
       }).join('');
@@ -3341,7 +3364,7 @@
         <td>${picCell}</td>
         <td class="num-col">${feeCell}</td>
         <td>${statusCell}</td>
-        <td class="num-col">${escapeHtml(b.deadline || '—')}</td>
+        <td class="num-col">${escapeHtml(fmtDateDDMMYYYY(b.deadline || '—'))}</td>
       </tr>`;
       }).join('');
     }

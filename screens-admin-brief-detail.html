@@ -615,6 +615,12 @@
         </select>
       </div>
 
+      <div class="field">
+        <label for="assign-brand">Brand</label>
+        <select class="filter-select" id="assign-brand" style="width: 100%;"></select>
+        <span class="field-hint">Salah taruh brand? Ganti di sini, kesimpen bareng pas klik Simpan.</span>
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-secondary" id="assign-cancel">Batal</button>
         <button class="btn btn-primary" id="assign-save">Simpan</button>
@@ -1637,12 +1643,14 @@
         modal.dataset.wired = '1';
 
         const elPic     = document.getElementById('assign-pic');
+        const elBrandPick = document.getElementById('assign-brand');
         const elTitle   = document.getElementById('assign-brief-title');
         const elBrand   = document.getElementById('assign-brief-brand');
         const elCurrent = document.getElementById('assign-brief-current');
         const btnCancel = document.getElementById('assign-cancel');
         const btnSave   = document.getElementById('assign-save');
         const detailPicInfo = () => document.getElementById('detail-pic-info');
+        const FIXED_BRANDS = ['Jamuzen', 'CalmadeAI', 'Convictio.id', 'Gipsy Research'];
 
         let activeBriefTitle = null;
         let activeBriefBrand = null;
@@ -1689,6 +1697,10 @@
             if (p.username === brief.assigned_to) o.selected = true;
             elPic.appendChild(o);
           });
+          // populate dropdown brand
+          elBrandPick.innerHTML = FIXED_BRANDS.map(b =>
+            `<option value="${escapeHtml(b)}" ${b === activeBriefBrand ? 'selected' : ''}>${escapeHtml(b)}</option>`
+          ).join('');
           modal.classList.add('show');
         }
 
@@ -1706,65 +1718,6 @@
           if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
         });
 
-        // ---- Assign ulang brand (mirip assign kreator) ----
-        const modalBrand = document.getElementById('assign-brand-modal');
-        const elBrandSelect = document.getElementById('assign-brand-select');
-        const elBrandBriefTitle = document.getElementById('assign-brand-brief-title');
-        const elBrandCurrent = document.getElementById('assign-brand-current');
-        const btnBrandCancel = document.getElementById('assign-brand-cancel');
-        const btnBrandSave = document.getElementById('assign-brand-save');
-        const FIXED_BRANDS = ['Jamuzen', 'CalmadeAI', 'Convictio.id', 'Gipsy Research'];
-
-        function openBrandModal() {
-          if (!modalBrand) return;
-          // Isi dropdown brand
-          elBrandSelect.innerHTML = FIXED_BRANDS.map(b =>
-            `<option value="${escapeHtml(b)}" ${b === brief.brand ? 'selected' : ''}>${escapeHtml(b)}</option>`
-          ).join('');
-          elBrandBriefTitle.textContent = brief.title || '—';
-          elBrandCurrent.textContent = brief.brand || '—';
-          modalBrand.classList.add('show');
-        }
-        function closeBrandModal() {
-          if (modalBrand) modalBrand.classList.remove('show');
-        }
-        document.addEventListener('click', (e) => {
-          const btn = e.target.closest('#btn-reassign-brand');
-          if (!btn) return;
-          e.preventDefault();
-          openBrandModal();
-        });
-        btnBrandCancel?.addEventListener('click', closeBrandModal);
-        modalBrand?.addEventListener('click', (e) => { if (e.target === modalBrand) closeBrandModal(); });
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && modalBrand && modalBrand.classList.contains('show')) closeBrandModal();
-        });
-        btnBrandSave?.addEventListener('click', async () => {
-          const A = window.AdminApp;
-          if (!A) return;
-          const newBrand = elBrandSelect.value;
-          if (!newBrand || newBrand === brief.brand) {
-            A.showToast('Brand tidak berubah', 'info');
-            closeBrandModal();
-            return;
-          }
-          btnBrandSave.disabled = true;
-          const orig = btnBrandSave.textContent;
-          btnBrandSave.textContent = 'Memindahkan…';
-          try {
-            const sbId = (BRIEFS[briefId] && BRIEFS[briefId].sb_id) || briefId;
-            await A.updateBrief(sbId, { brand: newBrand });
-            A.showToast(`Brief dipindahkan ke brand ${newBrand} ✓`);
-            closeBrandModal();
-            render();
-          } catch (err) {
-            A.showToast('Gagal: ' + (err.message || err), 'error');
-          } finally {
-            btnBrandSave.disabled = false;
-            btnBrandSave.textContent = orig;
-          }
-        });
-
         btnSave?.addEventListener('click', async () => {
           const A = window.AdminApp;
           if (!A) return;
@@ -1772,18 +1725,36 @@
           // Pakai sb_id untuk write; index BRIEFS tetap pakai URL param key.
           const sbId = (BRIEFS[briefId] && BRIEFS[briefId].sb_id) || briefId;
           const newPic = elPic.value || null;
+          const newBrand = elBrandPick.value;
+          const fields = {};
+          const picChanged = newPic !== (BRIEFS[briefId] ? (BRIEFS[briefId].assigned_to || null) : null);
+          const brandChanged = newBrand && newBrand !== activeBriefBrand;
+          if (picChanged) fields.assigned_to = newPic;
+          if (brandChanged) fields.brand = newBrand;
+          if (!picChanged && !brandChanged) {
+            A.showToast('Gak ada perubahan', 'info');
+            closeModal();
+            return;
+          }
           btnSave.disabled = true;
           const orig = btnSave.textContent;
           btnSave.textContent = 'Menyimpan…';
           try {
-            await A.updateBrief(sbId, { assigned_to: newPic });
-            if (BRIEFS[briefId]) BRIEFS[briefId].assigned_to = newPic;
-            refreshDetailPicInfo(newPic);
+            await A.updateBrief(sbId, fields);
+            if (BRIEFS[briefId]) {
+              if (picChanged) BRIEFS[briefId].assigned_to = newPic;
+              if (brandChanged) BRIEFS[briefId].brand = newBrand;
+            }
+            if (picChanged) refreshDetailPicInfo(newPic);
             const picLabel = newPic
               ? ((A.data.profiles || []).find(p => p.username === newPic)?.display_name || newPic)
               : 'Terbuka';
-            showToast('Brief di-assign ke ' + picLabel + ' ✓');
+            const parts = [];
+            if (picChanged) parts.push('kreator → ' + picLabel);
+            if (brandChanged) parts.push('brand → ' + newBrand);
+            showToast('Tersimpan: ' + parts.join(', ') + ' ✓');
             closeModal();
+            render();
           } catch (err) {
             showToast('Gagal: ' + err.message);
           } finally {

@@ -817,13 +817,23 @@
           const d = new Date(iso);
           const now = new Date();
           const diffH = Math.round((now - d) / 36e5);
+          const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
           if (diffH < 1) return 'baru saja';
-          if (diffH < 24) return diffH + ' jam lalu';
+          if (diffH < 24) return diffH + ' jam lalu · ' + timeStr;
           const diffD = Math.round(diffH / 24);
-          if (diffD === 1) return 'kemarin';
-          if (diffD < 7) return diffD + ' hari lalu';
-          if (diffD < 30) return Math.round(diffD / 7) + ' minggu lalu';
-          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+          if (diffD === 1) return 'kemarin · ' + timeStr;
+          if (diffD < 7) return diffD + ' hari lalu · ' + timeStr;
+          if (diffD < 30) return Math.round(diffD / 7) + ' minggu lalu · ' + timeStr;
+          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' · ' + timeStr;
+        }
+        // Tanggal+jam lengkap buat tooltip (hover) — presisi penuh biar admin bisa bandingin
+        // urutan upload video secara pasti walau label relatifnya keliatan sama ("4 hari lalu").
+        function fmtFullDateTime(iso) {
+          if (!iso) return '—';
+          const d = new Date(iso);
+          if (isNaN(d.getTime())) return '—';
+          return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+            + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
         }
         const dynamicVideos = relatedProgress.map(p => {
           // Cari payment yang match
@@ -833,6 +843,7 @@
             link: p.video_url || (p.video_storage_path ? '[storage] ' + p.video_storage_path : '—'),
             status: statusForVideo(p),
             date: fmtRelative(p.updated_at),
+            dateFull: fmtFullDateTime(p.updated_at),
             fee: pay ? Number(pay.fee) : 0,
             progress_id: p.id,
             kreator: p.kreator,
@@ -1173,7 +1184,7 @@
             <div class="vi-top">
               <div class="v-info">
                 <strong>${escapeHtml(v.title)}</strong>
-                <small>${escapeHtml(v.date)} · ${fmtRp(v.fee)}</small>
+                <small title="${escapeHtml(v.dateFull || '')}">${escapeHtml(v.date)} · ${fmtRp(v.fee)}</small>
                 <a href="${escapeHtml(v.link || '#')}" target="_blank" rel="noopener" class="video-link">${escapeHtml(linkDisplay)} ↗</a>
               </div>
               <span class="vi-status status ${stCls}">${stLabel}</span>

@@ -525,24 +525,6 @@
   }
 
   // ---- expose API ----
-  // Format tanggal "13 Agustus 2026" → "13/08/2026" (DD/MM/YYYY)
-  const ID_MONTHS = { januari:1, februari:2, maret:3, april:4, mei:5, juni:6, juli:7, agustus:8, september:9, oktober:10, november:11, desember:12 };
-  function fmtDate(str) {
-    if (!str || str === '—') return '—';
-    const m = String(str).match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
-    if (m) {
-      const d = String(m[1]).padStart(2, '0');
-      const mon = String(ID_MONTHS[m[2].toLowerCase()] || '01').padStart(2, '0');
-      return `${d}/${mon}/${m[3]}`;
-    }
-    const iso = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return str;
-    const pad = (n) => String(n).padStart(2, '0');
-    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
-  }
-
   const A = {
     sb,
     session: { ...session, role: 'admin', displayName: profile.display_name || session.displayName },
@@ -555,7 +537,6 @@
     createBrief,
     deleteBrief,
     updateScript,
-    fmtDate,
     createScriptForKreator,
     updateProgress,
     updateBrief,

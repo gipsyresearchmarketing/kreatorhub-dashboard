@@ -1553,29 +1553,36 @@
       // "Brief baru" button di panel briefs → di-handle wireNewBriefButton (IIFE #2, buka #brief-modal)
 
       // link-cell di tabel antrian
-      document.querySelectorAll('#queue-table .link-cell').forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          showToast('Membuka video di tab baru (simulasi).');
-        });
-      });
-
-      // video title di tabel antrian → buka brief detail / toast fallback
-      document.querySelectorAll('#queue-table [data-video-link]').forEach(titleEl => {
-        const go = () => {
-          const tr = titleEl.closest('tr');
-          const briefId = tr?.dataset.briefId;
-          if (briefId) {
-            window.location.href = 'screens-admin-brief-detail.html?id=' + briefId;
-          } else {
-            showToast('Membuka detail video (simulasi).');
+      // Event delegation di #queue-table — dipasang SEKALI ke tabelnya (bukan ke tiap row),
+      // jadi tetep jalan walau row-row-nya di-render ulang belakangan (async, dari renderQueueTable
+      // setelah data Supabase kepanggil). Sebelumnya wiring ini querySelectorAll ke row yang belum
+      // ada (tabel masih kosong pas halaman baru load) → listener ga pernah ke-attach ke row asli.
+      const queueTableEl = document.getElementById('queue-table');
+      if (queueTableEl && !queueTableEl.dataset.clickWired) {
+        queueTableEl.dataset.clickWired = '1';
+        queueTableEl.addEventListener('click', (e) => {
+          // video title → buka detail brief (sama kayak "Buka brief →" punya script)
+          const titleEl = e.target.closest('[data-video-link]');
+          if (titleEl) {
+            e.preventDefault();
+            const tr = titleEl.closest('tr');
+            const briefId = tr?.dataset.briefId;
+            if (briefId) {
+              window.location.href = 'screens-admin-brief-detail.html?id=' + encodeURIComponent(briefId);
+            } else {
+              showToast('Brief untuk video ini tidak ditemukan.');
+            }
+            return;
           }
-        };
-        titleEl.addEventListener('click', (e) => { e.preventDefault(); go(); });
-        titleEl.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
         });
-      });
+        queueTableEl.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const titleEl = e.target.closest('[data-video-link]');
+          if (!titleEl) return;
+          e.preventDefault();
+          titleEl.click();
+        });
+      }
 
       // ---- sort by brand di tabel antrian ----
       const brandHeader = document.querySelector('#queue-table thead th:nth-child(2)');
@@ -3208,9 +3215,10 @@
                </div>`
             : `<span class="pill">${statusPill(item.status).replace(/<[^>]+>/g, '')}</span>`;
         }
-        // data-type attribute buat click handler detect type
+        // data-type attribute buat click handler detect type; data-brief-id dipake delegated click handler
         const dataType = item.type === 'script' ? `data-script-brief-id="${escapeHtml(item.brief_id)}"` : `data-progress-id="${escapeHtml(item.id)}"`;
-        return `<tr data-row ${dataType} data-type="${item.type}" data-status="${escapeHtml(item.status)}" data-brand="${escapeHtml(item.brand)}">
+        const dataBriefId = item.brief_id ? `data-brief-id="${escapeHtml(item.brief_id)}"` : '';
+        return `<tr data-row ${dataType} ${dataBriefId} data-type="${item.type}" data-status="${escapeHtml(item.status)}" data-brand="${escapeHtml(item.brand)}">
           <td>
             <div class="row-title">
               <div>

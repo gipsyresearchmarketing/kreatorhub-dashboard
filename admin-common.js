@@ -524,6 +524,40 @@
     window.location.href = 'screens-login.html';
   }
 
+  // ---- fmtDate: format deadline/tanggal jadi DD/MM/YYYY, ringkas & konsisten di semua halaman ----
+  // Deadline brief disimpan sebagai teks bebas dari input admin — bisa "13 Agustus 2026" (dengan
+  // tahun), "13 Agustus" (tanpa tahun, di-asumsikan tahun berjalan), ISO string ("2026-08-13..."),
+  // atau format lain yang masih bisa di-parse Date native. Kalau semua gagal, balikin teks aslinya
+  // apa adanya (jangan nebak-nebak / jangan rusak data yang ga dikenali).
+  const ID_MONTHS = {
+    januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6,
+    juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12
+  };
+  function fmtDate(str) {
+    if (!str || str === '—') return '—';
+    const s = String(str).trim();
+    const pad = (n) => String(n).padStart(2, '0');
+    // "13 Agustus 2026" (dengan tahun)
+    let m = s.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+    if (m) {
+      const mon = ID_MONTHS[m[2].toLowerCase()];
+      if (mon) return `${pad(m[1])}/${pad(mon)}/${m[3]}`;
+    }
+    // "13 Agustus" (tanpa tahun) — asumsikan tahun berjalan
+    m = s.match(/^(\d{1,2})\s+([A-Za-z]+)$/);
+    if (m) {
+      const mon = ID_MONTHS[m[2].toLowerCase()];
+      if (mon) return `${pad(m[1])}/${pad(mon)}/${new Date().getFullYear()}`;
+    }
+    // ISO "2026-08-13" atau "2026-08-13T..."
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    // fallback: coba Date native parse (mis. "Aug 13, 2026")
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    return s; // format ga dikenali → tampilkan apa adanya
+  }
+
   // ---- expose API ----
   const A = {
     sb,
@@ -559,6 +593,7 @@
     showToast,
     handleSignOut,
     hydrateProfile,
+    fmtDate,
     // finance-only gate (Putri) — upload/mark-paid/hapus bukti bayar
     isFinance: () => !!(session && session.isFinance),
     isSuperAdmin: () => !!(session && session.isSuperAdmin),

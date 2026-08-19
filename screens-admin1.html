@@ -167,9 +167,8 @@
        soalnya wrapper card-nya sengaja padding:0 buat keperluan overflow-x:auto (scroll horizontal) */
     #queue-table th:first-child, #queue-table td:first-child { padding-left: 20px; }
     #queue-table th:last-child,  #queue-table td:last-child  { padding-right: 20px; }
-    /* semua kolom (Video s.d. Aksi) di-center biar simetris */
-    #queue-table th, #queue-table td { text-align: center; }
-    #queue-table .row-actions-cell { justify-content: center; } /* flexbox: text-align aja ga cukup */
+    /* cuma teks header kolom (Video s.d. Aksi) yang di-center — isi baris data tetap alignment asli */
+    #queue-table th { text-align: center; }
 
     /* stat detail modal list items */
     .stat-item {

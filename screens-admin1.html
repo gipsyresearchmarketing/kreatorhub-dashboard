@@ -163,6 +163,13 @@
       text-underline-offset: 3px;
       outline: none;
     }
+    /* jarak ekstra di kolom paling kiri (Video) & paling kanan (Aksi) — biar ga mepet ke tepi card,
+       soalnya wrapper card-nya sengaja padding:0 buat keperluan overflow-x:auto (scroll horizontal) */
+    #queue-table th:first-child, #queue-table td:first-child { padding-left: 20px; }
+    #queue-table th:last-child,  #queue-table td:last-child  { padding-right: 20px; }
+    /* semua kolom (Video s.d. Aksi) di-center biar simetris */
+    #queue-table th, #queue-table td { text-align: center; }
+    #queue-table .row-actions-cell { justify-content: center; } /* flexbox: text-align aja ga cukup */
 
     /* stat detail modal list items */
     .stat-item {
@@ -716,7 +723,7 @@
         </div>
 
         <div class="card" style="padding: 0; overflow-x: auto; overflow-y: hidden;">
-          <table class="ds-table" id="queue-table">
+          <table class="ds-table" id="queue-table" style="min-width: 1080px;">
             <thead>
               <tr>
                 <th style="width: 28%;">Video</th>
@@ -3112,27 +3119,11 @@
       modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     })();
 
-    // Format tanggal string "13 Agustus 2026" → "13/08/2026" (DD/MM/YYYY)
-    // String disimpan dgn format panjang di DB (dari admin input),
-    // tapi display kita ringkas jadi DD/MM/YYYY biar konsisten.
-    const ID_MONTHS = { januari:1, februari:2, maret:3, april:4, mei:5, juni:6, juli:7, agustus:8, september:9, oktober:10, november:11, desember:12 };
-    function fmtDateDDMMYYYY(str) {
-      if (!str || str === '—') return '—';
-      // Format "13 Agustus 2026" → "13/08/2026"
-      const m = String(str).match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
-      if (m) {
-        const d = String(m[1]).padStart(2, '0');
-        const mon = String(ID_MONTHS[m[2].toLowerCase()] || '01').padStart(2, '0');
-        return `${d}/${mon}/${m[3]}`;
-      }
-      // ISO date "2026-08-13" atau "2026-08-13T..."
-      const iso = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
-      // fallback: toLocaleDateString (id-ID default = DD/MM/YYYY)
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return str;
-      const pad = (n) => String(n).padStart(2, '0');
-      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
+    // Deadline diformat pakai window.AdminApp.fmtDate (shared, di admin-common.js) — biar konsisten
+    // sama halaman lain (reports, brief-detail) dan biar handle juga deadline teks tanpa tahun
+    // (mis. "13 Agustus" tanpa "2026"), bukan cuma yang udah ada tahunnya.
+    function fmtDeadline(str) {
+      return (window.AdminApp && window.AdminApp.fmtDate) ? window.AdminApp.fmtDate(str) : (str || '—');
     }
 
     // Format tanggal+jam upload video/script — dipakai kolom "Diupload" di tabel antrian review.
@@ -3274,7 +3265,7 @@
           <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
           <td class="num-col" style="white-space: nowrap;" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
-          <td class="num-col">${escapeHtml(fmtDateDDMMYYYY(briefDeadline))}</td>
+          <td class="num-col">${escapeHtml(fmtDeadline(briefDeadline))}</td>
           <td>${actionsHtml}</td>
         </tr>`;
       }).join('');
@@ -3364,7 +3355,7 @@
         <td>${picCell}</td>
         <td class="num-col">${feeCell}</td>
         <td>${statusCell}</td>
-        <td class="num-col">${escapeHtml(fmtDateDDMMYYYY(b.deadline || '—'))}</td>
+        <td class="num-col">${escapeHtml(fmtDeadline(b.deadline || "—"))}</td>
       </tr>`;
       }).join('');
     }

@@ -330,25 +330,35 @@
       // Lanjut, status utama sudah terupdate
     }
 
-    // 3) Approve → auto-create baris fee (status pending, nominal default).
-    //    id deterministik + ignoreDuplicates → aman kalau video di-approve ulang
-    //    setelah revisi (fee yang udah dikoreksi admin nggak ke-reset).
+    // 3) Approve → auto-create/sync baris fee (status pending, nominal dari brief/default).
     //    Fee priority: fields.fee (override) > brief.fee > DEFAULT_FEE.
+    //    Kalau baris payment buat video ini UDAH ADA & statusnya masih 'pending' (belum
+    //    dibayar), fee-nya di-SYNC ke nilai terbaru — biar kalau admin baru isi/benerin
+    //    fee brief SETELAH video sempat di-approve duluan (jadi kepalang kepake DEFAULT_FEE),
+    //    koreksinya ke-apply begitu video di-approve ulang (mis. abis siklus revisi).
+    //    Kalau statusnya udah 'paid' (duit UDAH ditransfer), fee-nya TIDAK disentuh sama
+    //    sekali — biar catatan pembayaran yang udah beneran jalan gak keubah-ubah.
     if (decision === 'approve') {
       const fee = resolveFeeForItem(item, null);
-      const payRes = await sb.from('payments').upsert({
-        id: 'pay-' + progressId,
-        kreator: item.kreator,
-        video_title: item.title,
-        brand: item.brand,
-        fee,
-        status: 'pending',
-        submitted_at: new Date().toISOString(),
-        note: ''
-      }, { onConflict: 'id', ignoreDuplicates: true });
-      if (payRes.error) {
-        console.warn('[recordDecision] payment upsert gagal', payRes.error);
-        // Lanjut, status utama sudah terupdate
+      const payId = 'pay-' + progressId;
+      const existing = (data.payments || []).find(p => p.id === payId);
+      if (existing && existing.status === 'paid') {
+        // udah lunas — jangan sentuh fee sama sekali, biarin apa adanya
+      } else {
+        const payRes = await sb.from('payments').upsert({
+          id: payId,
+          kreator: item.kreator,
+          video_title: item.title,
+          brand: item.brand,
+          fee,
+          status: 'pending',
+          submitted_at: existing ? existing.submitted_at : new Date().toISOString(),
+          note: existing ? (existing.note || '') : ''
+        }, { onConflict: 'id' });
+        if (payRes.error) {
+          console.warn('[recordDecision] payment upsert gagal', payRes.error);
+          // Lanjut, status utama sudah terupdate
+        }
       }
     }
 
@@ -391,26 +401,32 @@
     }, fields)).eq('id', id);
     if (updRes.error) throw new Error('Update progress gagal: ' + updRes.error.message);
 
-    // Auto-create payment row kalau status final 'approved'/'selesai'
+    // Auto-create/sync payment row kalau status final 'approved'/'selesai'
     // (sama pattern dengan recordDecision di single-admin flow, tapi dipanggil
     // setelah vote quorum updateProgress). Tanpa ini, payment ga muncul
     // di Fee panel setelah video di-approve via multi-admin vote.
+    // Fee di-sync ke nilai terbaru kalau masih 'pending'; kalau udah 'paid', gak disentuh.
     if (fields && (fields.status === 'approved' || fields.status === 'selesai')) {
       // Ambil progress row buat dapet kreator/title/brand
       const item = data.progress.find(p => p.id === id);
       if (item) {
         const payId = 'pay-' + id;
         const fee = resolveFeeForItem(item, fields.fee);
-        const payRes = await sb.from('payments').upsert({
-          id: payId,
-          kreator: item.kreator,
-          video_title: item.title,
-          brand: item.brand,
-          fee,
-          status: 'pending'
-        }, { onConflict: 'id', ignoreDuplicates: true });
-        if (payRes.error) {
-          console.warn('[updateProgress] payment auto-create gagal', payRes.error);
+        const existing = (data.payments || []).find(p => p.id === payId);
+        if (!(existing && existing.status === 'paid')) {
+          const payRes = await sb.from('payments').upsert({
+            id: payId,
+            kreator: item.kreator,
+            video_title: item.title,
+            brand: item.brand,
+            fee,
+            status: 'pending',
+            submitted_at: existing ? existing.submitted_at : new Date().toISOString(),
+            note: existing ? (existing.note || '') : ''
+          }, { onConflict: 'id' });
+          if (payRes.error) {
+            console.warn('[updateProgress] payment auto-create gagal', payRes.error);
+          }
         }
       }
     }

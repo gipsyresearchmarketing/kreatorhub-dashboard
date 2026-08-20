@@ -167,8 +167,9 @@
        soalnya wrapper card-nya sengaja padding:0 buat keperluan overflow-x:auto (scroll horizontal) */
     #queue-table th:first-child, #queue-table td:first-child { padding-left: 20px; }
     #queue-table th:last-child,  #queue-table td:last-child  { padding-right: 20px; }
-    /* cuma teks header kolom (Video s.d. Aksi) yang di-center — isi baris data tetap alignment asli */
+    /* cuma teks header kolom yang di-center — isi baris data tetap alignment asli */
     #queue-table th { text-align: center; }
+    #briefs-table th { text-align: center; }
     /* dengan table-layout:fixed, kolom Aksi kadang sempit di layar kecil — biar tombol boleh
        turun ke baris ke-2 drpd jebol keluar cell (nowrap global-nya di-override khusus di sini) */
     #queue-table .row-actions-cell { flex-wrap: wrap; justify-content: center; white-space: normal; }

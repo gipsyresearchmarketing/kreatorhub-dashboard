@@ -169,6 +169,9 @@
     #queue-table th:last-child,  #queue-table td:last-child  { padding-right: 20px; }
     /* cuma teks header kolom (Video s.d. Aksi) yang di-center — isi baris data tetap alignment asli */
     #queue-table th { text-align: center; }
+    /* dengan table-layout:fixed, kolom Aksi kadang sempit di layar kecil — biar tombol boleh
+       turun ke baris ke-2 drpd jebol keluar cell (nowrap global-nya di-override khusus di sini) */
+    #queue-table .row-actions-cell { flex-wrap: wrap; justify-content: center; white-space: normal; }
 
     /* stat detail modal list items */
     .stat-item {
@@ -721,16 +724,15 @@
           </div>
         </div>
 
-        <div class="card" style="padding: 0; overflow-x: auto; overflow-y: hidden;">
+        <div class="card" style="padding: 0; overflow: hidden;">
           <table class="ds-table" id="queue-table">
             <thead>
               <tr>
-                <th style="width: 28%;">Video</th>
+                <th style="width: 26%;">Video</th>
                 <th>Brand</th>
                 <th>Kreator</th>
                 <th>Tipe</th>
                 <th>Status</th>
-                <th class="num-col">Diupload</th>
                 <th class="num-col">Deadline</th>
                 <th>Aksi</th>
               </tr>
@@ -3130,11 +3132,19 @@
       if (!iso) return '—';
       const d = new Date(iso);
       if (isNaN(d.getTime())) return '—';
-      // Format DD/MM/YYYY (lebih ringkas drpd '14 Agustus 2026')
       const pad = (n) => String(n).padStart(2, '0');
       const dateStr = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
-      const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = pad(d.getHours()) + ':' + pad(d.getMinutes());
       return dateStr + ', ' + timeStr;
+    }
+    // Versi lengkap buat tooltip (hover)
+    function fmtUploadFull(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      return dateStr + ', ' + timeStr + ' WIB';
     }
 
     function renderQueueTable(A) {
@@ -3202,7 +3212,7 @@
           : typeFilter === 'video'
             ? 'Belum ada video yang perlu review.'
             : 'Belum ada progres atau script dari kreator. Kreator perlu submit dari halaman Brief & script (setelah script di-approve admin).';
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--muted);">${emptyMsg}</td></tr>`;
         return;
       }
       tbody.innerHTML = items.map(item => {
@@ -3253,6 +3263,7 @@
               </div>
             </div>
             <div style="margin-top: 4px; font-size: 11px;">${linkHtml}</div>
+            <div style="margin-top: 4px; font-size: 11px; color: var(--muted);" title="${escapeHtml(fmtUploadFull(item.updated_at))}">Diupload ${fmtUploadDateTime(item.updated_at)}</div>
           </td>
           <td><span class="brand-tag">${brandTag(item.brand)}</span></td>
           <td>
@@ -3263,8 +3274,7 @@
           </td>
           <td>${typeBadge}</td>
           <td>${statusPill(item.status)}</td>
-          <td class="num-col" style="white-space: nowrap;" title="${escapeHtml(item.updated_at || '')}">${fmtUploadDateTime(item.updated_at)}</td>
-          <td class="num-col">${escapeHtml(fmtDeadline(briefDeadline))}</td>
+          <td class="num-col" title="${escapeHtml(briefDeadline)}">${escapeHtml(fmtDeadline(briefDeadline))}</td>
           <td>${actionsHtml}</td>
         </tr>`;
       }).join('');

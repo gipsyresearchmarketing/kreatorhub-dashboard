@@ -325,6 +325,31 @@
         const bannerStyle = 'margin-bottom: 16px; padding: 10px 12px; background: color-mix(in oklch, var(--warn) 14%, transparent); border: 1px dashed color-mix(in oklch, var(--warn) 40%, transparent); border-radius: 8px; color: var(--fg); font-size: 13px;';
         const headStyle = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;';
 
+        // Cari feedback ASLI dari admin (bukan catatan kreator sendiri) buat video yang lagi
+        // diminta revisi/ditolak — pakai progress_id (FK yang akurat), ambil yang paling baru.
+        function findAdminFeedback() {
+          if (!existing) return null;
+          const candidates = (A.data.history || [])
+            .filter(h => h.progress_id === existing.id)
+            .slice()
+            .sort((a, b) => new Date(b.reviewed_at || 0) - new Date(a.reviewed_at || 0));
+          return candidates.find(h => h.status === 'revisi' || h.status === 'rejected') || null;
+        }
+        function renderAdminFeedbackHtml() {
+          const fb = findAdminFeedback();
+          if (!fb) return '';
+          const isReject = fb.status === 'rejected';
+          const cardStyle = `margin: 12px 0 16px; padding: 14px 16px; border-radius: 10px; border: 1px solid color-mix(in oklch, ${isReject ? 'var(--danger)' : 'var(--warn)'} 35%, var(--border)); background: color-mix(in oklch, ${isReject ? 'var(--danger)' : 'var(--warn)'} 10%, transparent);`;
+          return `
+            <div style="${cardStyle}">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <strong style="font-size: 13px;">${isReject ? '❌ Ditolak admin' : '🔄 Admin minta revisi'}</strong>
+                <span class="meta">oleh ${escapeHtml(fb.admin || 'admin')}</span>
+              </div>
+              <div style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(fb.feedback || 'Admin tidak menuliskan detail spesifik — coba hubungi admin langsung.')}</div>
+            </div>`;
+        }
+
         // Render video sebelumnya (untuk comparison / history)
         function renderPreviousVideoHtml() {
           if (!existing) return '';
@@ -365,6 +390,7 @@
                 <h2 class="h2">Video kamu</h2>
                 <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
               </div>
+              ${renderAdminFeedbackHtml()}
               ${renderPreviousVideoHtml()}
               <span class="field-hint">Video udah lo submit. Admin lagi review / vote. Status berikutnya (approve / revisi / tolak) ditentukan admin.</span>
             </div>`;
@@ -383,9 +409,10 @@
               <span class="meta">${isRevisiMode ? 'Ganti video lama dengan versi baru' : ''}</span>
             </div>
             ${uploadContextBanner}
+            ${renderAdminFeedbackHtml()}
             ${renderPreviousVideoHtml()}
             <form id="brief-upload-form" data-revision="${revisiCount}">
-              ${isRevisiMode ? '<div class="revisi-banner" style="' + bannerStyle + '">⚠️ Video sebelumnya akan <strong>diganti</strong> dengan yang baru. Riwayat revisi ada di Progres page.</div>' : ''}
+              ${isRevisiMode ? '<div class="revisi-banner" style="' + bannerStyle + '">⚠️ Video sebelumnya akan <strong>diganti</strong> dengan yang baru.</div>' : ''}
               <div class="field">
                 <label for="brief-vid-link">Link video ${isRevisiMode ? '(revisi baru)' : ''} <small style="color: var(--muted); font-weight: 400;">(drive)</small></label>
                 <input type="url" class="input" id="brief-vid-link" placeholder="https://…" />

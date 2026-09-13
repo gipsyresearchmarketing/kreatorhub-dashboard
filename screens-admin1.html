@@ -148,15 +148,18 @@
       .stat-row-flow { grid-template-columns: 1fr; }
     }
 
-    /* clickable video title (queue table) */
+    /* clickable video title (queue table & disetujui table) */
     [data-video-link] { cursor: pointer; }
-    #queue-table [data-video-link] {
+    #queue-table [data-video-link],
+    #disetujui-table [data-video-link] {
       color: var(--accent);
       text-decoration: none;
       transition: color 0.12s ease;
     }
     #queue-table [data-video-link]:hover,
-    #queue-table [data-video-link]:focus-visible {
+    #queue-table [data-video-link]:focus-visible,
+    #disetujui-table [data-video-link]:hover,
+    #disetujui-table [data-video-link]:focus-visible {
       color: color-mix(in oklch, var(--accent) 75%, var(--fg));
       text-decoration: underline;
       text-decoration-color: color-mix(in oklch, var(--accent) 50%, transparent);
@@ -889,7 +892,7 @@
       <!-- panel: disetujui -->
       <section class="panel" data-panel="disetujui" data-od-id="panel-disetujui">
         <div class="card" style="padding: 0; overflow: hidden;">
-          <table class="ds-table">
+          <table class="ds-table" id="disetujui-table">
             <thead>
               <tr>
                 <th style="width: 28%;">Video</th>
@@ -1586,6 +1589,33 @@
           }
         });
         queueTableEl.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const titleEl = e.target.closest('[data-video-link]');
+          if (!titleEl) return;
+          e.preventDefault();
+          titleEl.click();
+        });
+      }
+
+      // Sama persis pattern-nya kayak queue-table di atas — video title di tabel "Disetujui"
+      // sebelumnya cuma teks polos, ga bisa diklik ke detail brief.
+      const disetujuiTableEl = document.getElementById('disetujui-table');
+      if (disetujuiTableEl && !disetujuiTableEl.dataset.clickWired) {
+        disetujuiTableEl.dataset.clickWired = '1';
+        disetujuiTableEl.addEventListener('click', (e) => {
+          const titleEl = e.target.closest('[data-video-link]');
+          if (titleEl) {
+            e.preventDefault();
+            const tr = titleEl.closest('tr');
+            const briefId = tr?.dataset.briefId;
+            if (briefId) {
+              window.location.href = 'screens-admin-brief-detail.html?id=' + encodeURIComponent(briefId);
+            } else {
+              showToast('Brief untuk video ini tidak ditemukan.');
+            }
+          }
+        });
+        disetujuiTableEl.addEventListener('keydown', (e) => {
           if (e.key !== 'Enter' && e.key !== ' ') return;
           const titleEl = e.target.closest('[data-video-link]');
           if (!titleEl) return;
@@ -3438,8 +3468,8 @@
             const payLabel = isPaid ? 'Sudah dibayar' : 'Belum dibayar';
             const updated = p.updated_at ? new Date(p.updated_at).toLocaleDateString('id-ID') : '—';
             const brand = p.brand || '—';
-            return `<tr data-row data-status="${escapeHtml(p.status)}" data-brand="${escapeHtml(brand)}">
-              <td><strong>${escapeHtml(p.title || '—')}</strong></td>
+            return `<tr data-row data-status="${escapeHtml(p.status)}" data-brand="${escapeHtml(brand)}" data-brief-id="${escapeHtml(p.brief_id || '')}">
+              <td><strong data-video-link tabindex="0">${escapeHtml(p.title || '—')}</strong></td>
               <td><span class="brand-tag">${escapeHtml(brand.toUpperCase().slice(0, 18))}</span></td>
               <td>${escapeHtml(p.kreator || '—')}</td>
               <td class="num-col">${formatRp(fee)}</td>

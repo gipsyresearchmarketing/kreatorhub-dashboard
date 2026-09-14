@@ -296,14 +296,20 @@
         return;
       }
 
-      // cari brief cocok berdasarkan brand + minimal satu kata judul overlap
-      const briefs = A.data.briefs.filter(b => b.brand === item.brand);
+      // cari brief cocok — pakai brief_id langsung (FK yang udah ada di progress row) kalau ada.
+      // Fallback ke brand+kata-judul cuma buat data lama/legacy yang mungkin belum punya brief_id.
       let matchedBrief = null;
-      for (const b of briefs) {
-        const aWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const bWords = b.title.toLowerCase().split(/\s+/);
-        const overlap = aWords.some(w => bWords.some(x => x.includes(w) || w.includes(x)));
-        if (overlap) { matchedBrief = b; break; }
+      if (item.brief_id) {
+        matchedBrief = A.data.briefs.find(b => b.id === item.brief_id) || null;
+      }
+      if (!matchedBrief) {
+        const briefs = A.data.briefs.filter(b => b.brand === item.brand);
+        for (const b of briefs) {
+          const aWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+          const bWords = b.title.toLowerCase().split(/\s+/);
+          const overlap = aWords.some(w => bWords.some(x => x.includes(w) || w.includes(x)));
+          if (overlap) { matchedBrief = b; break; }
+        }
       }
 
       document.getElementById('page-title').textContent = item.title;
@@ -311,19 +317,20 @@
 
       // cari feedback history yang relevan:
       // - kalau item dari history sendiri → pakai item.feedback langsung
-      // - kalau item dari progress → cari history dgn brand & kata judul cocok, status revision/rejected
+      // - kalau item dari progress → cari history via progress_id (FK yang udah ada & akurat,
+      //   BUKAN cocokin kata di judul — itu bisa ketuker antar video mirip judul kayak
+      //   "Clarissa"/"Clarissa 2"/"Clarissa 3"), urutin dari yang paling baru dulu
       let relevantHistory = null;
       if (fromHistory) {
         relevantHistory = item;
       } else {
-        const itemWords = item.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const candidates = A.data.history.filter(h => {
-          if (h.brand !== item.brand) return false;
-          const hWords = h.title.toLowerCase().split(/\s+/);
-          return itemWords.some(w => hWords.includes(w));
-        });
+        const candidates = (A.data.history || [])
+          .filter(h => h.progress_id === item.id)
+          .slice()
+          .sort((a, b) => new Date(b.reviewed_at || 0) - new Date(a.reviewed_at || 0));
         relevantHistory = candidates.find(h => h.status === 'rejected' || h.status === 'revisi')
-                       || candidates.find(h => h.status === 'approved');
+                       || candidates.find(h => h.status === 'approved')
+                       || candidates[0] || null;
       }
 
       // render sections
@@ -332,20 +339,28 @@
       sections.push(statusCard(item));
       sections.push(scriptCard(item));
 
-      // feedback card tergantung status
-      if (item.status === 'rejected' || (relevantHistory && relevantHistory.status === 'rejected' && !fromHistory)) {
+      // feedback card tergantung status SEKARANG (item.status) — bukan riwayat lama.
+      // Sebelumnya ada kondisi tambahan yang ngecek relevantHistory.status secara terpisah,
+      // itu bikin card "revisi"/"ditolak" tetep muncul walau video udah pindah status (misal
+      // udah di-upload ulang & sekarang 'review' lagi, atau bahkan udah 'approved'). item.status
+      // udah cukup & akurat buat kedua mode (live progress ATAU fromHistory, karena di mode
+      // fromHistory, item = entry history itu sendiri, jadi statusnya udah pasti sama).
+      if (item.status === 'rejected') {
         sections.push(feedbackRejectionCard(relevantHistory));
-      } else if (item.status === 'revisi' || (relevantHistory && relevantHistory.status === 'revisi' && !fromHistory)) {
+      } else if (item.status === 'revisi') {
         sections.push(feedbackRevisionCard(relevantHistory));
-      } else if (item.status === 'selesai' || item.status === 'approved' || (relevantHistory && relevantHistory.status === 'approved' && !fromHistory && !fromHistory)) {
-        // Untuk selesaid / approved dari progress atau via history: tampilkan info finalisasi
+      } else if (item.status === 'selesai' || item.status === 'approved') {
+        // Untuk selesai / approved: tampilkan info finalisasi
         sections.push(feedbackSelesaiCard(item));
       }
       // Note: untuk status lain (draft/editing/review) tidak ada feedback khusus
 
       // payment proofs (kreator lihat bukti transfer dari admin) — muncul kalau status approved/selesai
+      // Match pakai payment id deterministik ('pay-' + progressId), BUKAN kreator+judul —
+      // itu bisa ketuker kalau ada video lain dgn kreator & judul yg sama (mis. abis revisi/resubmit).
       if (item.status === 'approved' || item.status === 'selesai' || fromHistory) {
-        const linkedPayment = A.data.payments.find(p => p.kreator === item.kreator && p.video_title === item.title);
+        const pid = fromHistory ? item.progress_id : item.id;
+        const linkedPayment = pid ? A.data.payments.find(p => p.id === 'pay-' + pid) : null;
         if (linkedPayment) {
           sections.push(paymentProofsCard(linkedPayment.id));
         }

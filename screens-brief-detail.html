@@ -383,14 +383,14 @@
         }
 
         if (existing && !isRevisi) {
-          // Submitted, nunggu review (status='review') → show info + waiting note
+          // Submitted, nunggu review (status='review') → udah di-resubmit, feedback lama
+          // (kalau ada) udah gak relevan lagi ditampilin di sini — cukup ada di riwayat Progres.
           return `
             <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
               <div class="section-title">
                 <h2 class="h2">Video kamu</h2>
                 <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
               </div>
-              ${renderAdminFeedbackHtml()}
               ${renderPreviousVideoHtml()}
               <span class="field-hint">Video udah lo submit. Admin lagi review / vote. Status berikutnya (approve / revisi / tolak) ditentukan admin.</span>
             </div>`;

@@ -74,7 +74,7 @@
         <button type="button" class="filter-pill active" data-status-filter="all">Semua</button>
         <button type="button" class="filter-pill" data-status-filter="approved">Disetujui</button>
         <button type="button" class="filter-pill" data-status-filter="review">Review</button>
-        <button type="button" class="filter-pill" data-status-filter="revision">Revisi</button>
+        <button type="button" class="filter-pill" data-status-filter="revisi">Revisi</button>
         <button type="button" class="filter-pill" data-status-filter="rejected">Ditolak</button>
       </div>
 
@@ -113,7 +113,10 @@
       const historyTbody = document.getElementById('history-tbody');
       function renderHistory(statusFilter) {
         historyTbody.innerHTML = '';
-        let items = A.data.history.filter(h => A.userBrands.includes(h.brand));
+        // Filter brand DAN kreator sendiri — sebelumnya cuma filter brand, jadi kalau ada
+        // kreator lain kerja di brand yang sama, riwayat & feedback mereka ikut kebuka (privacy bug).
+        const me = A.session && A.session.username;
+        let items = A.data.history.filter(h => A.userBrands.includes(h.brand) && h.kreator === me);
         if (statusFilter && statusFilter !== 'all') items = items.filter(h => h.status === statusFilter);
         document.getElementById('history-count').textContent = items.length + ' video';
         if (!items.length) {
@@ -121,7 +124,8 @@
           return;
         }
         items.forEach(h => {
-          const label = ({approved: 'Disetujui', review: 'Review', revision: 'Revisi', rejected: 'Ditolak', draft: 'Draft'})[h.status] || h.status;
+          // key label pakai status ASLI yang kesimpen di DB ('revisi', bukan 'revision')
+          const label = ({approved: 'Disetujui', review: 'Review', revisi: 'Revisi', rejected: 'Ditolak', draft: 'Draft', selesai: 'Selesai'})[h.status] || h.status;
           const adminBlk = h.feedback
             ? `<strong>${h.admin}</strong>"${h.feedback}"`
             : '—';
@@ -133,17 +137,12 @@
             <td><strong>${h.title}</strong><br><small style="color: var(--muted); font-size: 11px;">${h.when}</small></td>
             <td>${h.brand}</td>
             <td><span class="status ${h.status}">${label}</span></td>
-            <td><a href="#" class="link-cell" data-link>${h.link}</a></td>
+            <td><a href="${h.link || '#'}" target="_blank" rel="noopener" class="link-cell" data-link>${h.link || '—'}</a></td>
             <td class="feedback-cell">${adminBlk}</td>
           `;
           tr.addEventListener('click', (e) => {
             if (e.target.closest('a')) return;
-            A.showToast('Membuka detail ' + h.title + ' (simulasi).');
-          });
-          tr.querySelector('.link-cell').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            A.showToast('Membuka video di tab baru (simulasi).');
+            window.location.href = 'screens-progres-detail.html?id=' + encodeURIComponent(h.id);
           });
           historyTbody.appendChild(tr);
         });

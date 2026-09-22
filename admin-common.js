@@ -124,7 +124,7 @@
   };
 
   async function refresh() {
-    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes, approvalsRes, proofsRes] = await Promise.all([
+    const [briefsRes, progressRes, historyRes, paymentsRes, profilesRes, scriptsRes, approvalsRes, proofsRes, libraryRes] = await Promise.all([
       sb.from('briefs').select('*').order('created_at', { ascending: false }),
       sb.from('progress').select('*').order('updated_at', { ascending: false }),
       sb.from('history').select('*').order('reviewed_at', { ascending: false }),
@@ -132,7 +132,8 @@
       sb.from('profiles').select('*').order('username'),
       sb.from('brief_scripts').select('*'),
       sb.from('approvals').select('*'),
-      sb.from('payment_proofs').select('*').order('created_at', { ascending: false })
+      sb.from('payment_proofs').select('*').order('created_at', { ascending: false }),
+      sb.from('script_library').select('*').order('script_number', { ascending: true })
     ]);
     if (briefsRes.error)   console.error('[refresh] briefs', briefsRes.error);
     if (progressRes.error) console.error('[refresh] progress', progressRes.error);
@@ -142,6 +143,7 @@
     if (scriptsRes.error)  console.error('[refresh] scripts', scriptsRes.error);
     if (approvalsRes.error) console.error('[refresh] approvals', approvalsRes.error);
     if (proofsRes.error)   console.error('[refresh] payment_proofs', proofsRes.error);
+    if (libraryRes.error)  console.error('[refresh] script_library', libraryRes.error);
     data.briefs       = briefsRes.data       || [];
     data.progress     = progressRes.data     || [];
     data.history      = historyRes.data      || [];
@@ -150,6 +152,7 @@
     data.scripts      = scriptsRes.data      || [];
     data.approvals    = approvalsRes.data    || [];
     data.paymentProofs = proofsRes.data      || [];
+    data.library      = libraryRes.data      || [];
     console.log('[admin-common] progress rows fetched:', data.progress.length, data.progress);
     return data;
   }
@@ -465,6 +468,85 @@
     }));
     return res.data[0];
   }
+
+  // ---- script_library (fitur Library / Kalender Konten) ----
+  async function createLibraryScript(fields) {
+    const id = 'lib-' + (fields.brand || 'brand').toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+    const payload = {
+      id,
+      ref_number: fields.refNumber || null,
+      script_number: fields.scriptNumber || null,
+      brand: fields.brand,
+      usp: fields.usp || '',
+      funnel_stage: fields.funnelStage || '',
+      brief_text: fields.briefText || '',
+      brand_guideline_url: fields.brandGuidelineUrl || '',
+      voucher_code: fields.voucherCode || '',
+      content: fields.content || '',
+      scheduled_date: fields.scheduledDate || null,
+      status: 'unassigned'
+    };
+    const res = await sb.from('script_library').insert(payload).select();
+    if (res.error) throw new Error('Buat script library gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-create', id } }));
+    return id;
+  }
+
+  async function scheduleLibraryScript(id, scheduledDate) {
+    // scheduledDate: 'YYYY-MM-DD' atau null (buat "unschedule" — balikin ke pool belum dijadwalkan)
+    const res = await sb.from('script_library').update({ scheduled_date: scheduledDate || null }).eq('id', id);
+    if (res.error) throw new Error('Set jadwal gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-schedule', id, scheduledDate } }));
+  }
+
+  async function assignLibraryScript(id, { kreator, deadline, fee }) {
+    // 1) Ambil data script library-nya
+    const item = (data.library || []).find(l => l.id === id);
+    if (!item) throw new Error('Script library tidak ditemukan: ' + id);
+    if (item.status === 'assigned') throw new Error('Script ini udah pernah di-assign sebelumnya.');
+    if (!kreator) throw new Error('Pilih kreator dulu.');
+
+    // 2) Bikin brief beneran (masuk ke alur Brief & script kreator yang biasa)
+    const title = 'Script ' + (item.script_number || item.ref_number || '') + (item.usp ? ' — ' + item.usp : '');
+    const meta = item.brief_text || '';
+    const briefId = await createBrief({
+      brand: item.brand,
+      title: title.trim() || ('Script ' + item.id),
+      meta,
+      deadline: deadline || '—',
+      fee: fee,
+      assignedTo: kreator
+    });
+
+    // 3) Pre-isi script draft-nya langsung dari library — kreator tinggal refine & upload
+    if (item.content) {
+      try {
+        await createScriptForKreator(briefId, kreator, { script: item.content, status: 'draft' });
+      } catch (err) {
+        console.warn('[assignLibraryScript] gagal pre-isi script', err);
+        // Brief tetap kebuat walau pre-isi script gagal — kreator masih bisa nulis manual
+      }
+    }
+
+    // 4) Tandai item library ini "assigned", link ke brief-nya
+    const updRes = await sb.from('script_library').update({
+      status: 'assigned', assigned_to: kreator, brief_id: briefId
+    }).eq('id', id);
+    if (updRes.error) throw new Error('Update status library gagal: ' + updRes.error.message);
+
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-assign', id, briefId, kreator } }));
+    return briefId;
+  }
+
+  async function deleteLibraryScript(id) {
+    const res = await sb.from('script_library').delete().eq('id', id);
+    if (res.error) throw new Error('Hapus script library gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-delete', id } }));
+  }
   async function updateBrief(id, fields) {
     const updRes = await sb.from('briefs').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update brief gagal: ' + updRes.error.message);
@@ -588,6 +670,10 @@
     deleteBrief,
     updateScript,
     createScriptForKreator,
+    createLibraryScript,
+    scheduleLibraryScript,
+    assignLibraryScript,
+    deleteLibraryScript,
     updateProgress,
     updateBrief,
     updatePayment,

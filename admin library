@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library &amp; Kalender Konten · Dasbor admin · Gipsy Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft:     color-mix(in oklch, var(--fg) 6%, transparent);
+      --success: oklch(62% 0.14 150);
+      --warn:    oklch(72% 0.14 70);
+      --danger:  oklch(58% 0.18 25);
+
+      --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono:    'Plus Jakarta Sans', system-ui, sans-serif;
+
+      --fs-h1: clamp(24px, 3vw, 32px);
+      --fs-h2: clamp(20px, 2.4vw, 26px);
+      --fs-body: 14px;
+      --fs-meta: 11px;
+
+      --gap-md: 16px;
+      --gap-lg: 24px;
+      --gutter: 24px;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.55; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; font-family: inherit; }
+    h1, h2, h3 { margin: 0; font-family: var(--font-display); }
+
+    .topnav { position: sticky; top: 0; z-index: 100; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 12px; padding-inline: var(--gutter); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .brand-logo .logo-text { font-weight: 600; font-size: 16px; }
+    .topnav-right { display: flex; align-items: center; gap: var(--gap-md); }
+    .meta { font-size: var(--fs-meta); color: var(--muted); }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 10px; font-weight: 600; }
+
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 50px); }
+    @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side-nav { display: none; } }
+    .side-nav { border-right: 1px solid var(--border); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .side-nav .brand-mini { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .side-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); }
+    .side-nav a:hover { background: var(--fg-soft); color: var(--fg); }
+    .side-nav a.active { background: var(--accent-soft); color: var(--fg); font-weight: 500; box-shadow: inset 2px 0 0 0 var(--accent); }
+    .side-nav svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+    .side-nav a.active svg { opacity: 1; }
+    .side-nav .role-tag { padding: 0 10px 12px; font-size: 11px; color: var(--muted); }
+
+    .main { padding: 28px var(--gutter) 64px; max-width: 100%; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-md); flex-wrap: wrap; margin-bottom: var(--gap-lg); }
+    .page-head h1 { font-size: var(--fs-h1); letter-spacing: -0.015em; font-weight: 600; }
+    .page-head p { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 60ch; }
+    .eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: var(--radius); border: 1px solid transparent; font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in oklch, var(--danger) 40%, var(--border)); }
+    .btn-danger:hover { background: color-mix(in oklch, var(--danger) 10%, transparent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .brand-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .brand-chip { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12.5px; font-weight: 500; }
+    .brand-chip.active { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+
+    .lib-layout { display: grid; grid-template-columns: 1fr 300px; gap: var(--gap-lg); align-items: start; margin-top: var(--gap-lg); }
+    @media (max-width: 1000px) { .lib-layout { grid-template-columns: 1fr; } }
+
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .cal-nav-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; }
+    .cal-nav-btn:hover { border-color: var(--fg); }
+    .cal-month-label { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .cal-dow { text-align: center; font-size: 11px; color: var(--muted); font-weight: 600; padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .cal-day { min-height: 92px; border: 1px solid var(--border); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 3px; background: var(--surface); }
+    .cal-day.other-month { background: var(--fg-soft); opacity: 0.5; }
+    .cal-day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .cal-day-num { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .cal-day.today .cal-day-num { color: var(--accent); }
+    .cal-chip { font-size: 10.5px; padding: 3px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; border-left: 3px solid var(--accent); }
+    .cal-chip.assigned { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); border-left-color: var(--success); }
+    .cal-chip:hover { filter: brightness(0.95); }
+
+    .pool-item { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; }
+    .pool-item:hover { border-color: var(--fg); }
+    .pool-item .brand-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); display: inline-block; margin-bottom: 4px; }
+    .pool-item .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+    .pool-item .sub { font-size: 11.5px; color: var(--muted); }
+    .empty-pool { color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px 8px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 5px; }
+    .field-hint { font-size: 11.5px; color: var(--muted); display: block; margin-top: 4px; }
+    .input, .textarea, .select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 13px; background: var(--surface); color: var(--fg); }
+    .textarea { resize: vertical; min-height: 90px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .modal-overlay { position: fixed; inset: 0; background: color-mix(in oklch, black 45%, transparent); display: none; align-items: flex-start; justify-content: center; z-index: 1000; padding: 40px 16px; overflow-y: auto; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; max-width: 620px; width: 100%; }
+    .modal-box h2 { font-size: 20px; margin-bottom: 4px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .modal-close-x { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; }
+
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; padding: 3px 10px; border-radius: 999px; font-weight: 500; }
+    .status-pill.unassigned { background: var(--fg-soft); color: var(--muted); }
+    .status-pill.assigned { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--surface); padding: 10px 18px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 2000; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a href="../index.html" class="brand-logo">
+        <span class="logo-mark">G</span>
+        <span class="logo-text">Gipsy Group</span>
+      </a>
+      <div class="topnav-right">
+        <span class="meta" id="profile-trigger-meta">Admin · —</span>
+        <div class="avatar" id="profile-trigger-avatar">—</div>
+        <button type="button" class="btn btn-secondary" id="btn-signout">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side-nav">
+      <div class="brand-mini">Admin</div>
+      <div class="role-tag">Mode admin</div>
+      <a href="screens-admin1.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        Antrian review
+      </a>
+      <a href="screens-admin1.html#briefs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12a4 4 0 014 4v10H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg>
+        Brief &amp; script
+      </a>
+      <a href="screens-admin-library.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+        Library konten
+      </a>
+      <a href="screens-admin1.html#creators">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a5 5 0 00-5-5"/></svg>
+        Kreator
+      </a>
+      <a href="screens-admin1.html#disetujui">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+        Disetujui
+      </a>
+      <a href="screens-reports.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7"/></svg>
+        Laporan detail
+      </a>
+      <a href="screens-admin1.html#fee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10h.01M18 10h.01"/></svg>
+        Fee kreator
+      </a>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">PANEL ADMIN</p>
+          <h1>Library &amp; Kalender Konten</h1>
+          <p>Script yang udah disiapin di muka. Jadwalkan ke tanggal, terus assign ke kreator — otomatis kebuat brief &amp; script draft-nya, langsung nongol di "Brief &amp; script" kreator itu.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-add-script">+ Tambah script</button>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow" style="margin-bottom: 10px;">FILTER BRAND</p>
+        <div class="brand-chips" id="brand-chips">
+          <button type="button" class="brand-chip active" data-brand="all">Semua</button>
+          <button type="button" class="brand-chip" data-brand="Gipsy Research">Gipsy Research</button>
+          <button type="button" class="brand-chip" data-brand="Jamuzen">Jamuzen</button>
+          <button type="button" class="brand-chip" data-brand="Convictio.id">Convictio.id</button>
+          <button type="button" class="brand-chip" data-brand="CalmadeAI">CalmadeAI</button>
+        </div>
+      </div>
+
+      <div class="lib-layout">
+        <div class="card">
+          <div class="cal-header">
+            <button type="button" class="cal-nav-btn" id="cal-prev">‹</button>
+            <div class="cal-month-label" id="cal-month-label">—</div>
+            <button type="button" class="cal-nav-btn" id="cal-next">›</button>
+          </div>
+          <div class="cal-grid" id="cal-dow-row">
+            <div class="cal-dow">Min</div><div class="cal-dow">Sen</div><div class="cal-dow">Sel</div>
+            <div class="cal-dow">Rab</div><div class="cal-dow">Kam</div><div class="cal-dow">Jum</div><div class="cal-dow">Sab</div>
+          </div>
+          <div class="cal-grid" id="cal-grid" style="margin-top: 4px;"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 14px; margin-bottom: 10px;">Belum dijadwalkan</h3>
+          <div id="unscheduled-pool"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: detail script -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal-box" style="position: relative;">
+      <button type="button" class="modal-close-x" id="detail-close">×</button>
+      <span class="status-pill" id="detail-status">—</span>
+      <h2 id="detail-title" style="margin-top: 8px;">—</h2>
+      <p class="meta" id="detail-meta" style="margin-top: 4px;">—</p>
+
+      <div class="field" style="margin-top: 16px;">
+        <label>USP</label>
+        <div class="field-hint" id="detail-usp" style="font-size: 13px; color: var(--fg);">—</div>
+      </div>
+      <div class="field">
+        <label>Brief</label>
+        <div class="field-hint" id="detail-brief" style="font-size: 13px; color: var(--fg); white-space: pre-wrap;">—</div>
+      </div>
+      <div class="field">
+        <label>Isi script</label>
+        <div class="field-hint" id="detail-content" style="font-size: 13px; color: var(--fg); white-space: pre-wrap; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">—</div>
+      </div>
+      <div class="field" id="detail-extra-wrap">
+        <label>Info tambahan</label>
+        <div class="field-hint" id="detail-extra" style="font-size: 13px; color: var(--fg);">—</div>
+      </div>
+
+      <div class="field">
+        <label for="detail-date">Tanggal jadwal</label>
+        <input type="date" class="input" id="detail-date" style="max-width: 200px;" />
+        <span class="field-hint">Kosongin buat balikin ke pool "Belum dijadwalkan".</span>
+      </div>
+
+      <div id="detail-assigned-block" style="display:none;">
+        <div class="field">
+          <label>Ditugaskan ke</label>
+          <div class="field-hint" id="detail-assigned-info" style="font-size: 13px; color: var(--fg);">—</div>
+        </div>
+      </div>
+
+      <div id="detail-assign-block">
+        <div class="field-hint" style="margin-bottom: 8px;">Belum di-assign ke kreator manapun.</div>
+        <button type="button" class="btn btn-primary" id="btn-open-assign">Assign ke kreator</button>
+      </div>
+
+      <div id="assign-form" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+        <div class="form-row-2">
+          <div class="field">
+            <label for="assign-kreator-select">Kreator</label>
+            <select class="select" id="assign-kreator-select"></select>
+          </div>
+          <div class="field">
+            <label for="assign-deadline">Deadline</label>
+            <input type="text" class="input" id="assign-deadline" placeholder="mis. 30 September" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="assign-fee">Fee (Rp) — opsional</label>
+          <input type="number" class="input" id="assign-fee" placeholder="Kosongin buat pakai default brand" />
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-confirm-assign">Simpan assign</button>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btn-delete-script">Hapus script</button>
+        <button type="button" class="btn btn-secondary" id="detail-cancel">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: tambah script -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal-box">
+      <h2>Tambah script baru</h2>
+      <p class="meta" style="margin-bottom: 16px;">Masuk ke pool "Belum dijadwalkan" — atur tanggalnya belakangan di kalender.</p>
+
+      <div class="form-row-2">
+        <div class="field">
+          <label for="add-brand">Brand</label>
+          <select class="select" id="add-brand">
+            <option value="Gipsy Research">Gipsy Research</option>
+            <option value="Jamuzen">Jamuzen</option>
+            <option value="Convictio.id">Convictio.id</option>
+            <option value="CalmadeAI">CalmadeAI</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="add-ref">Ref # (opsional)</label>
+          <input type="text" class="input" id="add-ref" placeholder="mis. 101" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="add-funnel">Funnel stage</label>
+        <input type="text" class="input" id="add-funnel" placeholder="mis. TOFU — Awareness" />
+      </div>
+      <div class="field">
+        <label for="add-usp">USP</label>
+        <input type="text" class="input" id="add-usp" placeholder="Angle/pesan utama script ini" />
+      </div>
+      <div class="field">
+        <label for="add-brief">Brief</label>
+        <textarea class="textarea" id="add-brief" rows="3" placeholder="Instruksi buat kreator..."></textarea>
+      </div>
+      <div class="field">
+        <label for="add-content">Isi script (Hook / Body / CTA)</label>
+        <textarea class="textarea" id="add-content" rows="6" placeholder="Hook: ...&#10;&#10;Body: ...&#10;&#10;CTA: ..."></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="field">
+          <label for="add-guideline">Link brand guideline (opsional)</label>
+          <input type="text" class="input" id="add-guideline" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label for="add-voucher">Kode voucher (opsional)</label>
+          <input type="text" class="input" id="add-voucher" placeholder="mis. FREELANCE2026" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="add-cancel">Batal</button>
+        <button type="button" class="btn btn-primary" id="btn-save-add">Simpan ke library</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="admin-common.js"></script>
+  <script>
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2600);
+    }
+    document.getElementById('btn-signout')?.addEventListener('click', () => {
+      if (window.AdminApp && window.AdminApp.handleSignOut) window.AdminApp.handleSignOut();
+    });
+
+    document.addEventListener('adminapp:ready', () => {
+      const A = window.AdminApp;
+      if (!A) return;
+
+      let currentBrand = 'all';
+      let viewYear = new Date().getFullYear();
+      let viewMonth = new Date().getMonth(); // 0-indexed
+
+      const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+      function libraryItems() {
+        return (A.data.library || []).filter(l => currentBrand === 'all' || l.brand === currentBrand);
+      }
+
+      function renderAll() {
+        renderCalendar();
+        renderUnscheduledPool();
+      }
+
+      function renderCalendar() {
+        document.getElementById('cal-month-label').textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+        const grid = document.getElementById('cal-grid');
+        grid.innerHTML = '';
+
+        const firstOfMonth = new Date(viewYear, viewMonth, 1);
+        const startWeekday = firstOfMonth.getDay(); // 0=Sun
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+        const todayStr = new Date().toISOString().slice(0, 10);
+
+        const items = libraryItems().filter(l => l.scheduled_date);
+        const byDate = {};
+        items.forEach(l => {
+          const key = l.scheduled_date;
+          if (!byDate[key]) byDate[key] = [];
+          byDate[key].push(l);
+        });
+
+        const cells = [];
+        // leading days from prev month
+        for (let i = startWeekday - 1; i >= 0; i--) {
+          cells.push({ day: daysInPrevMonth - i, otherMonth: true, dateStr: null });
+        }
+        // days of current month
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = viewYear + '-' + String(viewMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+          cells.push({ day: d, otherMonth: false, dateStr });
+        }
+        // trailing days to complete the grid (multiples of 7)
+        let trail = 1;
+        while (cells.length % 7 !== 0) {
+          cells.push({ day: trail++, otherMonth: true, dateStr: null });
+        }
+
+        cells.forEach(cell => {
+          const div = document.createElement('div');
+          div.className = 'cal-day' + (cell.otherMonth ? ' other-month' : '') + (cell.dateStr === todayStr ? ' today' : '');
+          const numEl = document.createElement('div');
+          numEl.className = 'cal-day-num';
+          numEl.textContent = cell.day;
+          div.appendChild(numEl);
+          if (cell.dateStr && byDate[cell.dateStr]) {
+            byDate[cell.dateStr].forEach(item => {
+              const chip = document.createElement('div');
+              chip.className = 'cal-chip' + (item.status === 'assigned' ? ' assigned' : '');
+              chip.textContent = (item.ref_number ? '#' + item.ref_number + ' ' : '') + (item.usp || item.brand);
+              chip.title = item.usp || '';
+              chip.addEventListener('click', () => openDetailModal(item.id));
+              div.appendChild(chip);
+            });
+          }
+          grid.appendChild(div);
+        });
+      }
+
+      function renderUnscheduledPool() {
+        const pool = document.getElementById('unscheduled-pool');
+        const items = libraryItems().filter(l => !l.scheduled_date);
+        if (!items.length) {
+          pool.innerHTML = '<div class="empty-pool">Semua script udah dijadwalkan.</div>';
+          return;
+        }
+        pool.innerHTML = '';
+        items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'pool-item';
+          div.innerHTML = `
+            <span class="brand-tag">${escapeHtml(item.brand)}</span>
+            <div class="title">${escapeHtml(item.ref_number ? '#' + item.ref_number + ' — ' : '') + escapeHtml(item.usp || 'Tanpa USP')}</div>
+            <div class="sub">${escapeHtml(item.funnel_stage || '')}</div>
+          `;
+          div.addEventListener('click', () => openDetailModal(item.id));
+          pool.appendChild(div);
+        });
+      }
+
+      // ---- Detail modal ----
+      const detailModal = document.getElementById('detail-modal');
+      let currentDetailId = null;
+
+      function openDetailModal(id) {
+        const item = (A.data.library || []).find(l => l.id === id);
+        if (!item) return;
+        currentDetailId = id;
+
+        document.getElementById('detail-status').textContent = item.status === 'assigned' ? 'Sudah di-assign' : 'Belum di-assign';
+        document.getElementById('detail-status').className = 'status-pill ' + (item.status === 'assigned' ? 'assigned' : 'unassigned');
+        document.getElementById('detail-title').textContent = (item.ref_number ? '#' + item.ref_number + ' — ' : '') + (item.usp || 'Tanpa USP');
+        document.getElementById('detail-meta').textContent = item.brand + (item.funnel_stage ? ' · ' + item.funnel_stage : '');
+        document.getElementById('detail-usp').textContent = item.usp || '—';
+        document.getElementById('detail-brief').textContent = item.brief_text || '—';
+        document.getElementById('detail-content').textContent = item.content || '—';
+
+        const extraParts = [];
+        if (item.brand_guideline_url) extraParts.push('Brand guideline: ' + item.brand_guideline_url);
+        if (item.voucher_code) extraParts.push('Kode voucher: ' + item.voucher_code);
+        document.getElementById('detail-extra-wrap').style.display = extraParts.length ? '' : 'none';
+        document.getElementById('detail-extra').textContent = extraParts.join(' · ');
+
+        document.getElementById('detail-date').value = item.scheduled_date || '';
+
+        const assignedBlock = document.getElementById('detail-assigned-block');
+        const assignBlock = document.getElementById('detail-assign-block');
+        const assignForm = document.getElementById('assign-form');
+        assignForm.style.display = 'none';
+        if (item.status === 'assigned') {
+          assignedBlock.style.display = '';
+          assignBlock.style.display = 'none';
+          const kreatorProfile = (A.data.profiles || []).find(p => p.username === item.assigned_to);
+          const kreatorLabel = kreatorProfile ? (kreatorProfile.display_name || kreatorProfile.username) : item.assigned_to;
+          assignedBlock.querySelector('#detail-assigned-info').innerHTML = escapeHtml(kreatorLabel) +
+            (item.brief_id ? ' · <a href="screens-admin-brief-detail.html?id=' + encodeURIComponent(item.brief_id) + '" style="color: var(--accent);">Buka brief →</a>' : '');
+        } else {
+          assignedBlock.style.display = 'none';
+          assignBlock.style.display = '';
+          const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+          const sel = document.getElementById('assign-kreator-select');
+          sel.innerHTML = '<option value="">— Pilih kreator —</option>' +
+            kreators.map(p => `<option value="${escapeHtml(p.username)}">${escapeHtml(p.display_name || p.username)}</option>`).join('');
+        }
+
+        document.getElementById('btn-delete-script').style.display = item.status === 'assigned' ? 'none' : '';
+
+        detailModal.classList.add('show');
+      }
+      function closeDetailModal() { detailModal.classList.remove('show'); currentDetailId = null; }
+      document.getElementById('detail-close').addEventListener('click', closeDetailModal);
+      document.getElementById('detail-cancel').addEventListener('click', closeDetailModal);
+      detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
+
+      document.getElementById('detail-date').addEventListener('change', async (e) => {
+        if (!currentDetailId) return;
+        try {
+          await A.scheduleLibraryScript(currentDetailId, e.target.value || null);
+          showToast(e.target.value ? 'Tanggal jadwal disimpan ✓' : 'Dibalikin ke pool belum dijadwalkan.');
+          renderAll();
+        } catch (err) {
+          showToast('Gagal: ' + err.message);
+        }
+      });
+
+      document.getElementById('btn-open-assign').addEventListener('click', () => {
+        document.getElementById('assign-form').style.display = '';
+      });
+
+      document.getElementById('btn-confirm-assign').addEventListener('click', async () => {
+        if (!currentDetailId) return;
+        const kreator = document.getElementById('assign-kreator-select').value;
+        const deadline = document.getElementById('assign-deadline').value.trim();
+        const feeRaw = document.getElementById('assign-fee').value.trim();
+        if (!kreator) { showToast('Pilih kreator dulu.'); return; }
+        const btn = document.getElementById('btn-confirm-assign');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Menyimpan…';
+        try {
+          await A.assignLibraryScript(currentDetailId, {
+            kreator,
+            deadline: deadline || '—',
+            fee: feeRaw === '' ? undefined : Number(feeRaw)
+          });
+          showToast('Berhasil di-assign, brief & script udah kebuat ✓');
+          closeDetailModal();
+          renderAll();
+        } catch (err) {
+          showToast('Gagal: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+
+      document.getElementById('btn-delete-script').addEventListener('click', async () => {
+        if (!currentDetailId) return;
+        if (!confirm('Hapus script ini dari library? Aksi ini gak bisa dibatalin.')) return;
+        try {
+          await A.deleteLibraryScript(currentDetailId);
+          showToast('Script dihapus.');
+          closeDetailModal();
+          renderAll();
+        } catch (err) {
+          showToast('Gagal: ' + err.message);
+        }
+      });
+
+      // ---- Add script modal ----
+      const addModal = document.getElementById('add-modal');
+      document.getElementById('btn-add-script').addEventListener('click', () => {
+        ['add-ref','add-funnel','add-usp','add-brief','add-content','add-guideline','add-voucher'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        addModal.classList.add('show');
+      });
+      function closeAddModal() { addModal.classList.remove('show'); }
+      document.getElementById('add-cancel').addEventListener('click', closeAddModal);
+      addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
+
+      document.getElementById('btn-save-add').addEventListener('click', async () => {
+        const brand = document.getElementById('add-brand').value;
+        const usp = document.getElementById('add-usp').value.trim();
+        if (!usp) { showToast('USP wajib diisi.'); return; }
+        const btn = document.getElementById('btn-save-add');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Menyimpan…';
+        try {
+          await A.createLibraryScript({
+            brand,
+            refNumber: document.getElementById('add-ref').value.trim(),
+            funnelStage: document.getElementById('add-funnel').value.trim(),
+            usp,
+            briefText: document.getElementById('add-brief').value.trim(),
+            content: document.getElementById('add-content').value.trim(),
+            brandGuidelineUrl: document.getElementById('add-guideline').value.trim(),
+            voucherCode: document.getElementById('add-voucher').value.trim()
+          });
+          showToast('Script ditambahin ke library ✓');
+          closeAddModal();
+          renderAll();
+        } catch (err) {
+          showToast('Gagal: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+
+      // ---- Brand filter ----
+      document.getElementById('brand-chips').addEventListener('click', (e) => {
+        const chip = e.target.closest('.brand-chip');
+        if (!chip) return;
+        document.querySelectorAll('#brand-chips .brand-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentBrand = chip.dataset.brand;
+        renderAll();
+      });
+
+      // ---- Calendar month nav ----
+      document.getElementById('cal-prev').addEventListener('click', () => {
+        viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        renderCalendar();
+      });
+      document.getElementById('cal-next').addEventListener('click', () => {
+        viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        renderCalendar();
+      });
+
+      // ---- Realtime data refresh ----
+      document.addEventListener('adminapp:data-changed', renderAll);
+
+      renderAll();
+    });
+  </script>
+</body>
+</html>

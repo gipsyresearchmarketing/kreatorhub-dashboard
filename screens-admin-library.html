@@ -323,8 +323,8 @@
         <textarea class="textarea" id="add-brief" rows="3" placeholder="Instruksi buat kreator..."></textarea>
       </div>
       <div class="field">
-        <label for="add-content">Isi script (Hook / Body / CTA)</label>
-        <textarea class="textarea" id="add-content" rows="6" placeholder="Hook: ...&#10;&#10;Body: ...&#10;&#10;CTA: ..."></textarea>
+        <label>Isi script (per bagian — Hook / Body / CTA, dst)</label>
+        <div id="add-content-table-wrap"></div>
       </div>
       <div class="form-row-2">
         <div class="field">
@@ -374,6 +374,89 @@
       let viewMonth = new Date().getMonth(); // 0-indexed
 
       const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+      // Script disimpen sebagai JSON [{scene, script}, ...] — sama pattern-nya kayak di
+      // screens-brief-detail.html & screens-admin-brief-detail.html, biar konsisten semua tempat.
+      function parseScriptRows(raw) {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length && parsed.every(r => r && typeof r === 'object' && 'scene' in r)) {
+              return parsed.map(r => ({ scene: r.scene || '', script: r.script || '' }));
+            }
+          } catch (_) {
+            if (String(raw).trim()) return [{ scene: 'Script', script: raw }];
+          }
+        }
+        return [{ scene: 'Hook', script: '' }, { scene: 'Body', script: '' }, { scene: 'CTA', script: '' }];
+      }
+      function serializeScriptRows(rows) { return JSON.stringify(rows); }
+      function renderScriptReadonlyTable(raw) {
+        let rows = null;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length && parsed.every(r => r && typeof r === 'object' && 'scene' in r)) rows = parsed;
+        } catch (_) { /* format lama */ }
+        if (!rows) return escapeHtml(raw || '—');
+        return `<table style="width: 100%; border-collapse: collapse;">
+          <thead><tr>
+            <th style="text-align: left; width: 26%; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Scene</th>
+            <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Script</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r => `<tr>
+              <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); font-weight: 600; vertical-align: top;">${escapeHtml(r.scene || '')}</td>
+              <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: pre-wrap;">${escapeHtml(r.script || '')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+      }
+      // Editable table builder, dipake di modal "Tambah script baru"
+      let addContentRows = [];
+      function renderAddContentTable() {
+        const wrap = document.getElementById('add-content-table-wrap');
+        if (!wrap) return;
+        wrap.innerHTML = `
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+            <thead><tr>
+              <th style="width: 28%; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Scene</th>
+              <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Script</th>
+              <th style="width: 32px; border-bottom: 1px solid var(--border);"></th>
+            </tr></thead>
+            <tbody id="add-content-table-body"></tbody>
+          </table>
+          <button type="button" class="btn btn-secondary" id="btn-add-content-row" style="font-size: 12px; padding: 6px 12px;">+ Tambah baris</button>
+        `;
+        const tbody = document.getElementById('add-content-table-body');
+        addContentRows.forEach((row, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top;">
+              <input type="text" class="input" data-idx="${idx}" data-role="scene" value="${escapeHtml(row.scene)}" placeholder="mis. Hook" style="font-weight: 600; font-size: 13px;" />
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
+              <textarea class="textarea" data-idx="${idx}" data-role="script" rows="2" placeholder="Isi script bagian ini..." style="font-size: 13px;">${escapeHtml(row.script)}</textarea>
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: top;">
+              ${addContentRows.length > 1 ? `<button type="button" class="add-row-remove" data-idx="${idx}" style="border: none; background: none; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1;">×</button>` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll('[data-role="scene"]').forEach(input => {
+          input.addEventListener('input', (e) => { addContentRows[Number(e.target.dataset.idx)].scene = e.target.value; });
+        });
+        tbody.querySelectorAll('[data-role="script"]').forEach(ta => {
+          ta.addEventListener('input', (e) => { addContentRows[Number(e.target.dataset.idx)].script = e.target.value; });
+        });
+        tbody.querySelectorAll('.add-row-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => { addContentRows.splice(Number(e.target.dataset.idx), 1); renderAddContentTable(); });
+        });
+        document.getElementById('btn-add-content-row')?.addEventListener('click', () => {
+          addContentRows.push({ scene: '', script: '' });
+          renderAddContentTable();
+        });
+      }
 
       function libraryItems() {
         return (A.data.library || []).filter(l => currentBrand === 'all' || l.brand === currentBrand);
@@ -476,7 +559,7 @@
         document.getElementById('detail-meta').textContent = item.brand + (item.funnel_stage ? ' · ' + item.funnel_stage : '');
         document.getElementById('detail-usp').textContent = item.usp || '—';
         document.getElementById('detail-brief').textContent = item.brief_text || '—';
-        document.getElementById('detail-content').textContent = item.content || '—';
+        document.getElementById('detail-content').innerHTML = renderScriptReadonlyTable(item.content);
 
         const extraParts = [];
         if (item.brand_guideline_url) extraParts.push('Brand guideline: ' + item.brand_guideline_url);
@@ -573,9 +656,11 @@
       // ---- Add script modal ----
       const addModal = document.getElementById('add-modal');
       document.getElementById('btn-add-script').addEventListener('click', () => {
-        ['add-ref','add-funnel','add-usp','add-brief','add-content','add-guideline','add-voucher'].forEach(id => {
+        ['add-ref','add-funnel','add-usp','add-brief','add-guideline','add-voucher'].forEach(id => {
           document.getElementById(id).value = '';
         });
+        addContentRows = parseScriptRows('');
+        renderAddContentTable();
         addModal.classList.add('show');
       });
       function closeAddModal() { addModal.classList.remove('show'); }
@@ -597,7 +682,7 @@
             funnelStage: document.getElementById('add-funnel').value.trim(),
             usp,
             briefText: document.getElementById('add-brief').value.trim(),
-            content: document.getElementById('add-content').value.trim(),
+            content: serializeScriptRows(addContentRows),
             brandGuidelineUrl: document.getElementById('add-guideline').value.trim(),
             voucherCode: document.getElementById('add-voucher').value.trim()
           });

@@ -654,9 +654,8 @@
       </div>
 
       <div class="field">
-        <label for="script-editor-text">Isi script</label>
-        <textarea id="script-editor-text" class="textarea" rows="12"
-          placeholder="Hook (3 detik):&#10;...&#10;&#10;Body (15 detik):&#10;...&#10;&#10;CTA (2 detik):&#10;..."></textarea>
+        <label>Isi script (per bagian — Hook / Body / CTA, dst)</label>
+        <div id="script-editor-table-wrap"></div>
       </div>
 
       <div class="modal-actions">
@@ -1143,8 +1142,32 @@
               ${scriptActionsStrip}
             </div>
           </div>`;
+        // Render script (JSON [{scene,script}]) sebagai tabel read-only — kalau format lama
+        // (teks polos, bukan JSON) atau kosong, fallback tampilin apa adanya.
+        function renderScriptReadonlyTable(raw) {
+          let rows = null;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length && parsed.every(r => r && typeof r === 'object' && 'scene' in r)) rows = parsed;
+          } catch (_) { /* bukan JSON — format lama */ }
+          if (!rows) {
+            return `<div style="white-space: pre-wrap;">${escapeHtml(raw || '')}</div>`;
+          }
+          return `<table style="width: 100%; border-collapse: collapse;">
+            <thead><tr>
+              <th style="text-align: left; width: 26%; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Scene</th>
+              <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Script</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(r => `<tr>
+                <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); font-weight: 600; vertical-align: top;">${escapeHtml(r.scene || '')}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: pre-wrap;">${escapeHtml(r.script || '')}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        }
         const scriptBlock = (hasScript
-          ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${escapeHtml(scriptState.script)}</div>
+          ? `<div class="script-box ${scriptStateClass(currentStatus)}" id="script-box">${renderScriptReadonlyTable(scriptState.script)}</div>
              <small class="meta" style="display: block; margin-top: 6px;">Disinkron ke cloud dari Supabase. <a href="screens-brief-detail.html?id=${briefId}" style="color: var(--accent);">Lihat di mode kreator →</a></small>`
           : `<div class="script-empty ${scriptStateClass(currentStatus)}" id="script-box">Belum ada script untuk brief ini.<br><small style="font-family: var(--font-mono); font-size: 11px;">Admin bisa menulis script dulu sebagai draft — kreator tinggal refine & upload video.</small></div>`) +
           `<div style="margin-top: 12px;">
@@ -1364,9 +1387,74 @@
           const elKreator = document.getElementById('script-editor-kreator');
           const elKreatorField = document.getElementById('script-editor-kreator-field');
           const elStatus  = document.getElementById('script-editor-status');
-          const elText    = document.getElementById('script-editor-text');
           const btnCancel = document.getElementById('script-editor-cancel');
           const btnSave   = document.getElementById('script-editor-save');
+
+          // Script disimpen sebagai JSON string [{scene, script}, ...] — sama pattern-nya
+          // kayak di sisi kreator (screens-brief-detail.html), biar konsisten satu sama lain.
+          function parseScriptRows(raw) {
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length && parsed.every(r => r && typeof r === 'object' && 'scene' in r)) {
+                  return parsed.map(r => ({ scene: r.scene || '', script: r.script || '' }));
+                }
+              } catch (_) {
+                if (String(raw).trim()) return [{ scene: 'Script', script: raw }];
+              }
+            }
+            return [{ scene: 'Hook', script: '' }, { scene: 'Body', script: '' }, { scene: 'CTA', script: '' }];
+          }
+          function serializeScriptRows(rows) { return JSON.stringify(rows); }
+          function hasScriptContent(rows) { return (rows || []).some(r => (r.script || '').trim().length > 0); }
+
+          let editorRows = [];
+          function renderEditorTable() {
+            const wrap = document.getElementById('script-editor-table-wrap');
+            if (!wrap) return;
+            wrap.innerHTML = `
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                <thead>
+                  <tr>
+                    <th style="width: 28%; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Scene</th>
+                    <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase;">Script</th>
+                    <th style="width: 32px; border-bottom: 1px solid var(--border);"></th>
+                  </tr>
+                </thead>
+                <tbody id="script-editor-table-body"></tbody>
+              </table>
+              <button type="button" class="btn btn-secondary" id="btn-editor-add-row" style="font-size: 12px; padding: 6px 12px;">+ Tambah baris</button>
+            `;
+            const tbody = document.getElementById('script-editor-table-body');
+            editorRows.forEach((row, idx) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top;">
+                  <input type="text" class="input editor-row-scene" data-idx="${idx}" value="${escapeHtml(row.scene)}" placeholder="mis. Hook" style="font-weight: 600; font-size: 13px;" />
+                </td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
+                  <textarea class="textarea editor-row-text" data-idx="${idx}" rows="2" placeholder="Isi script bagian ini..." style="font-size: 13px;">${escapeHtml(row.script)}</textarea>
+                </td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: top;">
+                  ${editorRows.length > 1 ? `<button type="button" class="btn-editor-row-remove" data-idx="${idx}" title="Hapus baris" style="border: none; background: none; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1;">×</button>` : ''}
+                </td>
+              `;
+              tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('.editor-row-scene').forEach(input => {
+              input.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].scene = e.target.value; });
+            });
+            tbody.querySelectorAll('.editor-row-text').forEach(ta => {
+              ta.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].script = e.target.value; });
+            });
+            tbody.querySelectorAll('.btn-editor-row-remove').forEach(btn => {
+              btn.addEventListener('click', (e) => { editorRows.splice(Number(e.target.dataset.idx), 1); renderEditorTable(); });
+            });
+            document.getElementById('btn-editor-add-row')?.addEventListener('click', () => {
+              editorRows.push({ scene: '', script: '' });
+              renderEditorTable();
+            });
+          }
 
           function open() {
             const A = window.AdminApp;
@@ -1395,19 +1483,19 @@
             // Pre-fill dengan script existing kalau ada
             const existing = (A.data.scripts || []).find(s => s.brief_id === briefId);
             if (existing) {
-              elText.value = existing.script || '';
+              editorRows = parseScriptRows(existing.script);
               elStatus.value = ['draft', 'editing', 'review'].includes(existing.status) ? existing.status : 'draft';
               elTitle.textContent = 'Edit script';
             } else {
-              elText.value = '';
+              editorRows = parseScriptRows('');
               elStatus.value = 'draft';
               elTitle.textContent = assigned
                 ? 'Tulis script untuk ' + (assigned)
                 : 'Tulis script untuk kreator';
             }
+            renderEditorTable();
 
             modal.classList.add('show');
-            setTimeout(() => elText.focus(), 50);
           }
           function close() { modal.classList.remove('show'); }
 
@@ -1433,11 +1521,11 @@
               showToast('Pilih kreator dulu.');
               return;
             }
-            const script = elText.value.trim();
-            if (script.length < 5) {
-              showToast('Script minimal 5 karakter.');
+            if (!hasScriptContent(editorRows)) {
+              showToast('Isi minimal 1 baris script.');
               return;
             }
+            const script = serializeScriptRows(editorRows);
             btnSave.disabled = true;
             const orig = btnSave.textContent;
             btnSave.textContent = 'Menyimpan…';

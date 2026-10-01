@@ -155,11 +155,33 @@
 
       let state = loadState(briefId);
       let scriptDirty = false;
+      // Script disimpen sebagai JSON string: [{scene, script}, ...] — biar bisa jadi tabel
+      // Scene/Script yang bisa nambah/hapus baris, bukan cuma 1 kotak teks polos.
+      // Backward-compat: script lama (format teks polos, bukan JSON) di-migrasi otomatis
+      // jadi 1 baris pas dibuka, biar data lama gak ilang.
+      function parseScriptRows(raw) {
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length && parsed.every(r => r && typeof r === 'object' && 'scene' in r)) {
+              return parsed.map(r => ({ scene: r.scene || '', script: r.script || '' }));
+            }
+          } catch (_) {
+            // bukan JSON valid → format lama (teks polos)
+            if (String(raw).trim()) return [{ scene: 'Script', script: raw }];
+          }
+        }
+        return [{ scene: 'Hook', script: '' }, { scene: 'Body', script: '' }, { scene: 'CTA', script: '' }];
+      }
+      function serializeScriptRows(rows) { return JSON.stringify(rows); }
+      function hasScriptContent(rows) { return (rows || []).some(r => (r.script || '').trim().length > 0); }
+      let scriptRows = parseScriptRows(state.script);
 
       // (page-title + page-lead udah dihapus dari DOM — ga perlu set lagi)
 
       function render() {
-        const hasScript = (state.script || '').trim().length > 0;
+        scriptRows = parseScriptRows(state.script); // re-parse tiap render (misal abis brief_scripts di-refresh dari Supabase)
+        const hasScript = hasScriptContent(scriptRows);
         const statusEditable = !ADMIN_CONTROLLED.includes(state.status);
         const scriptEditable = !LOCKED_AFTER_ADMIN.includes(state.status);
         const isKreatorFinal = ['approved', 'rejected', 'selesai'].includes(state.status);
@@ -190,10 +212,8 @@
               <span class="meta" id="script-meta">${scriptDirty ? '● ada perubahan belum disimpan' : (hasScript ? 'tersimpan' : 'belum diisi')}</span>
             </div>
             <div class="field brief-script-wrap">
-              <label for="script-text">Tulis script kamu ${hasScript ? '(sudah ada — admin bisa edit & kamu bisa refine)' : '<small style="color: var(--muted); font-weight: 400;">(opsional — bisa juga langsung upload video di bawah)</small>'}</label>
-              <textarea id="script-text" class="textarea" rows="14"
-                        placeholder="Mulai ketik script untuk video ini. Misal:&#10;&#10;Hook (3 detik): ...&#10;&#10;Body (15 detik): ...&#10;&#10;CTA (2 detik): ..."
-                        ${scriptEditable ? '' : 'disabled'}></textarea>
+              <label>Tulis script kamu per bagian (Hook / Body / CTA, dst) ${hasScript ? '(sudah ada — admin bisa edit & kamu bisa refine)' : '<small style="color: var(--muted); font-weight: 400;">(opsional — bisa juga langsung upload video di bawah)</small>'}</label>
+              <div id="script-table-wrap"></div>
               <span class="field-hint">
                 ${scriptEditable
                   ? 'Klik "Kirim script untuk review" di bawah kalau udah siap. Video bisa di-upload terpisah di card Upload video.'
@@ -214,31 +234,89 @@
           ${renderUploadCard(brief, state.status)}
         `;
 
-        // populate textarea
-        const ta = document.getElementById('script-text');
-        ta.value = state.script || '';
         // Status display only — kreator tidak bisa pilih status (kunci dari admin)
 
         // wire events (guarded — kalau element gak ada karena disabled state, skip)
-        ta.addEventListener('input', () => {
+        function updateSubmitButtonLive() {
+          const ctaLive = document.getElementById('btn-submit-review');
+          if (!ctaLive) return;
+          const liveHasScript = hasScriptContent(scriptRows);
+          const liveStatus = state.status;
+          const liveFinal = ['approved', 'rejected', 'selesai'].includes(liveStatus);
+          const shouldBeEnabled = scriptEditable && liveHasScript && liveStatus !== 'review' && liveStatus !== 'revisi' && !liveFinal;
+          ctaLive.disabled = !shouldBeEnabled;
+        }
+        function markScriptDirty() {
           scriptDirty = true;
-          // Update state.script live (jangan tunggu save) — biar pas save handler baca,
-          // yang diambil adalah teks terbaru. JANGAN panggil render() di sini, karena
-          // render() replace innerHTML dan ngehilangin teks yang lagi diketik.
-          state.script = ta.value;
+          state.script = serializeScriptRows(scriptRows);
           const meta = document.getElementById('script-meta');
           if (meta) meta.textContent = '● ada perubahan belum disimpan';
-          // Live update button disabled state — biar btn-submit-review bisa di-klik
-          // segera setelah user ngetik (render() ga dipanggil biar ga ngehilangin teks)
-          const ctaLive = document.getElementById('btn-submit-review');
-          if (ctaLive) {
-            const liveHasScript = ta.value.trim().length > 0;
-            const liveStatus = state.status;
-            const liveFinal = ['approved', 'rejected', 'selesai'].includes(liveStatus);
-            const shouldBeEnabled = scriptEditable && liveHasScript && liveStatus !== 'review' && liveStatus !== 'revisi' && !liveFinal;
-            ctaLive.disabled = !shouldBeEnabled;
+          updateSubmitButtonLive();
+        }
+        function renderScriptTable(editable) {
+          const wrap = document.getElementById('script-table-wrap');
+          if (!wrap) return;
+          wrap.innerHTML = `
+            <table class="script-table" style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+              <thead>
+                <tr>
+                  <th style="width: 28%; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;">Scene</th>
+                  <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;">Script</th>
+                  <th style="width: 32px; border-bottom: 1px solid var(--border);"></th>
+                </tr>
+              </thead>
+              <tbody id="script-table-body"></tbody>
+            </table>
+            ${editable ? '<button type="button" class="btn btn-secondary" id="btn-add-script-row" style="font-size: 12px; padding: 6px 12px;">+ Tambah baris</button>' : ''}
+          `;
+          const tbody = document.getElementById('script-table-body');
+          scriptRows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top;">
+                <input type="text" class="input script-row-scene" data-idx="${idx}" value="${escapeHtml(row.scene)}" placeholder="mis. Hook" ${editable ? '' : 'disabled'} style="font-weight: 600; font-size: 13px;" />
+              </td>
+              <td style="padding: 6px 8px; border-bottom: 1px solid var(--border);">
+                <textarea class="textarea script-row-text" data-idx="${idx}" rows="2" placeholder="Isi script bagian ini..." ${editable ? '' : 'disabled'} style="font-size: 13px;">${escapeHtml(row.script)}</textarea>
+              </td>
+              <td style="padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: top;">
+                ${editable && scriptRows.length > 1 ? `<button type="button" class="btn-row-remove" data-idx="${idx}" title="Hapus baris" style="border: none; background: none; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1; padding: 4px;">×</button>` : ''}
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          if (!editable) return;
+
+          tbody.querySelectorAll('.script-row-scene').forEach(input => {
+            input.addEventListener('input', (e) => {
+              scriptRows[Number(e.target.dataset.idx)].scene = e.target.value;
+              markScriptDirty();
+            });
+          });
+          tbody.querySelectorAll('.script-row-text').forEach(ta => {
+            ta.addEventListener('input', (e) => {
+              scriptRows[Number(e.target.dataset.idx)].script = e.target.value;
+              markScriptDirty();
+            });
+          });
+          tbody.querySelectorAll('.btn-row-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              scriptRows.splice(Number(e.target.dataset.idx), 1);
+              markScriptDirty();
+              renderScriptTable(editable);
+            });
+          });
+          const addBtn = document.getElementById('btn-add-script-row');
+          if (addBtn) {
+            addBtn.addEventListener('click', () => {
+              scriptRows.push({ scene: '', script: '' });
+              markScriptDirty();
+              renderScriptTable(editable);
+            });
           }
-        });
+        }
+        renderScriptTable(scriptEditable);
 
         // Catatan: dulu ada tombol "Simpan" (btn-save-script) terpisah dari "Kirim script untuk review",
         // tapi sekarang digabung jadi satu tombol (btn-submit-review) — handler lama sudah dihapus di sini
@@ -253,10 +331,10 @@
           ctaBtn.addEventListener('click', async () => {
             // Guard di dalam handler (bukan di attach listener-nya) — biar listener selalu
             // ke-pasang walau tombol awalnya disabled (misal script masih kosong pas render pertama).
-            const liveHasScript = ta.value.trim().length > 0;
+            const liveHasScript = hasScriptContent(scriptRows);
             const liveFinal = ['approved', 'rejected', 'selesai'].includes(state.status);
             if (!scriptEditable || !liveHasScript || state.status === 'review' || state.status === 'revisi' || liveFinal) return;
-            state.script = ta.value; // auto-save script first
+            state.script = serializeScriptRows(scriptRows); // auto-save script first
             state.status = 'review';
             scriptDirty = false;
             try {

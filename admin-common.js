@@ -547,6 +547,17 @@
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-delete', id } }));
   }
+
+  async function updateLibraryScript(id, fields) {
+    // fields bisa berisi: content, brand_guideline_url, voucher_code, usp, brief_text, funnel_stage, ref_number
+    // Catatan: kalau item ini UDAH di-assign (brief_id udah ada), edit di sini cuma ngubah
+    // record library-nya aja — brief & script yang udah kebuat sebelumnya TIDAK ikut ke-update
+    // otomatis (itu udah jadi record terpisah punya kreator).
+    const res = await sb.from('script_library').update(fields).eq('id', id);
+    if (res.error) throw new Error('Update script library gagal: ' + res.error.message);
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-update', id, fields } }));
+  }
   async function updateBrief(id, fields) {
     const updRes = await sb.from('briefs').update(fields).eq('id', id);
     if (updRes.error) throw new Error('Update brief gagal: ' + updRes.error.message);
@@ -673,6 +684,7 @@
     createLibraryScript,
     scheduleLibraryScript,
     assignLibraryScript,
+    updateLibraryScript,
     deleteLibraryScript,
     updateProgress,
     updateBrief,

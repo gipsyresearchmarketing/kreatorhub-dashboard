@@ -498,16 +498,17 @@
           tbody.appendChild(tr);
         });
         tbody.querySelectorAll('[data-role="scene"]').forEach(input => {
-          input.addEventListener('input', (e) => { detailContentRows[Number(e.target.dataset.idx)].scene = e.target.value; });
+          input.addEventListener('input', (e) => { detailContentRows[Number(e.target.dataset.idx)].scene = e.target.value; detailDirty = true; });
         });
         tbody.querySelectorAll('[data-role="script"]').forEach(ta => {
-          ta.addEventListener('input', (e) => { detailContentRows[Number(e.target.dataset.idx)].script = e.target.value; });
+          ta.addEventListener('input', (e) => { detailContentRows[Number(e.target.dataset.idx)].script = e.target.value; detailDirty = true; });
         });
         tbody.querySelectorAll('.detail-row-remove').forEach(btn => {
-          btn.addEventListener('click', (e) => { detailContentRows.splice(Number(e.target.dataset.idx), 1); renderDetailContentTable(); });
+          btn.addEventListener('click', (e) => { detailContentRows.splice(Number(e.target.dataset.idx), 1); detailDirty = true; renderDetailContentTable(); });
         });
         document.getElementById('btn-detail-add-row')?.addEventListener('click', () => {
           detailContentRows.push({ scene: '', script: '' });
+          detailDirty = true;
           renderDetailContentTable();
         });
       }
@@ -601,6 +602,7 @@
       // ---- Detail modal ----
       const detailModal = document.getElementById('detail-modal');
       let currentDetailId = null;
+      let detailDirty = false; // true kalau ada perubahan yg belum di-"Simpan perubahan"
 
       function openDetailModal(id) {
         const item = (A.data.library || []).find(l => l.id === id);
@@ -642,12 +644,19 @@
 
         document.getElementById('btn-delete-script').style.display = item.status === 'assigned' ? 'none' : '';
 
+        detailDirty = false; // baru dibuka, belum ada perubahan
         detailModal.classList.add('show');
       }
-      function closeDetailModal() { detailModal.classList.remove('show'); currentDetailId = null; }
+      function closeDetailModal() {
+        if (detailDirty && !confirm('Ada perubahan yang belum disimpan. Yakin mau tutup tanpa simpan?')) return;
+        detailModal.classList.remove('show');
+        currentDetailId = null;
+      }
       document.getElementById('detail-close').addEventListener('click', closeDetailModal);
       document.getElementById('detail-cancel').addEventListener('click', closeDetailModal);
       detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
+      document.getElementById('detail-guideline').addEventListener('input', () => { detailDirty = true; });
+      document.getElementById('detail-voucher').addEventListener('input', () => { detailDirty = true; });
 
       document.getElementById('detail-date').addEventListener('change', async (e) => {
         if (!currentDetailId) return;
@@ -675,6 +684,16 @@
         const orig = btn.textContent;
         btn.textContent = 'Menyimpan…';
         try {
+          // Kalau ada edit yang belum disimpen, simpen dulu — assignLibraryScript ngambil
+          // versi yang TERSIMPAN di database, jadi tanpa ini edit terbaru gak ikut ke kreator.
+          if (detailDirty) {
+            await A.updateLibraryScript(currentDetailId, {
+              content: serializeScriptRows(detailContentRows),
+              brand_guideline_url: document.getElementById('detail-guideline').value.trim(),
+              voucher_code: document.getElementById('detail-voucher').value.trim()
+            });
+            detailDirty = false;
+          }
           await A.assignLibraryScript(currentDetailId, {
             kreator,
             deadline: deadline || '—',
@@ -697,6 +716,7 @@
         try {
           await A.deleteLibraryScript(currentDetailId);
           showToast('Script dihapus.');
+          detailDirty = false; // udah dihapus — aman ditutup tanpa konfirmasi
           closeDetailModal();
           renderAll();
         } catch (err) {
@@ -717,6 +737,7 @@
             voucher_code: document.getElementById('detail-voucher').value.trim()
           });
           showToast('Perubahan tersimpan ✓');
+          detailDirty = false; // udah kesimpen — aman ditutup tanpa konfirmasi
           renderAll();
         } catch (err) {
           showToast('Gagal: ' + err.message);
@@ -734,9 +755,19 @@
         });
         addContentRows = parseScriptRows('');
         renderAddContentTable();
+        addDirty = false;
         addModal.classList.add('show');
       });
-      function closeAddModal() { addModal.classList.remove('show'); }
+      let addDirty = false; // true kalau ada yang udah diketik tapi belum "Simpan ke library"
+      // Event delegation: tangkep semua ketikan di modal (termasuk baris tabel yang dibuat dinamis)
+      addModal.addEventListener('input', () => { addDirty = true; });
+      addModal.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-add-content-row, .add-row-remove')) addDirty = true;
+      });
+      function closeAddModal() {
+        if (addDirty && !confirm('Ada isian yang belum disimpan. Yakin mau tutup tanpa simpan?')) return;
+        addModal.classList.remove('show');
+      }
       document.getElementById('add-cancel').addEventListener('click', closeAddModal);
       addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
 
@@ -760,6 +791,7 @@
             voucherCode: document.getElementById('add-voucher').value.trim()
           });
           showToast('Script ditambahin ke library ✓');
+          addDirty = false; // udah kesimpen — aman ditutup tanpa konfirmasi
           closeAddModal();
           renderAll();
         } catch (err) {

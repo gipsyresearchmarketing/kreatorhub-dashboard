@@ -433,11 +433,11 @@
     /* modal */
     .modal-backdrop { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 35%, transparent); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
     .modal-backdrop.show { display: flex; }
-    .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 480px; padding: 24px; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 480px; padding: 24px; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; }
     .modal h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 6px; font-weight: 600; }
     .modal p.lead { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
     .modal label { font-size: 12px; color: var(--muted); display: block; margin: 4px 0 8px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; position: sticky; bottom: -24px; background: var(--surface); padding: 12px 0 4px; margin-bottom: -24px; }
     .creator-preview { background: var(--fg-soft); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: var(--muted); margin-bottom: 14px; display: flex; justify-content: space-between; gap: 8px; }
     .creator-preview strong { color: var(--fg); font-weight: 500; }
 
@@ -1409,6 +1409,7 @@
           function hasScriptContent(rows) { return (rows || []).some(r => (r.script || '').trim().length > 0); }
 
           let editorRows = [];
+          let editorDirty = false; // true kalau ada perubahan yang belum di-"Simpan script"
           function renderEditorTable() {
             const wrap = document.getElementById('script-editor-table-wrap');
             if (!wrap) return;
@@ -1442,16 +1443,17 @@
               tbody.appendChild(tr);
             });
             tbody.querySelectorAll('.editor-row-scene').forEach(input => {
-              input.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].scene = e.target.value; });
+              input.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].scene = e.target.value; editorDirty = true; });
             });
             tbody.querySelectorAll('.editor-row-text').forEach(ta => {
-              ta.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].script = e.target.value; });
+              ta.addEventListener('input', (e) => { editorRows[Number(e.target.dataset.idx)].script = e.target.value; editorDirty = true; });
             });
             tbody.querySelectorAll('.btn-editor-row-remove').forEach(btn => {
-              btn.addEventListener('click', (e) => { editorRows.splice(Number(e.target.dataset.idx), 1); renderEditorTable(); });
+              btn.addEventListener('click', (e) => { editorRows.splice(Number(e.target.dataset.idx), 1); editorDirty = true; renderEditorTable(); });
             });
             document.getElementById('btn-editor-add-row')?.addEventListener('click', () => {
               editorRows.push({ scene: '', script: '' });
+              editorDirty = true;
               renderEditorTable();
             });
           }
@@ -1494,10 +1496,18 @@
                 : 'Tulis script untuk kreator';
             }
             renderEditorTable();
+            editorDirty = false; // reset — baru dibuka, belum ada perubahan
 
             modal.classList.add('show');
           }
-          function close() { modal.classList.remove('show'); }
+          function close() {
+            // Pengaman: kalau ada perubahan yang belum di-"Simpan script", konfirmasi dulu
+            // sebelum nutup — biar gak ke-ilang gara-gara gak sengaja klik di luar modal.
+            if (editorDirty && !confirm('Ada perubahan yang belum disimpan. Yakin mau tutup tanpa simpan?')) {
+              return;
+            }
+            modal.classList.remove('show');
+          }
 
           // Click handler di-delegate ke document supaya button di dalam script section works
           document.addEventListener('click', (e) => {
@@ -1535,6 +1545,7 @@
                 status: elStatus.value
               });
               showToast('Script tersimpan ✓');
+              editorDirty = false; // udah kesimpen — aman ditutup tanpa konfirmasi
               close();
               renderBriefDetail(brief);
             } catch (err) {

@@ -964,7 +964,18 @@
           const { data, error } = await sbClient.functions.invoke('generate-script', {
             body: { brand, usp, funnelStage, briefText }
           });
-          if (error) throw new Error(error.message || 'Function error');
+          if (error) {
+            // supabase-js cuma ngasih pesan generik; alasan aslinya ada di body response (error.context)
+            let detail = error.message || 'Function error';
+            try {
+              if (error.context && typeof error.context.json === 'function') {
+                const j = await error.context.json();
+                detail = (j && (j.error || j.message)) ? (j.error || j.message) : JSON.stringify(j);
+                if (error.context.status) detail = '[' + error.context.status + '] ' + detail;
+              }
+            } catch (_) { /* body bukan JSON, pakai pesan default */ }
+            throw new Error(detail);
+          }
           if (!data || !Array.isArray(data.rows)) throw new Error('Output AI kosong / format salah');
 
           const rows = data.rows.slice(0, 3);

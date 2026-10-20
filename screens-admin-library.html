@@ -336,8 +336,14 @@
         </div>
       </div>
       <div class="field">
-        <label for="add-usp">USP</label>
+        <label for="add-usp" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <span>USP</span>
+          <button type="button" class="btn btn-secondary" id="btn-generate-script" style="font-size: 11.5px; padding: 4px 10px;">
+            ✨ Generate with AI
+          </button>
+        </label>
         <input type="text" class="input" id="add-usp" placeholder="Angle/pesan utama script ini" />
+        <span class="field-hint" id="generate-hint" style="display: none;"></span>
       </div>
       <div class="field">
         <label for="add-brief">Brief</label>
@@ -836,6 +842,57 @@
       }
       document.getElementById('add-cancel').addEventListener('click', closeAddModal);
       addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
+
+      // ---- Generate script with AI ----
+      // Panggil Supabase Edge Function 'generate-script' (pakai Claude 3.5 Haiku).
+      // Hasil: array rows [{scene, script}] di-inject ke tabel script add modal.
+      document.getElementById('btn-generate-script').addEventListener('click', async () => {
+        const brand = document.getElementById('add-brand').value;
+        const usp = document.getElementById('add-usp').value.trim();
+        const funnelStage = document.getElementById('add-funnel').value.trim();
+        const briefText = document.getElementById('add-brief').value.trim();
+        if (!usp) { showToast('Isi USP dulu sebelum generate.'); return; }
+
+        const btn = document.getElementById('btn-generate-script');
+        const hint = document.getElementById('generate-hint');
+        const origText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ Generating…';
+        hint.style.display = '';
+        hint.textContent = 'Claude lagi mikir…';
+        hint.style.color = 'var(--muted)';
+
+        try {
+          const sbClient = A.sb;
+          if (!sbClient || !sbClient.functions) throw new Error('Supabase client gak ready.');
+
+          const { data, error } = await sbClient.functions.invoke('generate-script', {
+            body: { brand, usp, funnelStage, briefText }
+          });
+          if (error) throw new Error(error.message || 'Function error');
+          if (!data || !Array.isArray(data.rows)) throw new Error('Output AI kosong / format salah');
+
+          // Map ke shape internal {scene, script}, fallback nama scene default kalo AI pake nama lain
+          const fallbackNames = ['Hook', 'Body', 'CTA'];
+          addContentRows = data.rows.map((r, i) => ({
+            scene: (r.scene || fallbackNames[i] || `Bagian ${i + 1}`).slice(0, 40),
+            script: (r.script || '').toString()
+          }));
+          renderAddContentTable();
+          addDirty = true;
+
+          hint.textContent = '✓ Script ke-generate — review & edit sebelum save';
+          hint.style.color = 'var(--success)';
+          showToast('Script generated ✓');
+        } catch (err) {
+          hint.textContent = '✗ Gagal: ' + (err.message || 'unknown error');
+          hint.style.color = 'var(--danger)';
+          showToast('Generate gagal: ' + (err.message || 'unknown'));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = origText;
+        }
+      });
 
       document.getElementById('btn-save-add').addEventListener('click', async () => {
         const brand = document.getElementById('add-brand').value;

@@ -114,6 +114,21 @@
     .pool-item .sub { font-size: 11.5px; color: var(--muted); }
     .empty-pool { color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px 8px; }
 
+    /* === AI Generate panel (Claude.ai-style) === */
+    .ai-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px 24px; margin-bottom: var(--gap-lg); position: relative; overflow: hidden; }
+    .ai-panel::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 4%, transparent), transparent 60%); pointer-events: none; }
+    .ai-panel-greeting { font-family: var(--font-display); font-size: 22px; font-weight: 600; text-align: center; margin-bottom: 4px; position: relative; }
+    .ai-panel-sub { color: var(--muted); font-size: 13.5px; text-align: center; margin-bottom: 22px; position: relative; }
+    .ai-panel-form { position: relative; display: flex; flex-direction: column; gap: 12px; }
+    .ai-panel-form .field { margin-bottom: 0; }
+    .ai-panel-meta { display: grid; grid-template-columns: 200px 1fr auto; gap: 10px; align-items: center; }
+    @media (max-width: 720px) { .ai-panel-meta { grid-template-columns: 1fr; } }
+    .ai-panel-input { font-size: 15px; min-height: 80px; resize: vertical; }
+    .ai-panel-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+    .ai-panel-voice { font-size: 11.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+    .ai-result { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); position: relative; }
+    .ai-result-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 5px; }
     .field-hint { font-size: 11.5px; color: var(--muted); display: block; margin-top: 4px; }
@@ -193,10 +208,73 @@
           <p>Script yang udah disiapin di muka. Jadwalkan ke tanggal, terus assign ke kreator — otomatis kebuat brief &amp; script draft-nya, langsung nongol di "Brief &amp; script" kreator itu.</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: flex-end;">
-          <button type="button" class="btn btn-secondary" id="btn-open-ai" style="border-color: var(--accent); color: var(--accent);">
-            🤖 Generate with AI
-          </button>
           <button type="button" class="btn btn-primary" id="btn-add-script">+ Tambah script</button>
+        </div>
+      </div>
+
+      <div class="ai-panel" id="ai-panel">
+        <div class="ai-panel-greeting">🤖 Generate Script with AI</div>
+        <div class="ai-panel-sub">Bikin Hook/Body/CTA dalam detik — Gemini-powered, edit sebelum simpan ke library.</div>
+
+        <div class="ai-panel-form">
+          <div class="ai-panel-meta">
+            <div>
+              <select class="select" id="ai-brand" style="width: 100%;">
+                <option value="Gipsy Research">Gipsy Research</option>
+                <option value="Jamuzen">Jamuzen</option>
+                <option value="Convictio.id">Convictio.id</option>
+                <option value="CalmadeAI">CalmadeAI</option>
+              </select>
+            </div>
+            <input type="text" class="input" id="ai-funnel" placeholder="Funnel stage (opsional) — mis. TOFU — Awareness" />
+            <span class="ai-panel-voice" id="ai-voice-status">—</span>
+          </div>
+
+          <textarea class="textarea ai-panel-input" id="ai-usp" placeholder="USP / angle / ide lo...&#10;&#10;mis. 'Peta Riset Sistematis dari Nol sampai Sidang'"></textarea>
+
+          <textarea class="textarea" id="ai-brief" rows="2" placeholder="Brief tambahan (opsional) — instruksi khusus buat AI..."></textarea>
+
+          <div class="ai-panel-actions">
+            <button type="button" class="btn btn-primary" id="btn-ai-generate" style="padding: 9px 18px;">
+              ✨ Generate script
+            </button>
+            <span class="field-hint" id="ai-hint" style="display: none;"></span>
+          </div>
+        </div>
+
+        <div id="ai-result" class="ai-result" style="display: none;">
+          <p class="eyebrow" style="margin-bottom: 14px;">Hasil — edit sebelum setujui</p>
+
+          <div class="field">
+            <label for="ai-row-hook">Hook <span style="color: var(--muted); font-weight: 400;">(1 baris, max 15 kata)</span></label>
+            <textarea class="textarea" id="ai-row-hook" rows="2"></textarea>
+          </div>
+          <div class="field">
+            <label for="ai-row-body">Body <span style="color: var(--muted); font-weight: 400;">(2-4 kalimat, ~50-80 kata)</span></label>
+            <textarea class="textarea" id="ai-row-body" rows="5"></textarea>
+          </div>
+          <div class="field">
+            <label for="ai-row-cta">CTA <span style="color: var(--muted); font-weight: 400;">(1 baris, max 12 kata)</span></label>
+            <textarea class="textarea" id="ai-row-cta" rows="2"></textarea>
+          </div>
+
+          <div class="form-row-2">
+            <div class="field">
+              <label for="ai-row-date">Jadwalkan ke tanggal (opsional)</label>
+              <input type="date" class="input" id="ai-row-date" />
+              <span class="field-hint">Kosongin buat masuk pool "Belum dijadwalkan".</span>
+            </div>
+            <div class="field">
+              <label for="ai-row-ref">Ref # (opsional)</label>
+              <input type="text" class="input" id="ai-row-ref" placeholder="mis. 110" />
+            </div>
+          </div>
+
+          <div class="ai-result-actions">
+            <button type="button" class="btn btn-secondary" id="btn-ai-regenerate">🔄 Generate ulang</button>
+            <button type="button" class="btn btn-secondary" id="btn-ai-discard">🗑️ Buang</button>
+            <button type="button" class="btn btn-primary" id="btn-ai-save">✓ Setujui &amp; simpan ke library</button>
+          </div>
         </div>
       </div>
 
@@ -305,72 +383,6 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-danger" id="btn-delete-script">Hapus script</button>
         <button type="button" class="btn btn-secondary" id="detail-cancel">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: generate script with AI -->
-  <div class="modal-overlay" id="ai-modal">
-    <div class="modal-box" style="max-width: 720px;">
-      <h2>🤖 Generate Script with AI</h2>
-      <p class="meta" style="margin-bottom: 18px;">Gemini bakal bikin Hook/Body/CTA berdasarkan brand &amp; USP. Edit hasil sebelum save ke library.</p>
-
-      <div class="form-row-2">
-        <div class="field">
-          <label for="ai-brand">Brand</label>
-          <select class="select" id="ai-brand">
-            <option value="Gipsy Research">Gipsy Research</option>
-            <option value="Jamuzen">Jamuzen</option>
-            <option value="Convictio.id">Convictio.id</option>
-            <option value="CalmadeAI">CalmadeAI</option>
-          </select>
-          <span class="field-hint" id="ai-voice-status">—</span>
-        </div>
-        <div class="field">
-          <label for="ai-funnel">Funnel stage (opsional)</label>
-          <input type="text" class="input" id="ai-funnel" placeholder="mis. TOFU — Awareness" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="ai-usp">USP <span style="color: var(--danger);">*</span></label>
-        <input type="text" class="input" id="ai-usp" placeholder="Angle/pesan utama script ini" />
-      </div>
-
-      <div class="field">
-        <label for="ai-brief">Brief tambahan (opsional)</label>
-        <textarea class="textarea" id="ai-brief" rows="2" placeholder="Instruksi khusus buat AI..."></textarea>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <button type="button" class="btn btn-primary" id="btn-ai-generate">✨ Generate script</button>
-        <span class="field-hint" id="ai-hint" style="display: none;"></span>
-      </div>
-
-      <div id="ai-result" style="display: none; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border);">
-        <p class="eyebrow" style="margin-bottom: 12px;">HASIL — edit sebelum save</p>
-        <div class="field">
-          <label for="ai-row-hook">Hook</label>
-          <textarea class="textarea" id="ai-row-hook" rows="2" placeholder="1 baris, max 15 kata..."></textarea>
-        </div>
-        <div class="field">
-          <label for="ai-row-body">Body</label>
-          <textarea class="textarea" id="ai-row-body" rows="5" placeholder="2-4 kalimat, ~50-80 kata..."></textarea>
-        </div>
-        <div class="field">
-          <label for="ai-row-cta">CTA</label>
-          <textarea class="textarea" id="ai-row-cta" rows="2" placeholder="1 baris, max 12 kata..."></textarea>
-        </div>
-        <div class="field">
-          <label for="ai-row-date">Jadwalkan ke tanggal (opsional)</label>
-          <input type="date" class="input" id="ai-row-date" style="max-width: 200px;" />
-          <span class="field-hint">Kosongin buat masuk pool "Belum dijadwalkan".</span>
-        </div>
-        <button type="button" class="btn btn-primary" id="btn-ai-save">💾 Simpan ke library</button>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="ai-cancel">Tutup</button>
       </div>
     </div>
   </div>
@@ -908,54 +920,35 @@
       document.getElementById('add-cancel').addEventListener('click', closeAddModal);
       addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
 
-      // ---- AI Generate modal ----
-      const aiModal = document.getElementById('ai-modal');
+      // ---- AI Generate panel (inline, Claude.ai-style) ----
       const aiResult = document.getElementById('ai-result');
       const aiVoiceStatus = document.getElementById('ai-voice-status');
+      // Brand voice guide yang udah ready (sisanya pakai default tone). Update di sini kalo
+      // nambah voice guide definitif untuk brand lain.
+      const VOICE_READY = ['Gipsy Research'];
 
-      function openAiModal() {
-        // Reset state pas dibuka
-        aiResult.style.display = 'none';
-        document.getElementById('ai-hint').style.display = 'none';
-        document.getElementById('ai-usp').value = '';
-        document.getElementById('ai-funnel').value = '';
-        document.getElementById('ai-brief').value = '';
-        document.getElementById('ai-row-date').value = '';
-        // Tandai brand voice guide yang live vs placeholder (di-hardcode karena brand-voices.ts
-        // ada di Edge Function, gak bisa di-import langsung)
-        const voiceReady = ['Gipsy Research'];
-        const brand = document.getElementById('ai-brand').value;
-        aiVoiceStatus.textContent = voiceReady.includes(brand)
+      function refreshVoiceStatus(brand) {
+        aiVoiceStatus.textContent = VOICE_READY.includes(brand)
           ? '✓ voice guide ready'
-          : '⏳ voice guide dalam tahap pengembangan (default tone)';
-        aiVoiceStatus.style.color = voiceReady.includes(brand) ? 'var(--success)' : 'var(--muted)';
-        aiModal.classList.add('show');
-        setTimeout(() => document.getElementById('ai-usp').focus(), 50);
+          : '⏳ voice guide dalam tahap pengembangan';
+        aiVoiceStatus.style.color = VOICE_READY.includes(brand) ? 'var(--success)' : 'var(--muted)';
       }
-      function closeAiModal() { aiModal.classList.remove('show'); }
+      refreshVoiceStatus(document.getElementById('ai-brand').value);
 
-      document.getElementById('btn-open-ai').addEventListener('click', openAiModal);
-      document.getElementById('ai-cancel').addEventListener('click', closeAiModal);
-      aiModal.addEventListener('click', (e) => { if (e.target === aiModal) closeAiModal(); });
-
-      // Update voice status label pas ganti brand
       document.getElementById('ai-brand').addEventListener('change', (e) => {
-        const voiceReady = ['Gipsy Research'];
-        aiVoiceStatus.textContent = voiceReady.includes(e.target.value)
-          ? '✓ voice guide ready'
-          : '⏳ voice guide dalam tahap pengembangan (default tone)';
-        aiVoiceStatus.style.color = voiceReady.includes(e.target.value) ? 'var(--success)' : 'var(--muted)';
+        refreshVoiceStatus(e.target.value);
       });
 
-      // Generate button: panggil Edge Function, hasil di-inject ke #ai-result
-      document.getElementById('btn-ai-generate').addEventListener('click', async () => {
+      // Helper: panggil Edge Function 'generate-script', populate #ai-result textareas.
+      // Dipake ulang oleh tombol "Generate" pertama kali dan "Generate ulang" setelah result.
+      async function runGenerate(regenerate) {
         const brand = document.getElementById('ai-brand').value;
         const usp = document.getElementById('ai-usp').value.trim();
         const funnelStage = document.getElementById('ai-funnel').value.trim();
         const briefText = document.getElementById('ai-brief').value.trim();
         if (!usp) { showToast('Isi USP dulu sebelum generate.'); return; }
 
-        const btn = document.getElementById('btn-ai-generate');
+        const btn = regenerate ? document.getElementById('btn-ai-regenerate') : document.getElementById('btn-ai-generate');
         const hint = document.getElementById('ai-hint');
         const origText = btn.textContent;
         btn.disabled = true;
@@ -974,7 +967,6 @@
           if (error) throw new Error(error.message || 'Function error');
           if (!data || !Array.isArray(data.rows)) throw new Error('Output AI kosong / format salah');
 
-          // Map ke Hook/Body/CTA textareas (3 baris pertama yg match)
           const rows = data.rows.slice(0, 3);
           const hook = rows.find(r => (r.scene || '').toLowerCase().includes('hook'));
           const body = rows.find(r => (r.scene || '').toLowerCase().includes('body'));
@@ -986,7 +978,10 @@
           document.getElementById('ai-row-cta').value = (cta.script || '').toString();
           aiResult.style.display = '';
 
-          hint.textContent = '✓ Script ke-generate — review & edit sebelum save';
+          // Scroll halus ke hasil biar admin langsung liat
+          aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+          hint.textContent = '✓ Script ke-generate — review & edit sebelum setujui';
           hint.style.color = 'var(--success)';
           showToast('Script generated ✓');
         } catch (err) {
@@ -997,21 +992,37 @@
           btn.disabled = false;
           btn.textContent = origText;
         }
+      }
+
+      document.getElementById('btn-ai-generate').addEventListener('click', () => runGenerate(false));
+      document.getElementById('btn-ai-regenerate').addEventListener('click', () => runGenerate(true));
+
+      // Buang hasil — reset textareas, sembunyiin result, biar admin bisa generate ulang dengan USP beda
+      document.getElementById('btn-ai-discard').addEventListener('click', () => {
+        if (!confirm('Buang hasil generate? Text lo di Hook/Body/CTA akan ilang.')) return;
+        document.getElementById('ai-row-hook').value = '';
+        document.getElementById('ai-row-body').value = '';
+        document.getElementById('ai-row-cta').value = '';
+        document.getElementById('ai-row-date').value = '';
+        document.getElementById('ai-row-ref').value = '';
+        aiResult.style.display = 'none';
+        document.getElementById('ai-hint').style.display = 'none';
+        document.getElementById('ai-usp').focus();
       });
 
-      // Save hasil AI ke library
+      // Setujui & simpan ke library — kalo udah oke, baru masuk library
       document.getElementById('btn-ai-save').addEventListener('click', async () => {
         const brand = document.getElementById('ai-brand').value;
         const usp = document.getElementById('ai-usp').value.trim();
         const funnelStage = document.getElementById('ai-funnel').value.trim();
         const scheduledDate = document.getElementById('ai-row-date').value || null;
+        const refNumber = document.getElementById('ai-row-ref').value.trim();
         const hookText = document.getElementById('ai-row-hook').value.trim();
         const bodyText = document.getElementById('ai-row-body').value.trim();
         const ctaText = document.getElementById('ai-row-cta').value.trim();
         if (!usp) { showToast('USP wajib diisi.'); return; }
         if (!hookText || !bodyText || !ctaText) { showToast('Hook/Body/CTA harus diisi semua.'); return; }
 
-        // Reconstruct content rows format (sama dengan add modal)
         const contentRows = [
           { scene: 'Hook', script: hookText },
           { scene: 'Body', script: bodyText },
@@ -1026,7 +1037,7 @@
         try {
           await A.createLibraryScript({
             brand,
-            refNumber: '',
+            refNumber,
             funnelStage,
             usp,
             briefText: '',
@@ -1035,9 +1046,21 @@
             voucherCode: '',
             scheduledDate
           });
-          showToast('Script tersimpan di library ✓');
-          closeAiModal();
+          showToast('Script disetujui & tersimpan di library ✓');
+          // Reset panel — siap untuk generate berikutnya
+          document.getElementById('ai-usp').value = '';
+          document.getElementById('ai-funnel').value = '';
+          document.getElementById('ai-brief').value = '';
+          document.getElementById('ai-row-hook').value = '';
+          document.getElementById('ai-row-body').value = '';
+          document.getElementById('ai-row-cta').value = '';
+          document.getElementById('ai-row-date').value = '';
+          document.getElementById('ai-row-ref').value = '';
+          aiResult.style.display = 'none';
+          document.getElementById('ai-hint').style.display = 'none';
           renderAll();
+          // Scroll balik ke atas panel biar admin tau udah reset
+          document.getElementById('ai-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (err) {
           showToast('Gagal simpan: ' + (err.message || 'unknown'));
         } finally {

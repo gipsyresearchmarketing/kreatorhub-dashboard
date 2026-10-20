@@ -266,6 +266,7 @@
         <div class="field">
           <label>Ditugaskan ke</label>
           <div class="field-hint" id="detail-assigned-info" style="font-size: 13px; color: var(--fg);">—</div>
+          <button type="button" class="btn btn-secondary" id="btn-reassign-library" style="margin-top: 10px; font-size: 12.5px;">↻ Ganti kreator</button>
         </div>
       </div>
 
@@ -641,6 +642,13 @@
         const assignBlock = document.getElementById('detail-assign-block');
         const assignForm = document.getElementById('assign-form');
         assignForm.style.display = 'none';
+
+        // Selalu populate dropdown kreator (dipakai dua-duanya: assign pertama ATAU reassign)
+        const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
+        const sel = document.getElementById('assign-kreator-select');
+        sel.innerHTML = '<option value="">— Pilih kreator —</option>' +
+          kreators.map(p => `<option value="${escapeHtml(p.username)}">${escapeHtml(p.display_name || p.username)}</option>`).join('');
+
         if (item.status === 'assigned') {
           assignedBlock.style.display = '';
           assignBlock.style.display = 'none';
@@ -648,13 +656,18 @@
           const kreatorLabel = kreatorProfile ? (kreatorProfile.display_name || kreatorProfile.username) : item.assigned_to;
           assignedBlock.querySelector('#detail-assigned-info').innerHTML = escapeHtml(kreatorLabel) +
             (item.brief_id ? ' · <a href="screens-admin-brief-detail.html?id=' + encodeURIComponent(item.brief_id) + '" style="color: var(--accent);">Buka brief →</a>' : '');
+
+          // Pre-fill form reassign dengan nilai brief yang lagi aktif, biar admin tinggal tweak
+          const linkedBrief = item.brief_id ? (A.data.briefs || []).find(b => b.id === item.brief_id) : null;
+          document.getElementById('assign-kreator-select').value = item.assigned_to || '';
+          document.getElementById('assign-deadline').value = (linkedBrief && linkedBrief.deadline) || '';
+          document.getElementById('assign-fee').value = (linkedBrief && linkedBrief.fee != null) ? linkedBrief.fee : '';
         } else {
           assignedBlock.style.display = 'none';
           assignBlock.style.display = '';
-          const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
-          const sel = document.getElementById('assign-kreator-select');
-          sel.innerHTML = '<option value="">— Pilih kreator —</option>' +
-            kreators.map(p => `<option value="${escapeHtml(p.username)}">${escapeHtml(p.display_name || p.username)}</option>`).join('');
+          document.getElementById('assign-kreator-select').value = '';
+          document.getElementById('assign-deadline').value = '';
+          document.getElementById('assign-fee').value = '';
         }
 
         document.getElementById('btn-delete-script').style.display = item.status === 'assigned' ? 'none' : '';
@@ -688,19 +701,37 @@
         document.getElementById('assign-form').style.display = '';
       });
 
+      document.getElementById('btn-reassign-library').addEventListener('click', () => {
+        // Toggle form reassign: kalau lagi kebuka, tutup; kalau nutup, buka. Pre-fill udah
+        // dilakukan di openDetailModal() — pas dibuka lagi, gak ngulang biar apa yang udah
+        // admin edit gak ke-reset.
+        const f = document.getElementById('assign-form');
+        f.style.display = f.style.display === 'none' ? '' : 'none';
+      });
+
       document.getElementById('btn-confirm-assign').addEventListener('click', async () => {
         if (!currentDetailId) return;
         const kreator = document.getElementById('assign-kreator-select').value;
         const deadline = document.getElementById('assign-deadline').value.trim();
         const feeRaw = document.getElementById('assign-fee').value.trim();
         if (!kreator) { showToast('Pilih kreator dulu.'); return; }
+
+        // Mode: 'reassign' kalau item udah assigned, 'assign' kalau belum. Branch di sini biar
+        // backend-nya bisa pilih: bikin brief+script baru (assign pertama) vs update yg udah ada (reassign).
+        const currentItem = (A.data.library || []).find(l => l.id === currentDetailId);
+        const isReassign = currentItem && currentItem.status === 'assigned';
+
+        if (isReassign && !confirm('Ganti kreator untuk item ini? Kreator lama udah mulai ngerjain kemungkinan tetap.')) {
+          return;
+        }
+
         const btn = document.getElementById('btn-confirm-assign');
         btn.disabled = true;
         const orig = btn.textContent;
         btn.textContent = 'Menyimpan…';
         try {
-          // Kalau ada edit yang belum disimpen, simpen dulu — assignLibraryScript ngambil
-          // versi yang TERSIMPAN di database, jadi tanpa ini edit terbaru gak ikut ke kreator.
+          // Kalau ada edit content/info yang belum disimpen, simpen dulu — assign/reassign
+          // ngambil versi yang TERSIMPAN di database, jadi tanpa ini edit terbaru gak ikut.
           if (detailDirty) {
             await A.updateLibraryScript(currentDetailId, {
               content: serializeScriptRows(detailContentRows),
@@ -709,12 +740,21 @@
             });
             detailDirty = false;
           }
-          await A.assignLibraryScript(currentDetailId, {
-            kreator,
-            deadline: deadline || '—',
-            fee: feeRaw === '' ? undefined : Number(feeRaw)
-          });
-          showToast('Berhasil di-assign, brief & script udah kebuat ✓');
+          if (isReassign) {
+            await A.reassignLibraryScript(currentDetailId, {
+              kreator,
+              deadline,
+              fee: feeRaw === '' ? undefined : Number(feeRaw)
+            });
+            showToast('Kreator di-update ✓');
+          } else {
+            await A.assignLibraryScript(currentDetailId, {
+              kreator,
+              deadline: deadline || '—',
+              fee: feeRaw === '' ? undefined : Number(feeRaw)
+            });
+            showToast('Berhasil di-assign, brief & script udah kebuat ✓');
+          }
           closeDetailModal();
           renderAll();
         } catch (err) {

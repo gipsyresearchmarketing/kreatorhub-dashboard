@@ -541,6 +541,38 @@
     return briefId;
   }
 
+  // Reassign untuk item library yang udah assigned — update assigned_to di kedua sisi (library
+  // row + brief yang udah ke-link), JANGAN bikin brief baru. Brief yatim lama tetap ada tapi
+  // udah gak ke-link ke script library ini lagi (cuma admin yang bisa liat lewat brief detail).
+  async function reassignLibraryScript(id, { kreator, deadline, fee }) {
+    const item = (data.library || []).find(l => l.id === id);
+    if (!item) throw new Error('Script library tidak ditemukan: ' + id);
+    if (item.status !== 'assigned') throw new Error('Cuma bisa reassign item yang udah assigned.');
+    if (!kreator) throw new Error('Pilih kreator dulu.');
+
+    // 1) Update row library: assigned_to baru, brief_id tetap (brief-nya gak ke-ganti)
+    const libUpd = await sb.from('script_library').update({ assigned_to: kreator }).eq('id', id);
+    if (libUpd.error) throw new Error('Update library gagal: ' + libUpd.error.message);
+
+    // 2) Update brief yang ke-link dari library ini — assigned_to + deadline/fee kalo diubah
+    if (item.brief_id) {
+      const briefFields = { assigned_to: kreator };
+      if (deadline != null && deadline !== '' && deadline !== '—') briefFields.deadline = deadline;
+      if (fee != null && fee !== '' && !(Number.isNaN(Number(fee)))) briefFields.fee = Number(fee);
+      const briefUpd = await sb.from('briefs').update(briefFields).eq('id', item.brief_id);
+      if (briefUpd.error) {
+        console.warn('[reassignLibraryScript] update brief gagal', briefUpd.error);
+        // Lanjut — library udah ke-update. Admin bisa re-edit brief di brief detail.
+      }
+    }
+
+    await refresh();
+    document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+      detail: { type: 'library-reassign', id, briefId: item.brief_id, kreator }
+    }));
+    return item.brief_id || null;
+  }
+
   async function deleteLibraryScript(id) {
     const res = await sb.from('script_library').delete().eq('id', id);
     if (res.error) throw new Error('Hapus script library gagal: ' + res.error.message);
@@ -684,6 +716,7 @@
     createLibraryScript,
     scheduleLibraryScript,
     assignLibraryScript,
+    reassignLibraryScript,
     updateLibraryScript,
     deleteLibraryScript,
     updateProgress,

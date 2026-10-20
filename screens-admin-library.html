@@ -192,7 +192,12 @@
           <h1>Library &amp; Kalender Konten</h1>
           <p>Script yang udah disiapin di muka. Jadwalkan ke tanggal, terus assign ke kreator — otomatis kebuat brief &amp; script draft-nya, langsung nongol di "Brief &amp; script" kreator itu.</p>
         </div>
-        <button type="button" class="btn btn-primary" id="btn-add-script">+ Tambah script</button>
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+          <button type="button" class="btn btn-secondary" id="btn-open-ai" style="border-color: var(--accent); color: var(--accent);">
+            🤖 Generate with AI
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-add-script">+ Tambah script</button>
+        </div>
       </div>
 
       <div class="card">
@@ -304,6 +309,72 @@
     </div>
   </div>
 
+  <!-- Modal: generate script with AI -->
+  <div class="modal-overlay" id="ai-modal">
+    <div class="modal-box" style="max-width: 720px;">
+      <h2>🤖 Generate Script with AI</h2>
+      <p class="meta" style="margin-bottom: 18px;">Gemini bakal bikin Hook/Body/CTA berdasarkan brand &amp; USP. Edit hasil sebelum save ke library.</p>
+
+      <div class="form-row-2">
+        <div class="field">
+          <label for="ai-brand">Brand</label>
+          <select class="select" id="ai-brand">
+            <option value="Gipsy Research">Gipsy Research</option>
+            <option value="Jamuzen">Jamuzen</option>
+            <option value="Convictio.id">Convictio.id</option>
+            <option value="CalmadeAI">CalmadeAI</option>
+          </select>
+          <span class="field-hint" id="ai-voice-status">—</span>
+        </div>
+        <div class="field">
+          <label for="ai-funnel">Funnel stage (opsional)</label>
+          <input type="text" class="input" id="ai-funnel" placeholder="mis. TOFU — Awareness" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="ai-usp">USP <span style="color: var(--danger);">*</span></label>
+        <input type="text" class="input" id="ai-usp" placeholder="Angle/pesan utama script ini" />
+      </div>
+
+      <div class="field">
+        <label for="ai-brief">Brief tambahan (opsional)</label>
+        <textarea class="textarea" id="ai-brief" rows="2" placeholder="Instruksi khusus buat AI..."></textarea>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" id="btn-ai-generate">✨ Generate script</button>
+        <span class="field-hint" id="ai-hint" style="display: none;"></span>
+      </div>
+
+      <div id="ai-result" style="display: none; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border);">
+        <p class="eyebrow" style="margin-bottom: 12px;">HASIL — edit sebelum save</p>
+        <div class="field">
+          <label for="ai-row-hook">Hook</label>
+          <textarea class="textarea" id="ai-row-hook" rows="2" placeholder="1 baris, max 15 kata..."></textarea>
+        </div>
+        <div class="field">
+          <label for="ai-row-body">Body</label>
+          <textarea class="textarea" id="ai-row-body" rows="5" placeholder="2-4 kalimat, ~50-80 kata..."></textarea>
+        </div>
+        <div class="field">
+          <label for="ai-row-cta">CTA</label>
+          <textarea class="textarea" id="ai-row-cta" rows="2" placeholder="1 baris, max 12 kata..."></textarea>
+        </div>
+        <div class="field">
+          <label for="ai-row-date">Jadwalkan ke tanggal (opsional)</label>
+          <input type="date" class="input" id="ai-row-date" style="max-width: 200px;" />
+          <span class="field-hint">Kosongin buat masuk pool "Belum dijadwalkan".</span>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-ai-save">💾 Simpan ke library</button>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="ai-cancel">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: tambah script -->
   <div class="modal-overlay" id="add-modal">
     <div class="modal-box">
@@ -336,14 +407,8 @@
         </div>
       </div>
       <div class="field">
-        <label for="add-usp" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-          <span>USP</span>
-          <button type="button" class="btn btn-secondary" id="btn-generate-script" style="font-size: 11.5px; padding: 4px 10px;">
-            ✨ Generate with AI
-          </button>
-        </label>
+        <label for="add-usp">USP</label>
         <input type="text" class="input" id="add-usp" placeholder="Angle/pesan utama script ini" />
-        <span class="field-hint" id="generate-hint" style="display: none;"></span>
       </div>
       <div class="field">
         <label for="add-brief">Brief</label>
@@ -843,23 +908,60 @@
       document.getElementById('add-cancel').addEventListener('click', closeAddModal);
       addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
 
-      // ---- Generate script with AI ----
-      // Panggil Supabase Edge Function 'generate-script' (pakai Claude 3.5 Haiku).
-      // Hasil: array rows [{scene, script}] di-inject ke tabel script add modal.
-      document.getElementById('btn-generate-script').addEventListener('click', async () => {
-        const brand = document.getElementById('add-brand').value;
-        const usp = document.getElementById('add-usp').value.trim();
-        const funnelStage = document.getElementById('add-funnel').value.trim();
-        const briefText = document.getElementById('add-brief').value.trim();
+      // ---- AI Generate modal ----
+      const aiModal = document.getElementById('ai-modal');
+      const aiResult = document.getElementById('ai-result');
+      const aiVoiceStatus = document.getElementById('ai-voice-status');
+
+      function openAiModal() {
+        // Reset state pas dibuka
+        aiResult.style.display = 'none';
+        document.getElementById('ai-hint').style.display = 'none';
+        document.getElementById('ai-usp').value = '';
+        document.getElementById('ai-funnel').value = '';
+        document.getElementById('ai-brief').value = '';
+        document.getElementById('ai-row-date').value = '';
+        // Tandai brand voice guide yang live vs placeholder (di-hardcode karena brand-voices.ts
+        // ada di Edge Function, gak bisa di-import langsung)
+        const voiceReady = ['Gipsy Research'];
+        const brand = document.getElementById('ai-brand').value;
+        aiVoiceStatus.textContent = voiceReady.includes(brand)
+          ? '✓ voice guide ready'
+          : '⏳ voice guide dalam tahap pengembangan (default tone)';
+        aiVoiceStatus.style.color = voiceReady.includes(brand) ? 'var(--success)' : 'var(--muted)';
+        aiModal.classList.add('show');
+        setTimeout(() => document.getElementById('ai-usp').focus(), 50);
+      }
+      function closeAiModal() { aiModal.classList.remove('show'); }
+
+      document.getElementById('btn-open-ai').addEventListener('click', openAiModal);
+      document.getElementById('ai-cancel').addEventListener('click', closeAiModal);
+      aiModal.addEventListener('click', (e) => { if (e.target === aiModal) closeAiModal(); });
+
+      // Update voice status label pas ganti brand
+      document.getElementById('ai-brand').addEventListener('change', (e) => {
+        const voiceReady = ['Gipsy Research'];
+        aiVoiceStatus.textContent = voiceReady.includes(e.target.value)
+          ? '✓ voice guide ready'
+          : '⏳ voice guide dalam tahap pengembangan (default tone)';
+        aiVoiceStatus.style.color = voiceReady.includes(e.target.value) ? 'var(--success)' : 'var(--muted)';
+      });
+
+      // Generate button: panggil Edge Function, hasil di-inject ke #ai-result
+      document.getElementById('btn-ai-generate').addEventListener('click', async () => {
+        const brand = document.getElementById('ai-brand').value;
+        const usp = document.getElementById('ai-usp').value.trim();
+        const funnelStage = document.getElementById('ai-funnel').value.trim();
+        const briefText = document.getElementById('ai-brief').value.trim();
         if (!usp) { showToast('Isi USP dulu sebelum generate.'); return; }
 
-        const btn = document.getElementById('btn-generate-script');
-        const hint = document.getElementById('generate-hint');
+        const btn = document.getElementById('btn-ai-generate');
+        const hint = document.getElementById('ai-hint');
         const origText = btn.textContent;
         btn.disabled = true;
         btn.textContent = '⏳ Generating…';
         hint.style.display = '';
-        hint.textContent = 'Claude lagi mikir…';
+        hint.textContent = 'Gemini lagi mikir…';
         hint.style.color = 'var(--muted)';
 
         try {
@@ -872,14 +974,17 @@
           if (error) throw new Error(error.message || 'Function error');
           if (!data || !Array.isArray(data.rows)) throw new Error('Output AI kosong / format salah');
 
-          // Map ke shape internal {scene, script}, fallback nama scene default kalo AI pake nama lain
-          const fallbackNames = ['Hook', 'Body', 'CTA'];
-          addContentRows = data.rows.map((r, i) => ({
-            scene: (r.scene || fallbackNames[i] || `Bagian ${i + 1}`).slice(0, 40),
-            script: (r.script || '').toString()
-          }));
-          renderAddContentTable();
-          addDirty = true;
+          // Map ke Hook/Body/CTA textareas (3 baris pertama yg match)
+          const rows = data.rows.slice(0, 3);
+          const hook = rows.find(r => (r.scene || '').toLowerCase().includes('hook'));
+          const body = rows.find(r => (r.scene || '').toLowerCase().includes('body'));
+          const cta = rows.find(r => (r.scene || '').toLowerCase().includes('cta'));
+          if (!hook || !body || !cta) throw new Error('Output AI gak lengkap (Hook/Body/CTA)');
+
+          document.getElementById('ai-row-hook').value = (hook.script || '').toString();
+          document.getElementById('ai-row-body').value = (body.script || '').toString();
+          document.getElementById('ai-row-cta').value = (cta.script || '').toString();
+          aiResult.style.display = '';
 
           hint.textContent = '✓ Script ke-generate — review & edit sebelum save';
           hint.style.color = 'var(--success)';
@@ -891,6 +996,53 @@
         } finally {
           btn.disabled = false;
           btn.textContent = origText;
+        }
+      });
+
+      // Save hasil AI ke library
+      document.getElementById('btn-ai-save').addEventListener('click', async () => {
+        const brand = document.getElementById('ai-brand').value;
+        const usp = document.getElementById('ai-usp').value.trim();
+        const funnelStage = document.getElementById('ai-funnel').value.trim();
+        const scheduledDate = document.getElementById('ai-row-date').value || null;
+        const hookText = document.getElementById('ai-row-hook').value.trim();
+        const bodyText = document.getElementById('ai-row-body').value.trim();
+        const ctaText = document.getElementById('ai-row-cta').value.trim();
+        if (!usp) { showToast('USP wajib diisi.'); return; }
+        if (!hookText || !bodyText || !ctaText) { showToast('Hook/Body/CTA harus diisi semua.'); return; }
+
+        // Reconstruct content rows format (sama dengan add modal)
+        const contentRows = [
+          { scene: 'Hook', script: hookText },
+          { scene: 'Body', script: bodyText },
+          { scene: 'CTA', script: ctaText }
+        ];
+        const content = JSON.stringify(contentRows);
+
+        const btn = document.getElementById('btn-ai-save');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Menyimpan…';
+        try {
+          await A.createLibraryScript({
+            brand,
+            refNumber: '',
+            funnelStage,
+            usp,
+            briefText: '',
+            content,
+            brandGuidelineUrl: '',
+            voucherCode: '',
+            scheduledDate
+          });
+          showToast('Script tersimpan di library ✓');
+          closeAiModal();
+          renderAll();
+        } catch (err) {
+          showToast('Gagal simpan: ' + (err.message || 'unknown'));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
         }
       });
 

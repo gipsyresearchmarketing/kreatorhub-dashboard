@@ -1,5 +1,5 @@
 // Edge Function: generate-script
-// Memanggil Claude 3.5 Haiku untuk generate script Hook/Body/CTA berdasarkan brand + USP.
+// Memanggil Google Gemini 2.0 Flash untuk generate script Hook/Body/CTA berdasarkan brand + USP.
 //
 // Input  (POST JSON):
 //   - brand:        string (required)  — salah satu dari BRAND_VOICES keys
@@ -11,18 +11,13 @@
 //   - rows: [{ scene: 'Hook'|'Body'|'CTA', script: string }, ...]
 //
 // Deploy:
-//   1. supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+//   1. supabase secrets set GEMINI_API_KEY=...
 //   2. supabase functions deploy generate-script
 // Atau paste manual via Supabase Dashboard → Edge Functions.
-//
-// Auth: function ini dipanggil dari authenticated admin client (sb.functions.invoke
-// kirim JWT otomatis). Cuma admin yang boleh akses — check role di sini.
 
 import { getVoiceFor } from './brand-voices.ts';
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-3-5-haiku-20241022';
-const MAX_TOKENS = 800;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,16 +48,12 @@ JANGAN:
 
 Kalo USP yang dikasih kurang jelas, tetep generate dengan asumsi terbaik dan kasih Hook yg relate.`;
 
-// Extract JSON dari text response kalo model kebetulan wrap dengan markdown ```json ... ```
 function extractJson(text: string): unknown {
   const trimmed = text.trim();
-  // Strip markdown code fences kalo ada
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   if (fenced) return JSON.parse(fenced[1]);
-  // Strip ```json ... ``` di tengah text
   const innerFence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (innerFence) return JSON.parse(innerFence[1]);
-  // Pure JSON
   return JSON.parse(trimmed);
 }
 
@@ -78,9 +69,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
-      throw new Error('Server belum dikonfigurasi: ANTHROPIC_API_KEY belum di-set di Supabase secrets.');
+      throw new Error('Server belum dikonfigurasi: GEMINI_API_KEY belum di-set di Supabase secrets.');
     }
 
     const body = await req.json();
@@ -104,29 +95,35 @@ Deno.serve(async (req) => {
     userParts.push('\nGenerate script untuk konten video pendek.');
     const userPrompt = userParts.join('\n');
 
-    const anthropicRes = await fetch(ANTHROPIC_API_URL, {
+    // Gemini API: system instruction dipisah dari user content
+    const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [
+          { role: 'user', parts: [{ text: userPrompt }] }
+        ],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 800,
+          responseMimeType: 'application/json'  // Minta JSON langsung
+        }
       }),
     });
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      throw new Error(`Anthropic API error (${anthropicRes.status}): ${errText.slice(0, 300)}`);
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      throw new Error(`Gemini API error (${geminiRes.status}): ${errText.slice(0, 300)}`);
     }
 
-    const result = await anthropicRes.json();
-    const text = result?.content?.[0]?.text;
-    if (!text) throw new Error('Anthropic response kosong / format salah');
+    const result = await geminiRes.json();
+    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini response kosong / format salah');
 
     let parsed: any;
     try {

@@ -879,7 +879,7 @@
           const isOverdue = /kemarin|terlambat/i.test(r.deadline);
           return rowItem({
             title: r.title,
-            meta: `<span style="color: var(--muted);">Brand:</span> ${r.brand} · <span style="color: var(--muted);">Kreator:</span> ${r.creator} · <span style="color: var(--muted);">Deadline:</span> ${r.deadline}`,
+            meta: `<span style="color: var(--muted);">Brand:</span> ${r.brand} · <span style="color: var(--muted);">Kreator:</span> ${r.creator} · <span style="color: var(--muted);">Deadline:</span> ${(window.AdminApp && window.AdminApp.fmtDate ? window.AdminApp.fmtDate(r.deadline) : r.deadline)}`,
             right: `<span class="status ${isOverdue ? 'rejected' : s.cls}">${isOverdue ? 'Terlambat' : s.label}</span>`
           });
         }).join('');
@@ -912,7 +912,7 @@
         document.getElementById('brief-aktif-meta').textContent = `${brands.size} brand · ${items.length} brief`;
         document.getElementById('brief-aktif-list').innerHTML = items.map(b => rowItem({
           title: b.title,
-          meta: `<span style="color: var(--muted);">Brand:</span> ${b.brand} · <span style="color: var(--muted);">Kreator:</span> ${b.creator || '—'} · <span style="color: var(--muted);">Deadline:</span> ${b.deadline}`,
+          meta: `<span style="color: var(--muted);">Brand:</span> ${b.brand} · <span style="color: var(--muted);">Kreator:</span> ${b.creator || '—'} · <span style="color: var(--muted);">Deadline:</span> ${(window.AdminApp && window.AdminApp.fmtDate ? window.AdminApp.fmtDate(b.deadline) : b.deadline)}`,
           right: `<span class="status review">Aktif</span>`
         })).join('');
       }
@@ -1222,7 +1222,7 @@
           briefList.innerHTML = briefs.length === 0
             ? '<div class="meta">Belum ada brief.</div>'
             : briefs.map(b => `<div class="item-row">
-                <div><strong>${escapeHtml(b.title)}</strong><small>${escapeHtml(b.brand)} · deadline ${escapeHtml(b.deadline || '—')}</small></div>
+                <div><strong>${escapeHtml(b.title)}</strong><small>${escapeHtml(b.brand)} · deadline ${escapeHtml((window.AdminApp && window.AdminApp.fmtDate ? window.AdminApp.fmtDate(b.deadline || '—') : (b.deadline || '—'))}</small></div>
               </div>`).join('');
         }
 

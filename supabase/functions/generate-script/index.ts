@@ -1,37 +1,84 @@
-// Edge Function: generate-script
-// Memanggil Google Gemini 2.0 Flash untuk generate script Hook/Body/CTA berdasarkan brand + USP.
+// Edge Function: generate-script (single-file version for Dashboard Editor)
+// Memanggil Google Gemini 2.0 Flash untuk generate script Hook/Body/CTA.
 //
 // Input  (POST JSON):
-//   - brand:        string (required)  — salah satu dari BRAND_VOICES keys
-//   - usp:          string (required)  — Unique Selling Proposition / angle utama
-//   - funnelStage:  string (optional)  — TOFU/MOFU/BOFU
-//   - briefText:    string (optional)  — instruksi tambahan dari admin
+//   - brand:        string (required)
+//   - usp:          string (required)
+//   - funnelStage:  string (optional)
+//   - briefText:    string (optional)
 //
 // Output (JSON):
 //   - rows: [{ scene: 'Hook'|'Body'|'CTA', script: string }, ...]
 //
-// Deploy:
-//   1. supabase secrets set GEMINI_API_KEY=...
-//   2. supabase functions deploy generate-script
-// Atau paste manual via Supabase Dashboard → Edge Functions.
-
-import { getVoiceFor } from './brand-voices.ts';
+// ENV yang dibutuhin: GEMINI_API_KEY (di-set di Supabase Dashboard → Secrets)
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// ====== Brand voice guide (inlined biar single-file) ======
+const BRAND_VOICES: Record<string, string> = {
+  'Gipsy Research': `
+TONE & PERSONALITI:
+- Bicara kayak senior researcher yang helpful, bukan profesor kaku
+- Academic tapi relatable — istilah riset boleh dipake asal langsung dikasih contoh/arti
+- Optimis tapi jujur ("ini bakal makan waktu, tapi worth it")
+- Bahasa casual-academic, pake "kamu" bukan "Anda"
+
+HOOK PATTERN (TOFU):
+- Sering buka dengan pertanyaan reflektif ("Kalau kamu...")
+- Atau pernyataan data/angka yang kontra-intuitif ("250 juta+ artikel...")
+- Atau pattern interrupt yang relate ke frustration umum (bab 1 stuck, dosen revisi, dll)
+
+BODY PATTERN:
+- Bukti/kredibilitas: sebut riset spesifik, framework, jurnal, atau step-by-step
+- Concrete & actionable — kasih step atau contoh nyata, bukan teori
+- Struktur: problem → kenapa orang stuck → framework/solusi → 1 contoh
+
+CTA PATTERN:
+- Soft, natural — "komen 'mau' nanti aku kirim worksheetnya"
+- Selalu ada value exchange yang jelas
+- JANGAN hard-sell atau janji berlebihan
+
+TARGET AUDIENCE:
+- Mahasiswa S1/S2/peneliti muda Indonesia
+- Stuck di awal riset (cari judul, bab 1) atau overwhelmed (banyak revisi)
+- Butuh sistem, bukan motivasi
+
+JANGAN:
+- Pakai kata "Anda" (selalu "kamu")
+- Bahasa Inggris campur (boleh istilah riset umum: framework, metodologi)
+- Emoji berlebihan di body
+- Klaim palsu atau overpromise
+`,
+  'Jamuzen': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
+  'Convictio.id': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
+  'CalmadeAI': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
 };
 
+const DEFAULT_VOICE = `
+TONE DEFAULT (kalo brand voice guide belum ready):
+- Bahasa Indonesia conversational, helpful & approachable
+- Bahasa "kamu" bukan "Anda"
+- Hook: pertanyaan reflektif atau pernyataan yang bikin orang berhenti scroll
+- Body: actionable & concrete, kasih step atau contoh nyata
+- CTA: soft, value exchange jelas
+- Cocok untuk konten TikTok/Reels pendek (~30-60 detik)
+`;
+
+function getVoiceFor(brand: string): string {
+  const voice = BRAND_VOICES[brand];
+  if (!voice) return DEFAULT_VOICE;
+  if (voice.includes('dalam tahap pengembangan')) return DEFAULT_VOICE;
+  return voice;
+}
+
+// ====== System prompt ======
 const SYSTEM_PROMPT = `Lo adalah AI copywriter Indonesia untuk konten video pendek (TikTok/Reels, ~30-60 detik).
 
 ATURAN KERAS (WAJIB DIIKUTI):
 - Output HARUS JSON valid dengan struktur: { "rows": [ { "scene": "Hook"|"Body"|"CTA", "script": "..." }, ... ] }
 - WAJIB ada tepat 3 baris: Hook, Body, CTA. Jangan lebih, jangan kurang.
 - Hook: 1 baris, max 15 kata, punchy, bikin orang berhenti scroll
-- Body: 2-4 kalimat (boleh pake newline sebagai pemisah antar kalimat), total ~50-80 kata, value konkret & actionable
+- Body: 2-4 kalimat (boleh pake newline sebagai pemisah), total ~50-80 kata, value konkret & actionable
 - CTA: 1 baris, max 12 kata, soft, natural, value exchange jelas
 - Bahasa Indonesia, gunakan "kamu" bukan "Anda"
 - Total panjang script cukup untuk ~30-45 detik video
@@ -56,6 +103,13 @@ function extractJson(text: string): unknown {
   if (innerFence) return JSON.parse(innerFence[1]);
   return JSON.parse(trimmed);
 }
+
+// ====== Handler ======
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -95,24 +149,17 @@ Deno.serve(async (req) => {
     userParts.push('\nGenerate script untuk konten video pendek.');
     const userPrompt = userParts.join('\n');
 
-    // Gemini API: system instruction dipisah dari user content
     const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        contents: [
-          { role: 'user', parts: [{ text: userPrompt }] }
-        ],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
         generationConfig: {
           temperature: 0.8,
           maxOutputTokens: 800,
-          responseMimeType: 'application/json'  // Minta JSON langsung
-        }
+          responseMimeType: 'application/json',
+        },
       }),
     });
 
@@ -136,7 +183,6 @@ Deno.serve(async (req) => {
       throw new Error('Output AI gak ada field "rows" / bukan array. Raw: ' + text.slice(0, 200));
     }
 
-    // Validasi minimal: harus ada scene Hook, Body, CTA
     const scenes = parsed.rows.map((r: any) => (r.scene || '').toLowerCase());
     if (!scenes.some((s: string) => s.includes('hook'))) throw new Error('Output AI gak ada baris Hook');
     if (!scenes.some((s: string) => s.includes('body'))) throw new Error('Output AI gak ada baris Body');

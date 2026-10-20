@@ -82,9 +82,8 @@
     .brand-chip { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12.5px; font-weight: 500; }
     .brand-chip.active { background: var(--accent); color: var(--surface); border-color: var(--accent); }
 
-    .lib-layout { display: flex; flex-direction: column; gap: var(--gap-lg); margin-top: var(--gap-lg); }
-    #unscheduled-pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-    #unscheduled-pool .empty-pool { grid-column: 1 / -1; }
+    .lib-layout { display: grid; grid-template-columns: 1fr 300px; gap: var(--gap-lg); align-items: start; margin-top: var(--gap-lg); }
+    @media (max-width: 1000px) { .lib-layout { grid-template-columns: 1fr; } }
 
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .cal-nav-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; }
@@ -108,10 +107,10 @@
     .cal-chip.assigned { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); border: 1px solid color-mix(in oklch, var(--success) 30%, transparent); border-left: 3px solid var(--success); }
     .cal-chip:hover { filter: brightness(0.95); }
 
-    .pool-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; cursor: pointer; background: var(--surface); }
+    .pool-item { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; }
     .pool-item:hover { border-color: var(--fg); }
     .pool-item .brand-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); display: inline-block; margin-bottom: 4px; }
-    .pool-item .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .pool-item .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
     .pool-item .sub { font-size: 11.5px; color: var(--muted); }
     .empty-pool { color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px 8px; }
 
@@ -128,9 +127,6 @@
     .ai-panel-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
     .ai-panel-voice { font-size: 11.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
     .ai-result { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); position: relative; }
-    .ai-variants { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-    .ai-variant-tab { border: 1px solid var(--border); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .ai-variant-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     .ai-result-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
 
     .field { margin-bottom: 14px; }
@@ -239,13 +235,6 @@
           <textarea class="textarea" id="ai-brief" rows="2" placeholder="Brief tambahan (opsional) — instruksi khusus buat AI..."></textarea>
 
           <div class="ai-panel-actions">
-            <select class="select" id="ai-count" style="width: auto;" title="Jumlah opsi script">
-              <option value="1">1 opsi</option>
-              <option value="2">2 opsi</option>
-              <option value="3" selected>3 opsi</option>
-              <option value="4">4 opsi</option>
-              <option value="5">5 opsi</option>
-            </select>
             <button type="button" class="btn btn-primary" id="btn-ai-generate" style="padding: 9px 18px;">
               ✨ Generate script
             </button>
@@ -255,7 +244,6 @@
 
         <div id="ai-result" class="ai-result" style="display: none;">
           <p class="eyebrow" style="margin-bottom: 14px;">Hasil — edit sebelum setujui</p>
-          <div id="ai-variants" class="ai-variants" style="display: none;"></div>
 
           <div class="field">
             <label for="ai-row-hook">Hook <span style="color: var(--muted); font-weight: 400;">(1 baris, max 15 kata)</span></label>
@@ -316,8 +304,7 @@
         </div>
 
         <div class="card">
-          <h3 style="font-size: 14px; margin-bottom: 4px;">Belum dijadwalkan <span id="pool-count" style="color: var(--muted); font-weight: 500;"></span></h3>
-          <p class="meta" style="margin-bottom: 14px;">Klik script buat buka detail, atur tanggal, atau assign ke kreator.</p>
+          <h3 style="font-size: 14px; margin-bottom: 10px;">Belum dijadwalkan</h3>
           <div id="unscheduled-pool"></div>
         </div>
       </div>
@@ -698,7 +685,6 @@
       function renderUnscheduledPool() {
         const pool = document.getElementById('unscheduled-pool');
         const items = libraryItems().filter(l => !l.scheduled_date);
-        document.getElementById('pool-count').textContent = items.length ? '(' + items.length + ')' : '';
         if (!items.length) {
           pool.innerHTML = '<div class="empty-pool">Semua script udah dijadwalkan.</div>';
           return;
@@ -953,40 +939,6 @@
         refreshVoiceStatus(e.target.value);
       });
 
-      // ---- Multi-opsi: simpan semua varian di memori, tab buat pindah, textarea = varian aktif ----
-      let aiVariants = [];
-      let aiActive = 0;
-      function syncActiveVariant() {
-        if (!aiVariants[aiActive]) return;
-        aiVariants[aiActive] = {
-          hook: document.getElementById('ai-row-hook').value,
-          body: document.getElementById('ai-row-body').value,
-          cta: document.getElementById('ai-row-cta').value
-        };
-      }
-      function loadVariant(i) {
-        aiActive = i;
-        const v = aiVariants[i] || { hook: '', body: '', cta: '' };
-        document.getElementById('ai-row-hook').value = v.hook || '';
-        document.getElementById('ai-row-body').value = v.body || '';
-        document.getElementById('ai-row-cta').value = v.cta || '';
-        renderVariantTabs();
-      }
-      function renderVariantTabs() {
-        const box = document.getElementById('ai-variants');
-        box.innerHTML = '';
-        if (aiVariants.length <= 1) { box.style.display = 'none'; return; }
-        box.style.display = '';
-        aiVariants.forEach((_, i) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'ai-variant-tab' + (i === aiActive ? ' active' : '');
-          b.textContent = 'Opsi ' + (i + 1);
-          b.addEventListener('click', () => { syncActiveVariant(); loadVariant(i); });
-          box.appendChild(b);
-        });
-      }
-
       // Helper: panggil Edge Function 'generate-script', populate #ai-result textareas.
       // Dipake ulang oleh tombol "Generate" pertama kali dan "Generate ulang" setelah result.
       async function runGenerate(regenerate) {
@@ -1010,7 +962,7 @@
           if (!sbClient || !sbClient.functions) throw new Error('Supabase client gak ready.');
 
           const { data, error } = await sbClient.functions.invoke('generate-script', {
-            body: { brand, usp, funnelStage, briefText, count: parseInt(document.getElementById('ai-count').value, 10) || 1 }
+            body: { brand, usp, funnelStage, briefText }
           });
           if (error) {
             // supabase-js cuma ngasih pesan generik; alasan aslinya ada di body response (error.context)
@@ -1024,19 +976,23 @@
             } catch (_) { /* body bukan JSON, pakai pesan default */ }
             throw new Error(detail);
           }
-          if (!data || !Array.isArray(data.variants) || !data.variants.length) throw new Error('Output AI kosong / format salah');
+          if (!data || !Array.isArray(data.rows)) throw new Error('Output AI kosong / format salah');
 
-          aiVariants = data.variants
-            .map(v => ({ hook: (v.hook || '').toString(), body: (v.body || '').toString(), cta: (v.cta || '').toString() }))
-            .filter(v => v.hook && v.body && v.cta);
-          if (!aiVariants.length) throw new Error('Output AI gak lengkap (Hook/Body/CTA)');
-          loadVariant(0);
+          const rows = data.rows.slice(0, 3);
+          const hook = rows.find(r => (r.scene || '').toLowerCase().includes('hook'));
+          const body = rows.find(r => (r.scene || '').toLowerCase().includes('body'));
+          const cta = rows.find(r => (r.scene || '').toLowerCase().includes('cta'));
+          if (!hook || !body || !cta) throw new Error('Output AI gak lengkap (Hook/Body/CTA)');
+
+          document.getElementById('ai-row-hook').value = (hook.script || '').toString();
+          document.getElementById('ai-row-body').value = (body.script || '').toString();
+          document.getElementById('ai-row-cta').value = (cta.script || '').toString();
           aiResult.style.display = '';
 
           // Scroll halus ke hasil biar admin langsung liat
           aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-          hint.textContent = '✓ ' + aiVariants.length + ' opsi ke-generate — pilih tab, review & edit sebelum setujui';
+          hint.textContent = '✓ Script ke-generate — review & edit sebelum setujui';
           hint.style.color = 'var(--success)';
           showToast('Script generated ✓');
         } catch (err) {
@@ -1060,7 +1016,7 @@
         document.getElementById('ai-row-cta').value = '';
         document.getElementById('ai-row-date').value = '';
         document.getElementById('ai-row-ref').value = '';
-        aiResult.style.display = 'none'; aiVariants = []; renderVariantTabs();
+        aiResult.style.display = 'none';
         document.getElementById('ai-hint').style.display = 'none';
         document.getElementById('ai-usp').focus();
       });
@@ -1111,7 +1067,7 @@
           document.getElementById('ai-row-cta').value = '';
           document.getElementById('ai-row-date').value = '';
           document.getElementById('ai-row-ref').value = '';
-          aiResult.style.display = 'none'; aiVariants = []; renderVariantTabs();
+          aiResult.style.display = 'none';
           document.getElementById('ai-hint').style.display = 'none';
           renderAll();
           // Scroll balik ke atas panel biar admin tau udah reset

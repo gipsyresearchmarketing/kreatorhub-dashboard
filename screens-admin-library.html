@@ -113,6 +113,8 @@
     .pool-item .brand-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); display: inline-block; margin-bottom: 4px; }
     .pool-item .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .pool-item .sub { font-size: 11.5px; color: var(--muted); }
+    .pool-item.needs-date { border-color: color-mix(in oklch, var(--warning, #b7791f) 55%, var(--border)); }
+    .pool-flag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 0 0 6px 6px; background: color-mix(in oklch, var(--warning, #b7791f) 16%, transparent); color: var(--warning, #b7791f); }
     .empty-pool { color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px 8px; }
 
     /* === AI Generate panel (Claude.ai-style) === */
@@ -382,8 +384,9 @@
             <select class="select" id="assign-kreator-select"></select>
           </div>
           <div class="field">
-            <label for="assign-deadline">Deadline</label>
-            <input type="text" class="input" id="assign-deadline" placeholder="mis. 30 September" />
+            <label for="assign-deadline">Tanggal / deadline</label>
+            <input type="date" class="input" id="assign-deadline" />
+            <div class="field-hint" style="font-size: 12px; margin-top: 4px;">Tanggal ini juga jadi jadwal di kalender.</div>
           </div>
         </div>
         <div class="field">
@@ -697,7 +700,8 @@
 
       function renderUnscheduledPool() {
         const pool = document.getElementById('unscheduled-pool');
-        const items = libraryItems().filter(l => !l.scheduled_date);
+        const items = libraryItems().filter(l => !l.scheduled_date)
+          .sort((a, b) => (b.status === 'assigned') - (a.status === 'assigned'));
         document.getElementById('pool-count').textContent = items.length ? '(' + items.length + ')' : '';
         if (!items.length) {
           pool.innerHTML = '<div class="empty-pool">Semua script udah dijadwalkan.</div>';
@@ -706,9 +710,10 @@
         pool.innerHTML = '';
         items.forEach(item => {
           const div = document.createElement('div');
-          div.className = 'pool-item';
+          const needsDate = item.status === 'assigned';
+          div.className = 'pool-item' + (needsDate ? ' needs-date' : '');
           div.innerHTML = `
-            <span class="brand-tag">${escapeHtml(item.brand)}</span>
+            <span class="brand-tag">${escapeHtml(item.brand)}</span>${needsDate ? '<span class="pool-flag">Sudah di-assign · belum ada tanggal</span>' : ''}
             <div class="title">${escapeHtml(item.ref_number ? '#' + item.ref_number + ' — ' : '') + escapeHtml(item.usp || 'Tanpa USP')}</div>
             <div class="sub">${escapeHtml(item.funnel_stage || '')}</div>
           `;
@@ -762,13 +767,13 @@
           // Pre-fill form reassign dengan nilai brief yang lagi aktif, biar admin tinggal tweak
           const linkedBrief = item.brief_id ? (A.data.briefs || []).find(b => b.id === item.brief_id) : null;
           document.getElementById('assign-kreator-select').value = item.assigned_to || '';
-          document.getElementById('assign-deadline').value = (linkedBrief && linkedBrief.deadline) || '';
+          document.getElementById('assign-deadline').value = item.scheduled_date || '';
           document.getElementById('assign-fee').value = (linkedBrief && linkedBrief.fee != null) ? linkedBrief.fee : '';
         } else {
           assignedBlock.style.display = 'none';
           assignBlock.style.display = '';
           document.getElementById('assign-kreator-select').value = '';
-          document.getElementById('assign-deadline').value = '';
+          document.getElementById('assign-deadline').value = item.scheduled_date || '';
           document.getElementById('assign-fee').value = '';
         }
 
@@ -814,7 +819,9 @@
       document.getElementById('btn-confirm-assign').addEventListener('click', async () => {
         if (!currentDetailId) return;
         const kreator = document.getElementById('assign-kreator-select').value;
-        const deadline = document.getElementById('assign-deadline').value.trim();
+        const dateIso = document.getElementById('assign-deadline').value; // 'YYYY-MM-DD' atau ''
+        const fmtId = (iso) => { const [y, m, d] = iso.split('-').map(Number); return d + ' ' + MONTH_NAMES[m - 1] + ' ' + y; };
+        const deadline = dateIso ? fmtId(dateIso) : '';
         const feeRaw = document.getElementById('assign-fee').value.trim();
         if (!kreator) { showToast('Pilih kreator dulu.'); return; }
 
@@ -823,6 +830,10 @@
         const currentItem = (A.data.library || []).find(l => l.id === currentDetailId);
         const isReassign = currentItem && currentItem.status === 'assigned';
 
+        if (!dateIso && !(currentItem && currentItem.scheduled_date) &&
+            !confirm('Belum ada tanggal. Script ini nggak bakal muncul di kalender sampai tanggalnya diisi. Tetap assign tanpa tanggal?')) {
+          return;
+        }
         if (isReassign && !confirm('Ganti kreator untuk item ini? Kreator lama udah mulai ngerjain kemungkinan tetap.')) {
           return;
         }
@@ -856,6 +867,10 @@
               fee: feeRaw === '' ? undefined : Number(feeRaw)
             });
             showToast('Berhasil di-assign, brief & script udah kebuat ✓');
+          }
+          // Samain jadwal kalender dengan tanggal yang dipilih (kalau beda / belum ada)
+          if (dateIso && dateIso !== (currentItem && currentItem.scheduled_date)) {
+            await A.scheduleLibraryScript(currentDetailId, dateIso);
           }
           closeDetailModal();
           renderAll();

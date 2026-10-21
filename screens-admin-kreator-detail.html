@@ -186,6 +186,33 @@
           <div class="meta-row"><span class="meta-label">Nomor rekening / HP</span><span class="meta-value">${escapeHtml(kreator.bank_account || '—')}</span></div>
         </div>
 
+        <!-- BRIEF -->
+        <div class="card">
+          <h2>Brief<small>${briefs.length} total · aktif &amp; yang pernah dikerjain</small></h2>
+          ${briefs.length === 0 ? '<div class="empty">Belum ada brief.</div>' : `
+            <table class="ds-table">
+              <thead>
+                <tr>
+                  <th>Judul</th>
+                  <th>Brand</th>
+                  <th>Deadline</th>
+                  <th>Fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${briefs.map(b => `
+                  <tr>
+                    <td><a class="brief-link" href="screens-admin-brief-detail.html?id=${encodeURIComponent(b.id)}">${escapeHtml(b.title || '—')}</a></td>
+                    <td>${escapeHtml(b.brand || '—')}</td>
+                    <td>${escapeHtml(b.deadline || '—')}</td>
+                    <td class="num-col">${b.fee != null ? fmtRp(b.fee) : '—'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+
         <!-- VIDEO -->
         <div class="card">
           <h2>Video<small>${progCount} total</small></h2>
@@ -282,7 +309,15 @@
         }
         const progress = (A.data.progress || []).filter(p => p.kreator === username);
         const payments = (A.data.payments || []).filter(p => p.kreator === username);
-        const briefs   = A.data.briefs || [];
+        const allBriefs = A.data.briefs || [];
+        // Brief yang relevan = (1) di-assign langsung ke kreator + (2) brief_id yang pernah
+        // dikerjain via progress. Logic sama kayak BRIEF AKTIF di screens-admin1.html.
+        const myBriefs = allBriefs.filter(b => b.assigned_to === username);
+        const briefIds = new Set(myBriefs.map(b => b.id));
+        progress.forEach(v => { if (v.brief_id) briefIds.add(v.brief_id); });
+        const briefs = [...briefIds]
+          .map(id => allBriefs.find(b => b.id === id))
+          .filter(Boolean);
         renderPage(kreator, progress, payments, briefs);
       }
 

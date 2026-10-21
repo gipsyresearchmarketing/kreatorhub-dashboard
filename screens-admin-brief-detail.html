@@ -1280,6 +1280,12 @@
                 <span class="brand-tag" style="border-color: var(--accent-soft); color: var(--accent);">${escapeHtml(brief.brand)}</span>
                 <span class="meta">Kreator: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.creator)}</strong></span>
                 <span class="meta">Deadline: <strong style="color: var(--fg); font-family: var(--font-body);">${escapeHtml(brief.deadline)}</strong></span>
+                <button type="button" class="btn btn-secondary" id="btn-brief-set-date" style="font-size: 12px; padding: 4px 10px;">Atur tanggal</button>
+                <span id="brief-date-form" style="display: none; align-items: center; gap: 6px;">
+                  <input type="date" class="input" id="brief-date-input" style="width: auto; padding: 4px 8px;" />
+                  <button type="button" class="btn btn-primary" id="brief-date-save" style="font-size: 12px; padding: 4px 12px;">Simpan</button>
+                  <button type="button" class="btn btn-secondary" id="brief-date-cancel" style="font-size: 12px; padding: 4px 12px;">Batal</button>
+                </span>
               </div>
               <div>${statusBadge(currentStatus)}</div>
             </div>
@@ -1348,6 +1354,51 @@
           if (chip) chip.classList.toggle('active');
         });
           
+        // Atur tanggal/deadline brief → ikut update jadwal di Library (kalender) kalau brief ini dari Library
+        (function () {
+          const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+          const sbIdOf = () => (BRIEFS[briefId] && BRIEFS[briefId].sb_id) || briefId;
+          const linkedLib = () => {
+            const A = window.AdminApp;
+            return A && (A.data.library || []).find(l => l.brief_id === sbIdOf());
+          };
+          const form = document.getElementById('brief-date-form');
+          const input = document.getElementById('brief-date-input');
+          document.getElementById('btn-brief-set-date')?.addEventListener('click', () => {
+            const lib = linkedLib();
+            input.value = (lib && lib.scheduled_date) || '';
+            form.style.display = 'inline-flex';
+          });
+          document.getElementById('brief-date-cancel')?.addEventListener('click', () => { form.style.display = 'none'; });
+          document.getElementById('brief-date-save')?.addEventListener('click', async () => {
+            const A = window.AdminApp;
+            if (!A || !A.updateBrief) { showToast('AdminApp belum siap.'); return; }
+            if (!input.value) { showToast('Pilih tanggal dulu.'); return; }
+            const [y, m, d] = input.value.split('-').map(Number);
+            const text = d + ' ' + MONTHS[m - 1] + ' ' + y;
+            const btn = document.getElementById('brief-date-save');
+            btn.disabled = true;
+            try {
+              await A.updateBrief(sbIdOf(), { deadline: text });
+              brief.deadline = text;
+              if (BRIEFS[briefId]) BRIEFS[briefId].deadline = text;
+              const lib = linkedLib();
+              let note = '';
+              if (lib && A.scheduleLibraryScript) {
+                await A.scheduleLibraryScript(lib.id, input.value);
+                note = ' · kalender Library ikut ke-update';
+              } else {
+                note = ' · item Library nggak ketemu, kalender nggak ke-update';
+              }
+              showToast('Tanggal disimpan: ' + text + note + ' ✓');
+              renderBriefDetail(brief);
+            } catch (err) {
+              showToast('Gagal: ' + err.message);
+              btn.disabled = false;
+            }
+          });
+        })();
+
         // per-script actions: vote (multi-admin quorum 3/5)
         document.getElementById('script-actions')?.addEventListener('click', async (e) => {
           const btn = e.target.closest('[data-vote-script]');

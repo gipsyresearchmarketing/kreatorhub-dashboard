@@ -842,6 +842,7 @@
               <div class="stat-num num">—</div>
               <div class="stat-sub">&nbsp;</div>
             </div>
+          </div>
 
           <div class="grid-2" style="gap: var(--gap-lg); margin-bottom: var(--gap-lg);">
             <div class="card chart-card" data-od-id="chart-brand">
@@ -3409,25 +3410,65 @@
       if (!tbody) return;
       const kreators = (A.data.profiles || []).filter(p => p.role === 'kreator');
       if (kreators.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada kreator.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--muted);">Belum ada kreator.</td></tr>`;
         return;
       }
+      const allBriefs   = A.data.briefs   || [];
+      const allProgress = A.data.progress || [];
+      const allPayments = A.data.payments || [];
+
+      // 7 sel per baris, urutannya HARUS sama dengan <thead>:
+      // Kreator | Brand | Brief aktif | Video (Lifetime) | Tingkat approval | Pendapatan | Status
       tbody.innerHTML = kreators.map(p => {
-        const items = A.data.progress.filter(i => i.kreator === p.username);
-        const displayName = p.display_name || p.username;
-        const href = 'screens-admin-kreator-detail.html?kreator=' + encodeURIComponent(p.username);
-        return `<tr data-creator="${escapeHtml(p.username)}" class="kreator-row" style="cursor: pointer;" onclick="window.location.href='${href}'" title="Klik untuk lihat detail kreator">
+        const username = p.username;
+        const displayName = p.display_name || username;
+        const href = 'screens-admin-kreator-detail.html?kreator=' + encodeURIComponent(username);
+
+        const videos  = allProgress.filter(i => i.kreator === username);
+        const myBriefs = allBriefs.filter(b => b.assigned_to === username);
+
+        // Brief aktif = brief yang di-assign ke kreator ini (+ brief dari video yang pernah disubmit)
+        const briefIds = new Set(myBriefs.map(b => b.id));
+        videos.forEach(v => { if (v.brief_id) briefIds.add(v.brief_id); });
+
+        // Brand = brand dari brief/video kreator ini
+        const brands = [...new Set([...myBriefs.map(b => b.brand), ...videos.map(v => v.brand)].filter(Boolean))];
+        const brandCell = brands.length === 0
+          ? '—'
+          : brands.slice(0, 2).map(b => `<span class="brand-tag">${escapeHtml(String(b).toUpperCase())}</span>`).join(' ')
+            + (brands.length > 2 ? ` <span class="brand-count">+${brands.length - 2}</span>` : '');
+
+        // Tingkat approval = disetujui / (disetujui + ditolak). "—" kalau belum ada yang diputusin.
+        const approved = videos.filter(v => v.status === 'approved' || v.status === 'selesai').length;
+        const rejected = videos.filter(v => v.status === 'rejected').length;
+        const decided  = approved + rejected;
+        const rate = decided ? Math.round((approved / decided) * 100) + '%' : '—';
+
+        // Pendapatan = fee yang sudah dibayar; yang belum dibayar ditampilkan kecil di bawahnya
+        const pays = allPayments.filter(x => x.kreator === username);
+        const paid = pays.filter(x => x.status === 'paid').reduce((sum, x) => sum + (Number(x.fee) || 0), 0);
+        const pending = pays.filter(x => x.status !== 'paid').reduce((sum, x) => sum + (Number(x.fee) || 0), 0);
+        const incomeCell = formatRp(paid) + (pending > 0
+          ? `<small style="display: block; color: var(--muted); font-size: 11px;">+ ${formatRp(pending)} menunggu</small>`
+          : '');
+
+        const statusCell = p.is_approved === false
+          ? '<span class="status pending">Menunggu</span>'
+          : '<span class="status approved">Aktif</span>';
+
+        return `<tr data-creator="${escapeHtml(username)}" class="kreator-row" style="cursor: pointer;" onclick="window.location.href='${href}'" title="Klik untuk lihat detail kreator">
           <td>
             <div class="row-creator">
-              <div class="avatar">${avatarFor(p.username, displayName)}</div>
-              <div class="name">${escapeHtml(displayName)}<small>${escapeHtml(p.username)}</small></div>
+              <div class="avatar">${avatarFor(username, displayName)}</div>
+              <div class="name">${escapeHtml(displayName)}<small>${escapeHtml(username)}</small></div>
             </div>
           </td>
-          <td>—</td>
-          <td>${items.length}</td>
-          <td>${items.filter(i => i.status === 'review').length}</td>
-          <td>${items.filter(i => i.status === 'approved').length}</td>
-          <td>${items.filter(i => i.status === 'rejected').length}</td>
+          <td>${brandCell}</td>
+          <td class="num-col">${briefIds.size}</td>
+          <td class="num-col">${videos.length}</td>
+          <td class="num-col">${rate}</td>
+          <td class="num-col">${incomeCell}</td>
+          <td>${statusCell}</td>
         </tr>`;
       }).join('');
     }
@@ -3591,6 +3632,7 @@
               const msg = 'Halo ' + name + ', konten kamu "' + item.title + '" udah di-approve admin Gipsy Group ✓. Cek dashboard buat detailnya ya.';
               openWaNotif(name, prof ? prof.phone : null, msg);
             }
+          } catch (err) {
             A.showToast('Gagal: ' + err.message, 'error');
           } finally {
             modalConfirm.disabled = false;

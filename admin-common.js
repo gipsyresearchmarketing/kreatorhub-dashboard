@@ -470,6 +470,20 @@
   }
 
   // ---- script_library (fitur Library / Kalender Konten) ----
+
+  // "2026-10-22" → "22 Oktober 2026" (format yang dipake kolom briefs.deadline).
+  // Dipakai buat fallback: kalau admin assign script dari library tanpa ngisi field deadline,
+  // tanggal jadwal library-nya otomatis jadi deadline brief biar kreator langsung liat tanggalnya.
+  const ID_MONTHS_LONG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  function isoToDateId(iso) {
+    if (!iso) return null;
+    const m = String(iso).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return null;
+    const mon = ID_MONTHS_LONG[Number(m[2]) - 1];
+    if (!mon) return null;
+    return `${Number(m[3])} ${mon} ${m[1]}`;
+  }
+
   async function createLibraryScript(fields) {
     const id = 'lib-' + (fields.brand || 'brand').toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
     const payload = {
@@ -511,11 +525,14 @@
     // 2) Bikin brief beneran (masuk ke alur Brief & script kreator yang biasa)
     const title = 'Script ' + (item.script_number || item.ref_number || '') + (item.usp ? ' — ' + item.usp : '');
     const meta = item.brief_text || '';
+    // Deadline: utamakan yang admin isi di form. Kalau kosong, fallback ke tanggal jadwal
+    // library — jadi tanggal yang udah di-set di kalender langsung kebawa ke brief kreator.
+    const effectiveDeadline = deadline || isoToDateId(item.scheduled_date) || '—';
     const briefId = await createBrief({
       brand: item.brand,
       title: title.trim() || ('Script ' + item.id),
       meta,
-      deadline: deadline || '—',
+      deadline: effectiveDeadline,
       fee: fee,
       assignedTo: kreator
     });
@@ -557,7 +574,11 @@
     // 2) Update brief yang ke-link dari library ini — assigned_to + deadline/fee kalo diubah
     if (item.brief_id) {
       const briefFields = { assigned_to: kreator };
+      // Sama kayak assign: form kosong → fallback ke jadwal library, biar deadline lama yang
+      // masih '—' keisi tanggalnya otomatis pas reassign.
+      const libDate = isoToDateId(item.scheduled_date);
       if (deadline != null && deadline !== '' && deadline !== '—') briefFields.deadline = deadline;
+      else if (libDate) briefFields.deadline = libDate;
       if (fee != null && fee !== '' && !(Number.isNaN(Number(fee)))) briefFields.fee = Number(fee);
       const briefUpd = await sb.from('briefs').update(briefFields).eq('id', item.brief_id);
       if (briefUpd.error) {

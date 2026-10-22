@@ -484,6 +484,12 @@
     return `${Number(m[3])} ${mon} ${m[1]}`;
   }
 
+  // Deadline brief dianggap "kosong" kalau null / '' / '—' / '-'
+  function isEmptyDeadline(d) {
+    const t = d == null ? '' : String(d).trim();
+    return t === '' || t === '—' || t === '-';
+  }
+
   async function createLibraryScript(fields) {
     const id = 'lib-' + (fields.brand || 'brand').toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
     const payload = {
@@ -509,8 +515,15 @@
 
   async function scheduleLibraryScript(id, scheduledDate) {
     // scheduledDate: 'YYYY-MM-DD' atau null (buat "unschedule" — balikin ke pool belum dijadwalkan)
+    const libItem = (data.library || []).find(l => l.id === id);
     const res = await sb.from('script_library').update({ scheduled_date: scheduledDate || null }).eq('id', id);
     if (res.error) throw new Error('Set jadwal gagal: ' + res.error.message);
+    // Kalau script ini udah di-assign ke kreator, deadline di brief-nya ikut tanggal kalender
+    // (jadi kreator langsung liat deadline-nya). Kalau tanggal dikosongin, deadline brief dibiarin.
+    if (scheduledDate && libItem && libItem.status === 'assigned' && libItem.brief_id) {
+      const bRes = await sb.from('briefs').update({ deadline: isoToDateId(scheduledDate) }).eq('id', libItem.brief_id);
+      if (bRes.error) console.warn('[scheduleLibraryScript] sinkron deadline brief gagal', bRes.error);
+    }
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-schedule', id, scheduledDate } }));
   }
@@ -592,6 +605,30 @@
       detail: { type: 'library-reassign', id, briefId: item.brief_id, kreator }
     }));
     return item.brief_id || null;
+  }
+
+  // Backfill: script yang udah ke-assign dari kemarin-kemarin, deadline brief-nya masih kosong,
+  // tapi di Library udah ada tanggal jadwal → isi deadline brief dari tanggal itu. Aman dipanggil
+  // berkali-kali: cuma nyentuh brief yang deadline-nya kosong, gak nimpa yang udah diisi.
+  async function syncBriefDeadlinesFromLibrary() {
+    const briefsById = {};
+    (data.briefs || []).forEach(b => { briefsById[b.id] = b; });
+    const todo = (data.library || []).filter(l =>
+      l.status === 'assigned' && l.brief_id && l.scheduled_date &&
+      briefsById[l.brief_id] && isEmptyDeadline(briefsById[l.brief_id].deadline)
+    );
+    if (!todo.length) return 0;
+    let n = 0;
+    for (const l of todo) {
+      const r = await sb.from('briefs').update({ deadline: isoToDateId(l.scheduled_date) }).eq('id', l.brief_id);
+      if (r.error) console.warn('[syncBriefDeadlinesFromLibrary] gagal untuk brief', l.brief_id, r.error);
+      else n++;
+    }
+    if (n) {
+      await refresh();
+      document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'brief-deadline-sync', count: n } }));
+    }
+    return n;
   }
 
   async function deleteLibraryScript(id) {
@@ -738,6 +775,7 @@
     scheduleLibraryScript,
     assignLibraryScript,
     reassignLibraryScript,
+    syncBriefDeadlinesFromLibrary,
     updateLibraryScript,
     deleteLibraryScript,
     updateProgress,

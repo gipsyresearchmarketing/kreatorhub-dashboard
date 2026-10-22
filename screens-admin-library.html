@@ -797,6 +797,10 @@
         if (!currentDetailId) return;
         try {
           await A.scheduleLibraryScript(currentDetailId, e.target.value || null);
+          // Sinkronkan juga field "Tanggal / deadline" di form assign, supaya tanggal yang
+          // admin set di kalender langsung kebawa ke brief kreator tanpa harus ngetik ulang.
+          const dl = document.getElementById('assign-deadline');
+          if (dl) dl.value = e.target.value || '';
           showToast(e.target.value ? 'Tanggal jadwal disimpan ✓' : 'Dibalikin ke pool belum dijadwalkan.');
           renderAll();
         } catch (err) {

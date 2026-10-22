@@ -145,12 +145,37 @@
         </div>`;
     }
 
-    function renderPage(kreator, progress, payments, briefs) {
+    function renderPage(kreator, progress, payments, briefs, scripts) {
+      scripts = scripts || [];
       const displayName = kreator.display_name || kreator.username;
       const progCount   = progress.length;
       const paidTotal   = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.fee || 0), 0);
       const pendingTotal = payments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.fee || 0), 0);
-      const brands = Array.from(new Set(progress.map(p => p.brand).filter(Boolean)));
+      // Brief milik kreator ini: yang di-assign ke dia + brief dari video/script yang pernah dia kerjain
+      const briefIds = new Set();
+      const myBriefs = [];
+      briefs.forEach(b => { if (b.assigned_to === kreator.username) { briefIds.add(b.id); myBriefs.push(b); } });
+      progress.concat(scripts).forEach(x => {
+        if (!x.brief_id || briefIds.has(x.brief_id)) return;
+        const b = briefs.find(bb => bb.id === x.brief_id);
+        if (b) { briefIds.add(b.id); myBriefs.push(b); }
+      });
+      const BRIEF_STATUS = {
+        draft:    ['draft',    'Draft'],
+        editing:  ['draft',    'Sedang ditulis'],
+        review:   ['review',   'Siap review'],
+        revisi:   ['revisi',   'Perlu revisi'],
+        approved: ['approved', 'Disetujui'],
+        rejected: ['rejected', 'Ditolak'],
+        selesai:  ['selesai',  'Selesai']
+      };
+      function briefStatusBadge(b) {
+        const sc = scripts.find(x => x.brief_id === b.id);
+        const m = sc ? (BRIEF_STATUS[sc.status] || ['draft', sc.status || '—']) : ['draft', 'Belum ada script'];
+        return `<span class="status ${m[0]}">${escapeHtml(m[1])}</span>`;
+      }
+      const fmtDeadline = (str) => (window.AdminApp && window.AdminApp.fmtDate) ? window.AdminApp.fmtDate(str) : (str || '—');
+      const brands = Array.from(new Set(progress.map(p => p.brand).concat(myBriefs.map(b => b.brand)).filter(Boolean)));
       const initials = initialsFor(kreator.username, displayName);
 
       document.getElementById('page-content').innerHTML = `
@@ -172,9 +197,39 @@
         <!-- STATS RINGKASAN -->
         <div class="card">
           <h2>Ringkasan<small>akumulasi semua brand</small></h2>
+          <div class="meta-row"><span class="meta-label">Total brief</span><span class="meta-value">${myBriefs.length}</span></div>
           <div class="meta-row"><span class="meta-label">Total video</span><span class="meta-value">${progCount}</span></div>
           <div class="meta-row"><span class="meta-label">Total dibayar</span><span class="meta-value">${fmtRp(paidTotal)}</span></div>
           <div class="meta-row"><span class="meta-label">Menunggu bayar</span><span class="meta-value">${fmtRp(pendingTotal)}</span></div>
+        </div>
+
+        <!-- BRIEF -->
+        <div class="card">
+          <h2>Brief<small>${myBriefs.length} total</small></h2>
+          ${myBriefs.length === 0 ? '<div class="empty">Belum ada brief yang di-assign ke kreator ini.</div>' : `
+            <table class="ds-table">
+              <thead>
+                <tr>
+                  <th>Judul brief</th>
+                  <th>Brand</th>
+                  <th>Status</th>
+                  <th class="num-col">Fee</th>
+                  <th class="num-col">Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${myBriefs.map(b => `
+                  <tr>
+                    <td><a class="brief-link" href="screens-admin-brief-detail.html?id=${encodeURIComponent(b.id)}">${escapeHtml(b.title || '—')}</a></td>
+                    <td>${escapeHtml(b.brand || '—')}</td>
+                    <td>${briefStatusBadge(b)}</td>
+                    <td class="num-col">${(b.fee != null && b.fee !== '') ? fmtRp(b.fee) : '—'}</td>
+                    <td class="num-col">${escapeHtml(fmtDeadline(b.deadline || '—'))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
         </div>
 
         <!-- KONTAK -->
@@ -184,33 +239,6 @@
           <div class="meta-row"><span class="meta-label">WhatsApp</span><span class="meta-value">${escapeHtml(kreator.phone || '—')}</span></div>
           <div class="meta-row"><span class="meta-label">Bank / e-wallet</span><span class="meta-value">${escapeHtml(kreator.bank_name || '—')}</span></div>
           <div class="meta-row"><span class="meta-label">Nomor rekening / HP</span><span class="meta-value">${escapeHtml(kreator.bank_account || '—')}</span></div>
-        </div>
-
-        <!-- BRIEF -->
-        <div class="card">
-          <h2>Brief<small>${briefs.length} total · aktif &amp; yang pernah dikerjain</small></h2>
-          ${briefs.length === 0 ? '<div class="empty">Belum ada brief.</div>' : `
-            <table class="ds-table">
-              <thead>
-                <tr>
-                  <th>Judul</th>
-                  <th>Brand</th>
-                  <th>Deadline</th>
-                  <th>Fee</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${briefs.map(b => `
-                  <tr>
-                    <td><a class="brief-link" href="screens-admin-brief-detail.html?id=${encodeURIComponent(b.id)}">${escapeHtml(b.title || '—')}</a></td>
-                    <td>${escapeHtml(b.brand || '—')}</td>
-                    <td>${escapeHtml(b.deadline || '—')}</td>
-                    <td class="num-col">${b.fee != null ? fmtRp(b.fee) : '—'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          `}
         </div>
 
         <!-- VIDEO -->
@@ -309,16 +337,9 @@
         }
         const progress = (A.data.progress || []).filter(p => p.kreator === username);
         const payments = (A.data.payments || []).filter(p => p.kreator === username);
-        const allBriefs = A.data.briefs || [];
-        // Brief yang relevan = (1) di-assign langsung ke kreator + (2) brief_id yang pernah
-        // dikerjain via progress. Logic sama kayak BRIEF AKTIF di screens-admin1.html.
-        const myBriefs = allBriefs.filter(b => b.assigned_to === username);
-        const briefIds = new Set(myBriefs.map(b => b.id));
-        progress.forEach(v => { if (v.brief_id) briefIds.add(v.brief_id); });
-        const briefs = [...briefIds]
-          .map(id => allBriefs.find(b => b.id === id))
-          .filter(Boolean);
-        renderPage(kreator, progress, payments, briefs);
+        const briefs   = A.data.briefs || [];
+        const scripts  = (A.data.scripts || []).filter(sc => sc.kreator === username);
+        renderPage(kreator, progress, payments, briefs, scripts);
       }
 
       if ((A.data.profiles || []).length > 0) {

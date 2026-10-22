@@ -795,12 +795,11 @@
 
       document.getElementById('detail-date').addEventListener('change', async (e) => {
         if (!currentDetailId) return;
+        // Tanggal jadwal yang baru dipilih otomatis jadi isi "Tanggal / deadline" di form assign
+        const assignDl = document.getElementById('assign-deadline');
+        if (assignDl) assignDl.value = e.target.value || '';
         try {
           await A.scheduleLibraryScript(currentDetailId, e.target.value || null);
-          // Sinkronkan juga field "Tanggal / deadline" di form assign, supaya tanggal yang
-          // admin set di kalender langsung kebawa ke brief kreator tanpa harus ngetik ulang.
-          const dl = document.getElementById('assign-deadline');
-          if (dl) dl.value = e.target.value || '';
           showToast(e.target.value ? 'Tanggal jadwal disimpan ✓' : 'Dibalikin ke pool belum dijadwalkan.');
           renderAll();
         } catch (err) {
@@ -823,7 +822,10 @@
       document.getElementById('btn-confirm-assign').addEventListener('click', async () => {
         if (!currentDetailId) return;
         const kreator = document.getElementById('assign-kreator-select').value;
-        const dateIso = document.getElementById('assign-deadline').value; // 'YYYY-MM-DD' atau ''
+        // Kosong di form → pakai tanggal jadwal yang udah ada di kalender
+        const dateIso = document.getElementById('assign-deadline').value
+          || ((A.data.library || []).find(l => l.id === currentDetailId) || {}).scheduled_date
+          || ''; // 'YYYY-MM-DD' atau ''
         const fmtId = (iso) => { const [y, m, d] = iso.split('-').map(Number); return d + ' ' + MONTH_NAMES[m - 1] + ' ' + y; };
         const deadline = dateIso ? fmtId(dateIso) : '';
         const feeRaw = document.getElementById('assign-fee').value.trim();
@@ -1212,6 +1214,14 @@
       document.addEventListener('adminapp:data-changed', renderAll);
 
       renderAll();
+
+      // Backfill sekali tiap buka halaman ini: script yang udah di-assign & udah punya tanggal di
+      // kalender, tapi deadline brief-nya masih kosong → diisi otomatis dari tanggal kalender.
+      if (A.syncBriefDeadlinesFromLibrary) {
+        A.syncBriefDeadlinesFromLibrary()
+          .then(n => { if (n) showToast(n + ' deadline brief disinkronkan dari kalender ✓'); })
+          .catch(err => console.warn('[sync deadline]', err));
+      }
     });
   </script>
 </body>

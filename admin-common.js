@@ -313,6 +313,29 @@
     }).eq('id', progressId);
     if (updRes.error) throw new Error('Update progress gagal: ' + updRes.error.message);
 
+    // 1b) Catat vote di tabel approvals.
+    //     Kenapa: brief detail nampilin counter "Setujui X/N" yang dibaca dari
+    //     voteCounts('video', progressId) → tabel approvals. Path approve dari
+    //     ANTRIAN (recordDecision) dulu ga nulis ke approvals sama sekali, jadi
+    //     video yg udah di-approve dari antrian tetap nampilin "0/0" di brief
+    //     detail. Sekarang vote-nya ikut dicatat biar counter konsisten.
+    //     (decision 'revision' ga bisa disimpan — CHECK constraint approvals cuma
+    //      izinkan 'approve'/'reject'.)
+    if (decision === 'approve' || decision === 'reject') {
+      try {
+        const voteRes = await sb.from('approvals').upsert({
+          target_type: 'video',
+          target_id: progressId,
+          admin_username: session.username,
+          decision: decision,
+          comment: feedback || null
+        }, { onConflict: 'target_type,target_id,admin_username' });
+        if (voteRes.error) console.warn('[recordDecision] approvals upsert gagal:', voteRes.error.message);
+      } catch (e) {
+        console.warn('[recordDecision] approvals upsert error:', e);
+      }
+    }
+
     // 2) Insert history row (snapshot)
     const histId = 'h-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
     const adminName = profile.display_name || profile.username;
@@ -361,6 +384,32 @@
         if (payRes.error) {
           console.warn('[recordDecision] payment upsert gagal', payRes.error);
           // Lanjut, status utama sudah terupdate
+        }
+      }
+
+      // 3b) Approve → supersede video LAIN untuk brief & kreator yang sama.
+      //      Aturan: satu brief = satu video. Begitu satu video di-approve, video
+      //      lain di brief itu (submission ulang / revisi yang masih nunggu) jadi
+      //      basi — tandai 'superseded' supaya gak nongol di antrian review dan
+      //      gak bikin 2 payment untuk 1 brief.
+      if (decision === 'approve' && item.brief_id) {
+        const siblings = (data.progress || []).filter(p =>
+          p.brief_id === item.brief_id &&
+          p.kreator === item.kreator &&
+          p.id !== progressId &&
+          p.status !== 'superseded' &&
+          p.status !== 'approved' &&
+          p.status !== 'selesai'
+        );
+        if (siblings.length) {
+          const supRes = await sb.from('progress')
+            .update({ status: 'superseded' })
+            .in('id', siblings.map(p => p.id));
+          if (supRes.error) {
+            console.warn('[recordDecision] supersede sibling gagal:', supRes.error.message);
+          } else {
+            console.log('[recordDecision] supersede', siblings.length, 'video sibling untuk brief', item.brief_id);
+          }
         }
       }
     }
@@ -484,12 +533,6 @@
     return `${Number(m[3])} ${mon} ${m[1]}`;
   }
 
-  // Deadline brief dianggap "kosong" kalau null / '' / '—' / '-'
-  function isEmptyDeadline(d) {
-    const t = d == null ? '' : String(d).trim();
-    return t === '' || t === '—' || t === '-';
-  }
-
   async function createLibraryScript(fields) {
     const id = 'lib-' + (fields.brand || 'brand').toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
     const payload = {
@@ -515,15 +558,8 @@
 
   async function scheduleLibraryScript(id, scheduledDate) {
     // scheduledDate: 'YYYY-MM-DD' atau null (buat "unschedule" — balikin ke pool belum dijadwalkan)
-    const libItem = (data.library || []).find(l => l.id === id);
     const res = await sb.from('script_library').update({ scheduled_date: scheduledDate || null }).eq('id', id);
     if (res.error) throw new Error('Set jadwal gagal: ' + res.error.message);
-    // Kalau script ini udah di-assign ke kreator, deadline di brief-nya ikut tanggal kalender
-    // (jadi kreator langsung liat deadline-nya). Kalau tanggal dikosongin, deadline brief dibiarin.
-    if (scheduledDate && libItem && libItem.status === 'assigned' && libItem.brief_id) {
-      const bRes = await sb.from('briefs').update({ deadline: isoToDateId(scheduledDate) }).eq('id', libItem.brief_id);
-      if (bRes.error) console.warn('[scheduleLibraryScript] sinkron deadline brief gagal', bRes.error);
-    }
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-schedule', id, scheduledDate } }));
   }
@@ -605,30 +641,6 @@
       detail: { type: 'library-reassign', id, briefId: item.brief_id, kreator }
     }));
     return item.brief_id || null;
-  }
-
-  // Backfill: script yang udah ke-assign dari kemarin-kemarin, deadline brief-nya masih kosong,
-  // tapi di Library udah ada tanggal jadwal → isi deadline brief dari tanggal itu. Aman dipanggil
-  // berkali-kali: cuma nyentuh brief yang deadline-nya kosong, gak nimpa yang udah diisi.
-  async function syncBriefDeadlinesFromLibrary() {
-    const briefsById = {};
-    (data.briefs || []).forEach(b => { briefsById[b.id] = b; });
-    const todo = (data.library || []).filter(l =>
-      l.status === 'assigned' && l.brief_id && l.scheduled_date &&
-      briefsById[l.brief_id] && isEmptyDeadline(briefsById[l.brief_id].deadline)
-    );
-    if (!todo.length) return 0;
-    let n = 0;
-    for (const l of todo) {
-      const r = await sb.from('briefs').update({ deadline: isoToDateId(l.scheduled_date) }).eq('id', l.brief_id);
-      if (r.error) console.warn('[syncBriefDeadlinesFromLibrary] gagal untuk brief', l.brief_id, r.error);
-      else n++;
-    }
-    if (n) {
-      await refresh();
-      document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'brief-deadline-sync', count: n } }));
-    }
-    return n;
   }
 
   async function deleteLibraryScript(id) {
@@ -775,7 +787,6 @@
     scheduleLibraryScript,
     assignLibraryScript,
     reassignLibraryScript,
-    syncBriefDeadlinesFromLibrary,
     updateLibraryScript,
     deleteLibraryScript,
     updateProgress,
@@ -792,6 +803,9 @@
     BRAND_TOTAL_ADMINS,
     getBrandQuorum,
     getBrandTotalAdmins,
+    // Progress row yang masih "aktif" — yang statusnya 'superseded' (versi video
+    // lama yang udah diganti revisi) harus disembunyiin dari semua list/count.
+    activeProgress: () => (data.progress || []).filter(p => p.status !== 'superseded'),
     getProofs,
     uploadPaymentProof,
     deletePaymentProof,
@@ -1014,6 +1028,48 @@
   document.addEventListener('adminapp:data-changed', () => {
     setTimeout(hydrateProfile, 0);
   });
+
+  // ---- auto-backfill deadline dari jadwal library (sudah ke-assign sebelumnya) ----
+  //
+  // Kenapa perlu: sebelum 2026-10-22, assignLibraryScript() cuma ngeirim deadline dari
+  // form "Tanggal / deadline". Kalau form kosong padahal library item punya scheduled_date,
+  // brief ke-create dengan deadline '—' → kreator nggak liat tanggal. Fix assign/reassign
+  // sekarang sudah fallback, tapi brief yang SUDAH ke-create nggak ikut ke-backfill.
+  //
+  // Cara kerja: cari brief yang (a) linked ke script_library item via brief_id,
+  // (b) library item punya scheduled_date, (c) brief.deadline masih kosong/'—'.
+  // Yang kena di-UPDATE deadline-nya. Idempotent — kalau dijalankan lagi, filter (c)
+  // bikin 0 baris, jadi nggak ada write berulang.
+  try {
+    const missing = [];
+    for (const lib of (data.library || [])) {
+      if (!lib.brief_id || !lib.scheduled_date) continue;
+      const brief = (data.briefs || []).find(b => b.id === lib.brief_id);
+      if (!brief) continue;
+      if (brief.deadline != null && String(brief.deadline).trim() !== '' && brief.deadline !== '—') continue;
+      const iso = isoToDateId(lib.scheduled_date);
+      if (iso) missing.push({ id: brief.id, deadline: iso });
+    }
+    if (missing.length) {
+      console.log('[admin-common] auto-backfill deadline:', missing.length, 'brief');
+      // Jalankan paralel; gagal di-swalllow biar nggak nge-block halaman.
+      await Promise.all(missing.map(m =>
+        sb.from('briefs').update({ deadline: m.deadline }).eq('id', m.id)
+          .then(res => { if (res.error) console.warn('[auto-backfill] gagal', m.id, res.error.message); })
+          .catch(err => console.warn('[auto-backfill] error', m.id, err))
+      ));
+      // Refresh sekali biar A.data.briefs konsisten dengan yang baru ditulis —
+      // halaman yang nge-render dari cache nggak akan lihat deadline lama.
+      await refresh();
+      document.dispatchEvent(new CustomEvent('adminapp:data-changed', {
+        detail: { type: 'brief-deadline-backfill', count: missing.length }
+      }));
+    } else {
+      console.log('[admin-common] auto-backfill deadline: tidak ada yang perlu di-backfill');
+    }
+  } catch (e) {
+    console.warn('[admin-common] auto-backfill deadline gagal:', e);
+  }
 
   document.dispatchEvent(new CustomEvent('adminapp:ready', { detail: { data } }));
 })();

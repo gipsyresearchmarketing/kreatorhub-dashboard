@@ -2500,7 +2500,16 @@
         // Filter by brand_access (admin brand) atau semua (super admin)
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const access = (A && A.brandAccess && A.brandAccess()) || [];
-        const payments = isSuper ? allPayments : allPayments.filter(p => access.indexOf(p.brand) >= 0);
+        // Payment yang progress-nya udah 'superseded' (video versi lama yg diganti
+        // revisi) disembunyiin — kalau ga, satu brief nampilin 2 baris fee dengan
+        // title sama (video_title duplikat) di panel ini.
+        const supersededIds = new Set(
+          ((A && A.data && A.data.progress) || [])
+            .filter(p => p.status === 'superseded')
+            .map(p => 'pay-' + p.id)
+        );
+        const payments = (isSuper ? allPayments : allPayments.filter(p => access.indexOf(p.brand) >= 0))
+          .filter(p => !supersededIds.has(p.id));
         const profiles = (A && A.data && A.data.profiles) || [];
         const nameOf = (username) => {
           const p = profiles.find(pr => pr.username === username);
@@ -2586,13 +2595,17 @@
       function renderFeeTable() {
         const q = (feeSearch?.value || '').toLowerCase();
         const statusFilter = feeFilterStatus?.value;
-        // filter: search + status + top scope toggle (brand/creator)
+        // filter: search + status + PERIODE + top scope toggle (brand/creator).
+        // filter PERIODE dulu kali ini kelewatan — stat card pakai getFiltered()
+        // (ada period-nya) tapi tabel nggak, jadi pilih "7 hari terakhir" cuma
+        // ngaruh angka di atas, isi tabelnya tetep nampilin semua (5 minggu lalu, dll).
         const filtered = FEE_DATA.filter(r => {
           const hay = (r.title + ' ' + r.creatorNm + ' ' + r.brand + ' ' + r.submittedText).toLowerCase();
           const okQ  = !q || hay.includes(q);
           const okS  = !statusFilter || r.status === statusFilter;
+          const okP  = inPeriod(r.daysAgo, feePeriod);
           const okSc = feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal);
-          return okQ && okS && okSc;
+          return okQ && okS && okP && okSc;
         });
         feeTableBody.innerHTML = '';
         filtered.forEach(r => feeTableBody.appendChild(renderFeeRow(r)));
@@ -2602,12 +2615,15 @@
           if (feeScope === 'brand')        label = `Brand: ${feeScopeVal}`;
           else if (feeScope === 'creator') label = `Kreator: ${feeScopeVal}`;
           else                              label = 'Semua brand & kreator';
+          // Total = seluruh entri dalam scope (tanpa filter periode) — biar label
+          // nunjukin "5 dari 27 entri" waktu periode/search/status aktif.
           const totalInScope = FEE_DATA.filter(r =>
             feeScope === 'all' || (feeScope === 'brand' && r.brand === feeScopeVal) || (feeScope === 'creator' && r.creator === feeScopeVal)
           ).length;
+          const periodNote = feePeriod !== 'all' ? ` · ${feePeriod} hari terakhir` : '';
           feeTableScope.textContent = filtered.length === totalInScope
-            ? `Menampilkan ${filtered.length} entri · ${label}`
-            : `Menampilkan ${filtered.length} dari ${totalInScope} entri · ${label}`;
+            ? `Menampilkan ${filtered.length} entri · ${label}${periodNote}`
+            : `Menampilkan ${filtered.length} dari ${totalInScope} entri · ${label}${periodNote}`;
         }
         if (feeEmpty) feeEmpty.style.display = filtered.length === 0 ? '' : 'none';
       }
@@ -2974,7 +2990,7 @@
         const cutoff = Date.now() - 30 * 86400000;
         const counts = {};
         brands.forEach(b => counts[b] = 0);
-        (A.data.progress || []).forEach(p => {
+        (A.activeProgress ? A.activeProgress() : (A.data.progress || [])).forEach(p => {
           if (brands.indexOf(p.brand) < 0) return;
           if (p.status !== 'approved' && p.status !== 'selesai') return;
           if (p.updated_at && new Date(p.updated_at).getTime() < cutoff) return;
@@ -3414,7 +3430,7 @@
         return;
       }
       const allBriefs   = A.data.briefs   || [];
-      const allProgress = A.data.progress || [];
+      const allProgress = (A.activeProgress ? A.activeProgress() : (A.data.progress || []));
       const allPayments = A.data.payments || [];
 
       // 7 sel per baris, urutannya HARUS sama dengan <thead>:
@@ -3490,7 +3506,7 @@
       const access = (A && A.brandAccess && A.brandAccess()) || [];
       const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
       const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
-      const progress = A.data.progress || [];
+      const progress = (A.activeProgress ? A.activeProgress() : (A.data.progress || []));
       const pays     = A.data.payments || [];
       const approved = progress.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
       // Map payment_id -> { fee, status } dari payments (source of truth)
@@ -3526,7 +3542,7 @@
 
     function renderTopStats(A) {
       const profiles   = A.data.profiles || [];
-      const progress   = A.data.progress || [];
+      const progress   = (A.activeProgress ? A.activeProgress() : (A.data.progress || []));
       const scripts    = A.data.scripts  || [];
       const briefs     = A.data.briefs   || [];
 
@@ -3567,7 +3583,7 @@
     }
 
     function renderMetricsStats(A) {
-      const progress = A.data.progress || [];
+      const progress = (A.activeProgress ? A.activeProgress() : (A.data.progress || []));
       const payments = A.data.payments || [];
 
       // Brand scope (sama seperti renderTopStats biar konsisten)

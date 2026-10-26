@@ -255,17 +255,48 @@
   }
 
   // Submit progress row baru. Payload: { title, brand, status, video_url?, video_storage_path?, thumbnail_path?, brief_id?, meta? }
+  //
+  // PENTING: kalau ini revisi (payload.supersedeId diisi = progress row lama yang
+  // diganti), row lama ditandai 'superseded' DULUAN. Tanpa ini, row lama tetap
+  // status 'revisi' dan masih nongol di antrian review admin — admin bisa approve
+  // row basi itu, jadinya satu brief punya 2 progress row dengan title sama →
+  // 2 payment di fee panel (video_title duplikat).
   async function submitProgress(payload) {
     if (!session || !session.username) throw new Error('Session kreator tidak ditemukan');
     const newId = 'p-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    const payloadClean = Object.assign({}, payload);
+    const supersedeId = payloadClean.supersedeId;
+    delete payloadClean.supersedeId;
     const insertRes = await sb.from('progress').insert(Object.assign({
       id: newId,
       kreator: session.username,
       updated_at: new Date().toISOString()
-    }, payload));
+    }, payloadClean));
     if (insertRes.error) throw new Error('Gagal simpan progress: ' + insertRes.error.message);
+    // Tandai row lama superseded (best-effort — kalau gagal, row lama tetap ada
+    // tapi minimal statusnya bukan 'revisi' lagi jadi ga ke-priority masuk antrian).
+    if (supersedeId) {
+      const supRes = await sb.from('progress')
+        .update({ status: 'superseded' })
+        .eq('id', supersedeId)
+        .eq('kreator', session.username);
+      if (supRes.error) console.warn('[submitProgress] supersede gagal', supersedeId, supRes.error.message);
+    }
     await refresh();
     return newId;
+  }
+
+  // Tandai satu progress row sebagai superseded (dipakai kalau admin/kreator
+  // secara manual menggeser video ke versi baru tanpa insert baru).
+  async function supersedeProgress(id) {
+    if (!session || !session.username) throw new Error('Session kreator tidak ditemukan');
+    const res = await sb.from('progress')
+      .update({ status: 'superseded' })
+      .eq('id', id)
+      .eq('kreator', session.username);
+    if (res.error) throw new Error('Gagal menandai video lama: ' + res.error.message);
+    await refresh();
+    return true;
   }
 
   // ---- save profile (display_name, phone, email, bank_name, bank_account) ----
@@ -305,6 +336,10 @@
     saveScript,
     uploadFile,
     submitProgress,
+    supersedeProgress,
+    // Progress row yang masih aktif — yang 'superseded' (versi lama yg udah
+    // diganti revisi) disembunyiin dari semua list/count.
+    activeProgress: () => (data.progress || []).filter(p => p.status !== 'superseded'),
     saveProfile,
     getProofs: (paymentId) => (data.paymentProofs || []).filter(p => p.payment_id === paymentId),
     getProofDownloadUrl: async (filePath, expiresIn) => {

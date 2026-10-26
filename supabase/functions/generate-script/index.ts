@@ -1,5 +1,6 @@
-// Edge Function: generate-script (single-file version for Dashboard Editor)
-// Memanggil Google Gemini 2.0 Flash untuk generate script Hook/Body/CTA.
+// Edge Function: generate-script
+// Memanggil Groq (Llama 3.3 70B) untuk generate script Hook/Body/CTA.
+// OpenAI-compatible chat completions API, free tier (30 req/min, no card).
 //
 // Input  (POST JSON):
 //   - brand:        string (required)
@@ -8,15 +9,20 @@
 //   - briefText:    string (optional)
 //
 // Output (JSON):
-//   - rows: [{ scene: 'Hook'|'Body'|'CTA', script: string }, ...]
+//   - rows: [{ scene: 'Hook'|'Body'|'CTA', script: string }, ...]  (3 rows)
 //
-// ENV yang dibutuhin: GEMINI_API_KEY (di-set di Supabase Dashboard → Secrets)
+// ENV:
+//   - GROQ_API_KEY   (required) — set di Supabase Dashboard → Secrets
+//   - GROQ_MODEL     (optional, default: "llama-3.3-70b-versatile")
+//                     Alternatif cepet: "llama-3.1-8b-instant"
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const GROQ_MODEL = Deno.env.get("GROQ_MODEL") ?? "llama-3.1-8b-instant";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // ====== Brand voice guide (inlined biar single-file) ======
 const BRAND_VOICES: Record<string, string> = {
-  'Gipsy Research': `
+  "Gipsy Research": `
 TONE & PERSONALITI:
 - Bicara kayak senior researcher yang helpful, bukan profesor kaku
 - Academic tapi relatable — istilah riset boleh dipake asal langsung dikasih contoh/arti
@@ -49,9 +55,12 @@ JANGAN:
 - Emoji berlebihan di body
 - Klaim palsu atau overpromise
 `,
-  'Jamuzen': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
-  'Convictio.id': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
-  'CalmadeAI': `[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]`,
+  "Jamuzen":
+    "[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]",
+  "Convictio.id":
+    "[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]",
+  "CalmadeAI":
+    "[Brand voice guide dalam tahap pengembangan — sementara AI generate pake tone default conversational-academic Indonesia yang helpful & approachable.]",
 };
 
 const DEFAULT_VOICE = `
@@ -67,135 +76,150 @@ TONE DEFAULT (kalo brand voice guide belum ready):
 function getVoiceFor(brand: string): string {
   const voice = BRAND_VOICES[brand];
   if (!voice) return DEFAULT_VOICE;
-  if (voice.includes('dalam tahap pengembangan')) return DEFAULT_VOICE;
+  if (voice.includes("dalam tahap pengembangan")) return DEFAULT_VOICE;
   return voice;
 }
 
-// ====== System prompt ======
-const SYSTEM_PROMPT = `Lo adalah AI copywriter Indonesia untuk konten video pendek (TikTok/Reels, ~30-60 detik).
-
-ATURAN KERAS (WAJIB DIIKUTI):
-- Output HARUS JSON valid dengan struktur: { "rows": [ { "scene": "Hook"|"Body"|"CTA", "script": "..." }, ... ] }
-- WAJIB ada tepat 3 baris: Hook, Body, CTA. Jangan lebih, jangan kurang.
-- Hook: 1 baris, max 15 kata, punchy, bikin orang berhenti scroll
-- Body: 2-4 kalimat (boleh pake newline sebagai pemisah), total ~50-80 kata, value konkret & actionable
-- CTA: 1 baris, max 12 kata, soft, natural, value exchange jelas
-- Bahasa Indonesia, gunakan "kamu" bukan "Anda"
-- Total panjang script cukup untuk ~30-45 detik video
-
-BRAND VOICE GUIDE:
-{VOICE}
-
-JANGAN:
-- Output teks lain di luar JSON (jangan ada intro/outro/penjelasan)
-- Pakai emoji berlebihan (boleh 1-2 di CTA kalo pas, jangan lebih)
-- Klaim palsu atau overpromise
-- Bahasa Inggris (kecuali istilah riset/scientific yang umum dipake di Indonesia)
-- Bahasa formal/kaku kayak buku teks
-
-Kalo USP yang dikasih kurang jelas, tetep generate dengan asumsi terbaik dan kasih Hook yg relate.`;
-
-function extractJson(text: string): unknown {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (fenced) return JSON.parse(fenced[1]);
-  const innerFence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (innerFence) return JSON.parse(innerFence[1]);
-  return JSON.parse(trimmed);
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-// ====== Handler ======
+// Kadang model ngebalutin JSON di ```json ... ```, strip.
+function extractJson(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (fenced) return fenced[1];
+  const innerFence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (innerFence) return innerFence[1];
+  return trimmed;
+}
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (req.method !== "POST") {
+    return json({ error: "Method not allowed" }, 405);
   }
 
   try {
-    const apiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!apiKey) {
-      throw new Error('Server belum dikonfigurasi: GEMINI_API_KEY belum di-set di Supabase secrets.');
+    if (!GROQ_API_KEY) {
+      return json(
+        { error: "Server belum dikonfigurasi: GROQ_API_KEY belum di-set di Supabase secrets." },
+        500,
+      );
     }
 
-    const body = await req.json();
-    const { brand, usp, funnelStage, briefText } = body;
-
-    if (!brand || typeof brand !== 'string') {
-      throw new Error('Field "brand" wajib diisi.');
-    }
-    if (!usp || typeof usp !== 'string' || !usp.trim()) {
-      throw new Error('Field "usp" wajib diisi.');
+    const { brand, usp, funnelStage, briefText } = await req.json();
+    if (!brand || typeof brand !== "string") return json({ error: "Field 'brand' wajib diisi." }, 400);
+    if (!usp || typeof usp !== "string" || !usp.trim()) {
+      return json({ error: "Field 'usp' wajib diisi." }, 400);
     }
 
     const voice = getVoiceFor(brand);
-    const systemPrompt = SYSTEM_PROMPT.replace('{VOICE}', voice);
+
+    // System prompt yang strict biar output selalu 3 row valid
+    const systemPrompt = `Kamu AI copywriter Indonesia untuk konten video pendek (TikTok/Reels, ~30-45 detik).
+
+OUTPUT FORMAT (WAJIB PATUH):
+- Output HARUS JSON valid TANPA teks lain di luar JSON (no intro, no outro, no markdown)
+- Struktur: { "rows": [ { "scene": "Hook"|"Body"|"CTA", "script": "..." }, ... ] }
+- TEPAT 3 elemen di array "rows" dengan scene persis: "Hook", "Body", "CTA" (case-sensitive, urutan Hook → Body → CTA)
+
+ATURAN PER SCENE:
+- Hook: 1 baris, MAKSIMAL 15 kata, punchy, bikin orang berhenti scroll dalam 3 detik pertama
+- Body: 2-4 kalimat, total ~50-80 kata, value konkret & actionable (step atau contoh nyata)
+- CTA: 1 baris, MAKSIMAL 12 kata, soft, natural, ada value exchange jelas
+
+BAHASA:
+- 100% Bahasa Indonesia, pake "kamu" (BUKAN "Anda")
+- Hindari emoji (boleh 1 di CTA kalo pas)
+
+BRAND VOICE GUIDE:
+${voice}
+
+LARANGAN:
+- Output teks lain di luar JSON (jangan ada "Berikut script..." atau "Tentu, ini...")
+- Klaim palsu / overpromise
+- Bahasa Inggris (kecuali istilah ilmiah umum di Indonesia)
+- Bahasa formal kayak buku teks
+
+Kalo USP kurang jelas, tetep generate dengan asumsi terbaik dan kasih Hook yang relate ke audience brand.`;
 
     const userParts: string[] = [];
     userParts.push(`Brand: ${brand}`);
     if (funnelStage && funnelStage.trim()) userParts.push(`Funnel stage: ${funnelStage.trim()}`);
     userParts.push(`USP: ${usp.trim()}`);
     if (briefText && briefText.trim()) userParts.push(`\nBrief dari admin:\n${briefText.trim()}`);
-    userParts.push('\nGenerate script untuk konten video pendek.');
-    const userPrompt = userParts.join('\n');
+    userParts.push("\nGenerate script untuk konten video pendek, sesuai format di system prompt.");
+    const userPrompt = userParts.join("\n");
 
-    const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(GROQ_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 800,
-          responseMimeType: 'application/json',
-        },
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.8,
+        max_tokens: 1500,
       }),
     });
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      throw new Error(`Gemini API error (${geminiRes.status}): ${errText.slice(0, 300)}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      const meta = `[model=${GROQ_MODEL}, key=...${GROQ_API_KEY.slice(-4)}]`;
+      console.error("Groq error", res.status, meta, errText);
+      return json({ error: `Groq ${res.status} ${meta}: ${errText.slice(0, 300)}` }, 502);
     }
 
-    const result = await geminiRes.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Gemini response kosong / format salah');
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) {
+      const reason = data?.choices?.[0]?.finish_reason ?? "unknown";
+      return json({ error: `Groq nggak ngasih output (${reason})` }, 502);
+    }
 
-    let parsed: any;
+    let parsed: { rows?: Array<{ scene?: string; script?: string }> };
     try {
-      parsed = extractJson(text);
-    } catch (parseErr) {
-      throw new Error('Output AI bukan JSON valid. Raw: ' + text.slice(0, 200));
+      parsed = JSON.parse(extractJson(text));
+    } catch {
+      return json({ error: "Output AI bukan JSON valid. Raw: " + text.slice(0, 200) }, 502);
     }
 
     if (!parsed?.rows || !Array.isArray(parsed.rows)) {
-      throw new Error('Output AI gak ada field "rows" / bukan array. Raw: ' + text.slice(0, 200));
+      return json({ error: "Output AI gak ada field 'rows' / bukan array. Raw: " + text.slice(0, 200) }, 502);
     }
 
-    const scenes = parsed.rows.map((r: any) => (r.scene || '').toLowerCase());
-    if (!scenes.some((s: string) => s.includes('hook'))) throw new Error('Output AI gak ada baris Hook');
-    if (!scenes.some((s: string) => s.includes('body'))) throw new Error('Output AI gak ada baris Body');
-    if (!scenes.some((s: string) => s.includes('cta'))) throw new Error('Output AI gak ada baris CTA');
+    const scenes = parsed.rows.map((r) => (r.scene ?? "").toLowerCase());
+    if (!scenes.some((s) => s.includes("hook"))) return json({ error: "Output AI gak ada baris Hook" }, 502);
+    if (!scenes.some((s) => s.includes("body"))) return json({ error: "Output AI gak ada baris Body" }, 502);
+    if (!scenes.some((s) => s.includes("cta"))) return json({ error: "Output AI gak ada baris CTA" }, 502);
 
-    return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const safe = parsed.rows.slice(0, 3).map((r) => ({
+      scene: (r.scene ?? "").toString(),
+      script: (r.script ?? "").toString().trim(),
+    }));
+
+    return json({ rows: safe });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error(err);
+    return json({ error: message }, 500);
   }
 });

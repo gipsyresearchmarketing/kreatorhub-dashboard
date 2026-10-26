@@ -132,7 +132,7 @@
 
       function renderProgress() {
         progressListEl.innerHTML = '';
-        let items = A.data.progress.filter(p => A.userBrands.includes(p.brand));
+        let items = (A.activeProgress ? A.activeProgress() : (A.data.progress || [])).filter(p => A.userBrands.includes(p.brand));
         if (currentBrandFilter !== 'all')   items = items.filter(p => p.brand === currentBrandFilter);
         if (currentStatusFilter !== 'all')  items = items.filter(p => p.status === currentStatusFilter);
         // Period filter: pakai updated_at (timestamp asli) — parseDaysAgo(meta) ga

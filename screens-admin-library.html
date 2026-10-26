@@ -231,7 +231,7 @@
         <div class="ai-panel-form">
           <div class="ai-panel-meta">
             <div>
-              <select class="select" id="ai-brand" style="width: 100%;">
+              <select class="select" id="ai-brand" data-brand-select style="width: 100%;">
                 <option value="Gipsy Research">Gipsy Research</option>
                 <option value="Jamuzen">Jamuzen</option>
                 <option value="Convictio.id">Convictio.id</option>
@@ -418,7 +418,7 @@
       <div class="form-row-2">
         <div class="field">
           <label for="add-brand">Brand</label>
-          <select class="select" id="add-brand">
+          <select class="select" id="add-brand" data-brand-select>
             <option value="Gipsy Research">Gipsy Research</option>
             <option value="Jamuzen">Jamuzen</option>
             <option value="Convictio.id">Convictio.id</option>
@@ -632,11 +632,25 @@
         });
       }
 
+      // Brand yang boleh diakses admin ini: super admin = semua, selain itu = brand_access.
+      // Intersection dengan filter chip, jadi admin Gipsy-only nggak bisa lihat brand lain
+      // walau klik chip-nya atau currentBrand = 'all'.
+      function allowedBrands() {
+        if (A.isSuperAdmin && A.isSuperAdmin()) return null; // null = semua brand
+        const access = (A.brandAccess && A.brandAccess()) || [];
+        return access.slice();
+      }
       function libraryItems() {
-        return (A.data.library || []).filter(l => currentBrand === 'all' || l.brand === currentBrand);
+        const allowed = allowedBrands();
+        return (A.data.library || []).filter(l => {
+          if (allowed && allowed.indexOf(l.brand) < 0) return false; // di luar brand_access
+          if (currentBrand !== 'all' && l.brand !== currentBrand) return false; // filter chip
+          return true;
+        });
       }
 
       function renderAll() {
+        applyBrandChipVisibility();
         renderCalendar();
         renderUnscheduledPool();
       }
@@ -1218,12 +1232,43 @@
       });
 
       // ---- Brand filter ----
+      // Admin non-super: sembunyiin chip brand di luar brand_access-nya, biar dia nggak
+      // bisa (dan nggak kelihatan seolah-olah bisa) filter ke brand lain.
+      function applyBrandChipVisibility() {
+        const allowed = allowedBrands();
+        document.querySelectorAll('#brand-chips .brand-chip').forEach(c => {
+          const b = c.dataset.brand;
+          if (b === 'all') return;
+          const blocked = allowed && allowed.indexOf(b) < 0;
+          c.style.display = blocked ? 'none' : '';
+        });
+        // Kalau currentBrand sekarang di-block (mis. state lama dari session sebelumnya),
+        // balikin ke 'all' supaya nggak nge-render kosong tanpa sebab.
+        if (allowed && currentBrand !== 'all' && allowed.indexOf(currentBrand) < 0) {
+          currentBrand = 'all';
+          document.querySelectorAll('#brand-chips .brand-chip').forEach(c => c.classList.toggle('active', c.dataset.brand === 'all'));
+        }
+        // Sama untuk <select> brand di form "Tambah script" & panel AI: sembunyiin option yang
+        // di luar brand_access. Kalau cuma 1 option yang tersisa, itu otomatis jadi default.
+        document.querySelectorAll('select[data-brand-select]').forEach(sel => {
+          const opts = Array.from(sel.options);
+          opts.forEach(o => { o.hidden = !!(allowed && allowed.indexOf(o.value) < 0); });
+          if (allowed && allowed.length) {
+            const visible = opts.find(o => !o.hidden);
+            if (visible) sel.value = visible.value;
+          }
+        });
+      }
+
       document.getElementById('brand-chips').addEventListener('click', (e) => {
         const chip = e.target.closest('.brand-chip');
         if (!chip) return;
+        const b = chip.dataset.brand;
+        const allowed = allowedBrands();
+        if (allowed && b !== 'all' && allowed.indexOf(b) < 0) return; // guard: klik chip terlarang
         document.querySelectorAll('#brand-chips .brand-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
-        currentBrand = chip.dataset.brand;
+        currentBrand = b;
         renderAll();
       });
 

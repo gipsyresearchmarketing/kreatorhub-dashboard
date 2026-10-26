@@ -31,3 +31,6 @@ npm-debug.log*
 # build artifacts
 dist/
 build/
+# brief klien (konten internal, jangan di-commit — repo ini public)
+brief_kol_gipsy_100langkah.docx
+*.docx

@@ -238,7 +238,9 @@
       // Visibility per kreator (sama kayak screens-brief.html): cuma brief assigned_to=me atau null
       const me = A.session && A.session.username;
       const visibleBriefs = (briefs || []).filter(b => !b.assigned_to || b.assigned_to === me);
-      const progress = A.data.progress;
+      // Progress row yang 'superseded' (versi video lama yg udah diganti revisi)
+// disembunyiin — biar kreator nggak liat 2 video untuk 1 brief.
+      const progress = (A.activeProgress ? A.activeProgress() : (A.data.progress || []));
       const history = A.data.history;
       // Normalisasi payments: Supabase kasih snake_case + numeric bisa string + ad_spend/gross_revenue null.
       // Coerce ke number (hindari NaN) + map ke camelCase yang dipakai kode dashboard.

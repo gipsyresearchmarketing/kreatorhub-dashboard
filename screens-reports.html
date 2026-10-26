@@ -837,7 +837,7 @@
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
         const allProfiles = (A && A.data && A.data.profiles || []).filter(p => p.role === 'kreator');
-        const allProgress = (A && A.data && A.data.progress) || [];
+        const allProgress = (A && A.activeProgress) ? A.activeProgress() : ((A && A.data && A.data.progress) || []);
         // Scope: kalau admin brand, hanya hitung kreator yang punya progress di brand-nya
         let profiles = allProfiles;
         let progress = allProgress;
@@ -922,7 +922,7 @@
         const access = (A && A.brandAccess && A.brandAccess()) || [];
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
-        const prog = (A && A.data && A.data.progress) || [];
+        const prog = (A && A.activeProgress) ? A.activeProgress() : ((A && A.data && A.data.progress) || []);
         const pays = (A && A.data && A.data.payments) || [];
         // Approved videos (status approved / selesai), brand-scoped
         const approvedProg = prog.filter(p => inScope(p.brand) && (p.status === 'approved' || p.status === 'selesai'));
@@ -1076,7 +1076,7 @@
         const isSuper = A && A.isSuperAdmin && A.isSuperAdmin();
         const inScope = (brand) => isSuper || access.indexOf(brand) >= 0;
         const profiles = (A && A.data && A.data.profiles) || [];
-        const progress = (A && A.data && A.data.progress) || [];
+        const progress = (A && A.activeProgress) ? A.activeProgress() : ((A && A.data && A.data.progress) || []);
         const pays     = (A && A.data && A.data.payments) || [];
         const briefs   = (A && A.data && A.data.briefs) || [];
 
@@ -1209,7 +1209,7 @@
       // Helper: jalankan render kalo A udah siap, atau tunggu event
       function initReportRender() {
         const A = window.AdminApp;
-        const prog = A && A.data ? (A.data.progress || []) : [];
+        const prog = A && A.activeProgress ? A.activeProgress() : (A && A.data ? (A.data.progress || []) : []);
         const hist = A && A.data ? (A.data.history || []) : [];
         const pays = A && A.data ? (A.data.payments || []) : [];
         const briefs = A && A.data ? (A.data.briefs || []) : [];

@@ -812,7 +812,7 @@
         // brief LAIN ikut nongol di list ini kalo judulnya mirip (mis. "Clarissa",
         // "Clarissa 2", "Clarissa 3" → semuanya muncul di tiap brief). Akibatnya
         // video "pertama" keliatan ngikut & nama video berulang. Sekarang cukup brief_id.
-        const relatedProgress = A.data.progress.filter(p => p.brief_id === briefId);
+        const relatedProgress = (A.activeProgress ? A.activeProgress() : A.data.progress).filter(p => p.brief_id === briefId);
 
         // Map progress.status → brief.videos[].status (paid/pending)
         function statusForVideo(p) {

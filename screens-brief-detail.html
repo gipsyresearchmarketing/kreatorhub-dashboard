@@ -387,16 +387,31 @@
       // (script & video independen). Admin bisa pre-fill script, kreator tinggal upload video.
       function renderUploadCard(brief, scriptStatus) {
         const hasPreFilledScript = !!scriptStatus; // ada row script (status apapun)
-        // Cek apakah sudah ada progress row untuk brief ini (kreator ini)
-        const existing = (A.data.progress || []).find(p =>
+        // SEMUA progress row untuk brief ini (kreator ini) — termasuk versi lama yang
+        // udah diganti revisi. Penting: kita cek SEMUA row, bukan cuma yang terbaru,
+        // karena kegedean "video kedua" itu karena row lama (approved/selesai) nggak
+        // pernah dicek — cuma row terbaru yg dicek.
+        const allVideoRows = (A.data.progress || []).filter(p =>
           p.brief_id === brief.id && p.kreator === A.session.username
         );
+        // Row video AKTIF = yang terbaru dan belum superseded (versi video yang
+        // lagi berlaku, atau yang lagiunggu admin review).
+        const activeRows = allVideoRows.filter(p => p.status !== 'superseded');
+        const existing = activeRows.slice().sort((a, b) =>
+          new Date(b.updated_at || 0) - new Date(a.updated_at || 0)
+        )[0] || null;
         // Hitung nomor revisi: ada berapa revisi note sebelumnya + 1
         const revisiCount = (existing && existing.note && existing.note.match(/\[Revisi #(\d+)\]/))
           ? Number(existing.note.match(/\[Revisi #(\d+)\]/)[1]) + 1
           : 1;
         const isRevisi = existing && (existing.status === 'revisi' || existing.status === 'rejected');
-        const isFinal = existing && (existing.status === 'approved' || existing.status === 'selesai');
+        // FINAL = brief ini SUDAH punya video yang di-approve (artinya udah dibayar).
+        // Kalau gitu, brief-nya selesai — kreator TIDAK boleh upload video kedua
+        // untuk brief yang sama, karena itu bikin 2 payment untuk 1 brief.
+        // Dicek ke SEMUA row (bukan cuma `existing`) — ini lubang yang bikin
+        // Clarissa bisa upload video kedua untuk brief yang udah di-approve.
+        const finalRow = allVideoRows.find(p => p.status === 'approved' || p.status === 'selesai');
+        const isFinal = !!finalRow;
 
         // Inline styles buat comparison/revisi blocks (gak perlu nambah CSS global)
         const prevStyle = 'margin: 12px 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in oklch, var(--fg) 4%, transparent);';
@@ -428,35 +443,39 @@
             </div>`;
         }
 
-        // Render video sebelumnya (untuk comparison / history)
-        function renderPreviousVideoHtml() {
-          if (!existing) return '';
-          const revisiTag = existing.note && existing.note.match(/\[Revisi #\d+\]/) ? existing.note.match(/\[Revisi #\d+\]/)[0] : '';
+        // Render video sebelumnya (untuk comparison / history).
+        // Param: row yang mau ditampilkan. Default = `existing` (row video aktif).
+        function renderPreviousVideoHtml(row) {
+          const r = row || existing;
+          if (!r) return '';
+          const revisiTag = r.note && r.note.match(/\[Revisi #\d+\]/) ? r.note.match(/\[Revisi #\d+\]/)[0] : '';
           return `
             <div class="previous-video-block" style="${prevStyle}">
               <div class="previous-video-head" style="${headStyle}">
                 <span class="meta">${revisiTag ? revisiTag + ' — ' : ''}video sebelumnya</span>
-                <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
+                <span class="status ${r.status}">${STATUS_LABEL[r.status] || r.status}</span>
               </div>
               <div class="field">
                 <label>Judul sebelumnya</label>
-                <div class="form-readonly">${escapeHtml(existing.title || '—')}</div>
+                <div class="form-readonly">${escapeHtml(r.title || '—')}</div>
               </div>
-              ${existing.video_url ? `<div class="field"><label>Link video sebelumnya</label><div class="form-readonly"><a href="${escapeHtml(existing.video_url)}" target="_blank" rel="noopener" style="color: var(--accent);">${escapeHtml(existing.video_url)}</a></div></div>` : '<div class="field"><label>File video sebelumnya</label><div class="form-readonly">[file: ' + escapeHtml((existing.video_storage_path || '').split('/').pop() || '—') + ']</div></div>'}
-              ${existing.note ? `<div class="field"><label>Catatan revisi sebelumnya</label><div class="form-readonly" style="white-space: pre-wrap;">${escapeHtml(existing.note)}</div></div>` : ''}
+              ${r.video_url ? `<div class="field"><label>Link video sebelumnya</label><div class="form-readonly"><a href="${escapeHtml(r.video_url)}" target="_blank" rel="noopener" style="color: var(--accent);">${escapeHtml(r.video_url)}</a></div></div>` : '<div class="field"><label>File video sebelumnya</label><div class="form-readonly">[file: ' + escapeHtml((r.video_storage_path || '').split('/').pop() || '—') + ']</div></div>'}
+              ${r.note ? `<div class="field"><label>Catatan revisi sebelumnya</label><div class="form-readonly" style="white-space: pre-wrap;">${escapeHtml(r.note)}</div></div>` : ''}
             </div>`;
         }
 
         if (isFinal) {
-          // Approved / selesai → read-only
+          // Approved / selesai → read-only. PENTING: yang ditampilkan adalah video
+          // yg SUDAH di-approve (finalRow), bukan `existing` — kalau `existing` yg
+          // terbaru ternyata submission ulang, video final-nya ada di row lain.
           return `
             <div class="card" data-od-id="brief-upload" style="margin-top: var(--gap-lg);">
               <div class="section-title">
                 <h2 class="h2">Video kamu</h2>
-                <span class="status ${existing.status}">${STATUS_LABEL[existing.status] || existing.status}</span>
+                <span class="status ${finalRow.status}">${STATUS_LABEL[finalRow.status] || finalRow.status}</span>
               </div>
-              ${renderPreviousVideoHtml()}
-              <span class="field-hint">Video udah final. Hubungi admin kalo perlu diskusi lebih lanjut.</span>
+              ${renderPreviousVideoHtml(finalRow)}
+              <span class="field-hint">Video udah final dan sudah dibayar. Brief ini selesai — kalo butuh revisi, hubungi admin ya.</span>
             </div>`;
         }
 
@@ -542,9 +561,33 @@
         const thumb = thumbEl.files[0];
         const title = titleEl.value.trim();
         const notesRaw = notesEl ? notesEl.value.trim() : '';
-        // Revisi: prepend [Revisi #N] marker ke note biar trackable
+
+        // Row video yang AKTIF untuk brief ini (status 'superseded' = versi lama
+        // yang udah diganti, jadi diabaikan).
+        const prevRow = (A.data.progress || []).filter(p =>
+          p.brief_id === brief.id && p.kreator === A.session.username && p.status !== 'superseded'
+        ).sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))[0] || null;
+        // Revisi = lagi upload untuk menggantikan video yang sebelumnya statusnya
+        // 'revisi' (admin minta revisi) atau 'rejected' (ditolak).
+        const isRevision = !!(prevRow && (prevRow.status === 'revisi' || prevRow.status === 'rejected'));
+
+        // GUARD: brief ini udah punya video yang di-approve (= udah dibayar) →
+        // video kedua buat brief yang sama DILARANG. Kalau lolos, satu brief
+        // jadi punya 2 payment → dobel bayar ke kreator.
+        const alreadyFinal = (A.data.progress || []).some(p =>
+          p.brief_id === brief.id && p.kreator === A.session.username
+          && (p.status === 'approved' || p.status === 'selesai')
+        );
+        if (alreadyFinal) {
+          A.showToast('Brief ini udah final (video udah di-approve & dibayar). Upload video kedua nggak bisa — hubungi admin kalo perlu revisi.', 'error');
+          return;
+        }
+
+        // Revisi: prepend [Revisi #N] marker ke note biar trackable. Marker ditulis
+        // dari revisi PERTAMA (sebelumnya cuma dari revisi ke-2, jadi nomornya
+        // nggak pernah naik dan revisi #1 vs #2 bedanya nggak kebaca).
         const revisiN = formEl ? Number(formEl.dataset.revision || 1) : 1;
-        const notes = revisiN > 1
+        const notes = isRevision
           ? '[Revisi #' + revisiN + '] ' + (notesRaw || 'Upload revisi #' + revisiN)
           : notesRaw;
 
@@ -582,7 +625,11 @@
             video_url: link || null,
             video_storage_path: storagePath,
             thumbnail_path: thumbPath,
-            brief_id: brief.id
+            brief_id: brief.id,
+            // Kalau ini revisi, tandai row video lama sebagai 'superseded' supaya
+            // gak nyisa di antrian review admin. Tanpa ini admin bisa approve row
+            // basi → 2 payment dengan title sama (video_title duplikat di fee panel).
+            supersedeId: isRevision && prevRow ? prevRow.id : null
           });
           A.showToast(status === 'review' ? (revisiN > 1 ? 'Revisi #' + revisiN + ' terkirim ✓' : 'Terkirim untuk review admin ✓') : 'Draft tersimpan.', 'success');
           render();

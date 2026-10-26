@@ -806,8 +806,13 @@
           }
         }
 
-        // Build videos array dari progress yang terkait brief ini
-        const relatedProgress = A.data.progress.filter(p => p.brief_id === briefId || (sbBrief && p.title && sbBrief.title && p.title.toLowerCase().includes(sbBrief.title.toLowerCase().split(/\s+/).slice(0, 2).join(' '))));
+        // Build videos array dari progress yang terkait brief ini.
+        // WAJIB match strictly by brief_id. Dulu ada fallback fuzzy by title
+        // (p.title contains 2 kata pertama dari brief.title) — itu bikin video dari
+        // brief LAIN ikut nongol di list ini kalo judulnya mirip (mis. "Clarissa",
+        // "Clarissa 2", "Clarissa 3" → semuanya muncul di tiap brief). Akibatnya
+        // video "pertama" keliatan ngikut & nama video berulang. Sekarang cukup brief_id.
+        const relatedProgress = A.data.progress.filter(p => p.brief_id === briefId);
 
         // Map progress.status → brief.videos[].status (paid/pending)
         function statusForVideo(p) {
@@ -839,8 +844,11 @@
             + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
         }
         const dynamicVideos = relatedProgress.map(p => {
-          // Cari payment yang match
-          const pay = A.data.payments.find(pay => pay.kreator === p.kreator && pay.video_title === p.title);
+          // Cari payment yang match — by ID (payment id = 'pay-' + progress id).
+          // Dulu dicocokkan by (kreator + video_title): kalau ada 2 video dengan title sama
+          // (mis. "Clarissa" & "Clarissa 2" beda brief), dia nyantol payment yang salah
+          // → fee di list jadi ngawur. Match by id = unik per progress.
+          const pay = A.data.payments.find(pay => pay.id === 'pay-' + p.id);
           return {
             title: p.title,
             link: p.video_url || (p.video_storage_path ? '[storage] ' + p.video_storage_path : '—'),

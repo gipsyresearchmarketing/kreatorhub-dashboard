@@ -117,6 +117,7 @@
     .pool-flag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 0 0 6px 6px; background: color-mix(in oklch, var(--warning, #b7791f) 16%, transparent); color: var(--warning, #b7791f); }
     /* Badge kreator — muncul di card pool kalau script sudah di-assign */
     .pool-item .kreator-tag { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: inline-block; background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); border: 1px solid color-mix(in oklch, var(--success) 30%, transparent); }
+    .pool-item .ref-tag { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: inline-block; background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent); }
     .pool-item .pool-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
     .pool-item .pool-tags .brand-tag, .pool-item .pool-tags .pool-flag, .pool-item .pool-tags .kreator-tag { margin-bottom: 0; }
     /* Chip kalender assigned: prefix "@user" supaya keliatan udah dipegang siapa */
@@ -362,6 +363,11 @@
           <input type="text" class="input" id="detail-voucher" placeholder="mis. FREELANCE2026" />
         </div>
       </div>
+      <div class="field">
+        <label for="detail-references">Video referensi (acuan buat kreator)</label>
+        <textarea class="textarea" id="detail-references" rows="3" placeholder="1 link per baris:&#10;https://drive.google.com/...&#10;https://instagram.com/reel/..."></textarea>
+        <span class="field-hint">Link video acuan — kreator bakal liat ini di halaman Brief &amp; script mereka.</span>
+      </div>
       <button type="button" class="btn btn-secondary" id="btn-save-detail" style="margin-bottom: 14px;">Simpan perubahan script &amp; info</button>
 
       <div class="field">
@@ -462,6 +468,11 @@
           <input type="text" class="input" id="add-voucher" placeholder="mis. FREELANCE2026" />
         </div>
       </div>
+      <div class="field">
+        <label for="add-references">Video referensi (acuan buat kreator) — opsional</label>
+        <textarea class="textarea" id="add-references" rows="3" placeholder="1 link per baris:&#10;https://drive.google.com/...&#10;https://instagram.com/reel/..."></textarea>
+        <span class="field-hint">Link video acuan — kreator bakal liat ini di halaman Brief &amp; script mereka.</span>
+      </div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" id="add-cancel">Batal</button>
@@ -517,6 +528,16 @@
         return [{ scene: 'Hook', script: '' }, { scene: 'Body', script: '' }, { scene: 'CTA', script: '' }];
       }
       function serializeScriptRows(rows) { return JSON.stringify(rows); }
+      // Link video referensi: form = textarea 1 link per baris, database = array of URL.
+      function parseRefLinks(textareaValue) {
+        return String(textareaValue || '')
+          .split(/\r?\n/)
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+      function renderRefLinks(list) {
+        return (Array.isArray(list) ? list : []).join('\n');
+      }
       function renderScriptReadonlyTable(raw) {
         let rows = null;
         try {
@@ -751,10 +772,15 @@
           const kreatorTag = kreatorLabel
             ? `<span class="kreator-tag" title="Ditugaskan ke ${escapeHtml(kreatorLabel)}">@${escapeHtml(kreatorLabel)}</span>`
             : '';
+          const refCount = (Array.isArray(item.reference_links) ? item.reference_links : []).length;
+          const refTag = refCount
+            ? `<span class="ref-tag" title="${refCount} video referensi sebagai acuan kreator">🎬 ${refCount} referensi</span>`
+            : '';
           div.innerHTML = `
             <div class="pool-tags">
               <span class="brand-tag">${escapeHtml(item.brand)}</span>
               ${kreatorTag}
+              ${refTag}
               ${needsDate ? '<span class="pool-flag">Sudah di-assign · belum ada tanggal</span>' : ''}
             </div>
             <div class="title">${escapeHtml(item.ref_number ? '#' + item.ref_number + ' — ' : '') + escapeHtml(item.usp || 'Tanpa USP')}</div>
@@ -785,6 +811,7 @@
         renderDetailContentTable();
         document.getElementById('detail-guideline').value = item.brand_guideline_url || '';
         document.getElementById('detail-voucher').value = item.voucher_code || '';
+        document.getElementById('detail-references').value = renderRefLinks(item.reference_links);
 
         document.getElementById('detail-date').value = item.scheduled_date || '';
 
@@ -835,6 +862,7 @@
       detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
       document.getElementById('detail-guideline').addEventListener('input', () => { detailDirty = true; });
       document.getElementById('detail-voucher').addEventListener('input', () => { detailDirty = true; });
+      document.getElementById('detail-references').addEventListener('input', () => { detailDirty = true; });
 
       document.getElementById('detail-date').addEventListener('change', async (e) => {
         if (!currentDetailId) return;
@@ -896,22 +924,28 @@
             await A.updateLibraryScript(currentDetailId, {
               content: serializeScriptRows(detailContentRows),
               brand_guideline_url: document.getElementById('detail-guideline').value.trim(),
-              voucher_code: document.getElementById('detail-voucher').value.trim()
+              voucher_code: document.getElementById('detail-voucher').value.trim(),
+              reference_links: parseRefLinks(document.getElementById('detail-references').value)
             });
             detailDirty = false;
           }
+          // Link video referensi — dari textarea di modal detail. Kalau kosong, backend
+          // fallback ke yang tersimpan di library (item.reference_links).
+          const refLinks = parseRefLinks(document.getElementById('detail-references').value);
           if (isReassign) {
             await A.reassignLibraryScript(currentDetailId, {
               kreator,
               deadline,
-              fee: feeRaw === '' ? undefined : Number(feeRaw)
+              fee: feeRaw === '' ? undefined : Number(feeRaw),
+              referenceLinks: refLinks
             });
             showToast('Kreator di-update ✓');
           } else {
             await A.assignLibraryScript(currentDetailId, {
               kreator,
               deadline: deadline || '—',
-              fee: feeRaw === '' ? undefined : Number(feeRaw)
+              fee: feeRaw === '' ? undefined : Number(feeRaw),
+              referenceLinks: refLinks
             });
             showToast('Berhasil di-assign, brief & script udah kebuat ✓');
           }
@@ -953,7 +987,8 @@
           await A.updateLibraryScript(currentDetailId, {
             content: serializeScriptRows(detailContentRows),
             brand_guideline_url: document.getElementById('detail-guideline').value.trim(),
-            voucher_code: document.getElementById('detail-voucher').value.trim()
+            voucher_code: document.getElementById('detail-voucher').value.trim(),
+            reference_links: parseRefLinks(document.getElementById('detail-references').value)
           });
           showToast('Perubahan tersimpan ✓');
           detailDirty = false; // udah kesimpen — aman ditutup tanpa konfirmasi
@@ -974,6 +1009,7 @@
         ['add-ref','add-funnel','add-usp','add-brief','add-guideline','add-voucher'].forEach(id => {
           document.getElementById(id).value = '';
         });
+        document.getElementById('add-references').value = '';
         document.getElementById('add-date').value = dateStr || '';
         // Brand default ngikutin filter yang lagi aktif (kalau "Semua", balik ke brand pertama)
         document.getElementById('add-brand').value = currentBrand !== 'all' ? currentBrand : 'Gipsy Research';
@@ -1205,6 +1241,7 @@
             content: serializeScriptRows(addContentRows),
             brandGuidelineUrl: document.getElementById('add-guideline').value.trim(),
             voucherCode: document.getElementById('add-voucher').value.trim(),
+            referenceLinks: parseRefLinks(document.getElementById('add-references').value),
             scheduledDate
           });
           showToast(scheduledDate ? 'Script ditambahin & dijadwalkan ✓' : 'Script ditambahin ke library ✓');

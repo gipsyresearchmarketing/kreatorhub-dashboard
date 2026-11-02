@@ -155,6 +155,11 @@
 
       let state = loadState(briefId);
       let scriptDirty = false;
+      // Link video referensi (acuan) — kolom briefs.reference_links (text[]).
+      // Kalau empty / null → array kosong, section-nya nggak dirender.
+      const refLinks = (Array.isArray(brief.reference_links) ? brief.reference_links : [])
+        .map(s => String(s || '').trim())
+        .filter(Boolean);
       // Script disimpen sebagai JSON string: [{scene, script}, ...] — biar bisa jadi tabel
       // Scene/Script yang bisa nambah/hapus baris, bukan cuma 1 kotak teks polos.
       // Backward-compat: script lama (format teks polos, bukan JSON) di-migrasi otomatis
@@ -204,6 +209,19 @@
               <label>Deadline</label>
               <div class="form-readonly currency">${escapeHtml(brief.deadline)}</div>
             </div>
+            ${refLinks.length ? `
+            <div class="field">
+              <label>Video referensi (acuan)</label>
+              <div class="ref-links">
+                ${refLinks.map((u, i) => `
+                  <a class="ref-link" href="${escapeHtml(u)}" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    <span>Referensi ${i + 1}</span>
+                    <span class="ref-link-url">${escapeHtml(u)}</span>
+                  </a>`).join('')}
+              </div>
+              <span class="field-hint">Buka link-nya buat lihat contoh tone &amp; gaya yang diharapkan.</span>
+            </div>` : ''}
           </div>
 
           <div class="card" style="margin-bottom: var(--gap-lg);" data-od-id="brief-script">

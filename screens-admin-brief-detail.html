@@ -886,6 +886,8 @@
           brand: sbBrief ? (sbBrief.brand || '—') : (BRIEFS[briefId] && BRIEFS[briefId].brand) || '—',
           deadline: sbBrief ? (sbBrief.deadline || '—') : (BRIEFS[briefId] && BRIEFS[briefId].deadline) || '—',
           requirement: sbBrief ? (sbBrief.meta || '') : (BRIEFS[briefId] && BRIEFS[briefId].requirement) || '',
+          // Link video referensi (acuan) — kolom briefs.reference_links (text[])
+          reference_links: sbBrief ? (sbBrief.reference_links || []) : ((BRIEFS[briefId] && BRIEFS[briefId].reference_links) || []),
           assigned_to: sbBrief ? sbBrief.assigned_to : (BRIEFS[briefId] && BRIEFS[briefId].assigned_to) || null,
           sb_id: sbBrief ? sbBrief.id : null,
           videos: dynamicVideos,
@@ -1301,6 +1303,16 @@
               <label>Requirement</label>
               <div style="font-size: 14px; line-height: 1.6;">${escapeHtml(brief.requirement)}</div>
             </div>
+            ${(brief.reference_links || []).length ? `
+            <div class="field">
+              <label>Video referensi (acuan kreator)</label>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${brief.reference_links.map((u, i) => `
+                  <a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="font-size: 13px; color: var(--accent);">
+                    Referensi ${i + 1} — ${escapeHtml(u)}
+                  </a>`).join('')}
+              </div>
+            </div>` : ''}
           </div>
           
           <!-- 2. Script (includes per-script actions strip at bottom) -->

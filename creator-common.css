@@ -136,6 +136,22 @@ h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-family: var(--font-display)
 .field.has-error .field-error { display: block; }
 .req { color: var(--danger); }
 
+/* Link video referensi (acuan) — tampil di detail brief sisi kreator */
+.ref-links { display: flex; flex-direction: column; gap: 8px; }
+.ref-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--accent); font-size: 13px; font-weight: 500;
+  transition: border-color .12s ease, background .12s ease;
+}
+.ref-link:hover { border-color: var(--accent); background: var(--accent-soft); }
+.ref-link svg { flex-shrink: 0; opacity: .7; }
+.ref-link-url {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%;
+}
+.ref-link:hover .ref-link-url { color: var(--accent); }
+
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 560px) { .row-2 { grid-template-columns: 1fr; } }
 

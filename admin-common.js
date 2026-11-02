@@ -425,12 +425,16 @@
   function requestRevision(id, feedback)        { return recordDecision(id, 'revision', feedback); }
 
   // ---- action: create brief ----
-  async function createBrief({ brand, title, meta, deadline, fee, assignedTo }) {
+  async function createBrief({ brand, title, meta, deadline, fee, assignedTo, referenceLinks }) {
     const id = 'brief-' + brand.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
     const insRes = await sb.from('briefs').insert({
       id, brand, title, meta: meta || '', deadline: deadline || '—',
       fee: (fee === '' || fee == null) ? null : (Number(fee) || 0),
-      assigned_to: assignedTo || null
+      assigned_to: assignedTo || null,
+      // Link video referensi (acuan buat kreator). PENTING: kolom ini harus ada di
+      // database — jalankan supabase/add-reference-links.sql dulu, kalau belum ada
+      // insert ini bakal error "column reference_links does not exist".
+      reference_links: normalizeRefLinks(referenceLinks)
     });
     if (insRes.error) throw new Error('Buat brief gagal: ' + insRes.error.message);
     await refresh();
@@ -533,6 +537,24 @@
     return `${Number(m[3])} ${mon} ${m[1]}`;
   }
 
+  // Normalisasi daftar link referensi: pecah per baris (kalau string), buang yang kosong,
+  // buang duplikat. Dipakai buat form library (textarea 1 link/baris) maupun array.
+  function normalizeRefLinks(input) {
+    if (!input) return [];
+    const raw = Array.isArray(input)
+      ? input
+      : String(input).split(/\r?\n/);
+    const seen = new Set();
+    const out = [];
+    raw.forEach(v => {
+      const s = String(v == null ? '' : v).trim();
+      if (!s || seen.has(s)) return;
+      seen.add(s);
+      out.push(s);
+    });
+    return out;
+  }
+
   async function createLibraryScript(fields) {
     const id = 'lib-' + (fields.brand || 'brand').toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
     const payload = {
@@ -545,6 +567,8 @@
       brief_text: fields.briefText || '',
       brand_guideline_url: fields.brandGuidelineUrl || '',
       voucher_code: fields.voucherCode || '',
+      // Link video referensi (acuan buat kreator) — array of URL, 1 per baris di form.
+      reference_links: normalizeRefLinks(fields.referenceLinks),
       content: fields.content || '',
       scheduled_date: fields.scheduledDate || null,
       status: 'unassigned'
@@ -564,7 +588,7 @@
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-schedule', id, scheduledDate } }));
   }
 
-  async function assignLibraryScript(id, { kreator, deadline, fee }) {
+  async function assignLibraryScript(id, { kreator, deadline, fee, referenceLinks }) {
     // 1) Ambil data script library-nya
     const item = (data.library || []).find(l => l.id === id);
     if (!item) throw new Error('Script library tidak ditemukan: ' + id);
@@ -577,13 +601,20 @@
     // Deadline: utamakan yang admin isi di form. Kalau kosong, fallback ke tanggal jadwal
     // library — jadi tanggal yang udah di-set di kalender langsung kebawa ke brief kreator.
     const effectiveDeadline = deadline || isoToDateId(item.scheduled_date) || '—';
+    // Link video referensi ikut kebawa ke brief — kreator langsung liat acuannya.
+    // Kalau form assign punya isinya, itu yang menang (override); kalau kosong,
+    // pake yang tersimpan di library.
+    const effectiveRefs = normalizeRefLinks(
+      referenceLinks && referenceLinks.length ? referenceLinks : item.reference_links
+    );
     const briefId = await createBrief({
       brand: item.brand,
       title: title.trim() || ('Script ' + item.id),
       meta,
       deadline: effectiveDeadline,
       fee: fee,
-      assignedTo: kreator
+      assignedTo: kreator,
+      referenceLinks: effectiveRefs
     });
 
     // 3) Pre-isi script draft-nya langsung dari library — kreator tinggal refine & upload
@@ -610,7 +641,7 @@
   // Reassign untuk item library yang udah assigned — update assigned_to di kedua sisi (library
   // row + brief yang udah ke-link), JANGAN bikin brief baru. Brief yatim lama tetap ada tapi
   // udah gak ke-link ke script library ini lagi (cuma admin yang bisa liat lewat brief detail).
-  async function reassignLibraryScript(id, { kreator, deadline, fee }) {
+  async function reassignLibraryScript(id, { kreator, deadline, fee, referenceLinks }) {
     const item = (data.library || []).find(l => l.id === id);
     if (!item) throw new Error('Script library tidak ditemukan: ' + id);
     if (item.status !== 'assigned') throw new Error('Cuma bisa reassign item yang udah assigned.');
@@ -629,6 +660,12 @@
       if (deadline != null && deadline !== '' && deadline !== '—') briefFields.deadline = deadline;
       else if (libDate) briefFields.deadline = libDate;
       if (fee != null && fee !== '' && !(Number.isNaN(Number(fee)))) briefFields.fee = Number(fee);
+      // Link referensi: kalau library punya, terusin ke brief (biar brief lama yang
+      // belum punya referensi ikut keisi). Kalau form reassign punya isinya, itu yang menang.
+      const libRefs = normalizeRefLinks(item.reference_links);
+      const newRefs = referenceLinks != null ? normalizeRefLinks(referenceLinks) : null;
+      if (newRefs && newRefs.length) briefFields.reference_links = newRefs;
+      else if (libRefs.length) briefFields.reference_links = libRefs;
       const briefUpd = await sb.from('briefs').update(briefFields).eq('id', item.brief_id);
       if (briefUpd.error) {
         console.warn('[reassignLibraryScript] update brief gagal', briefUpd.error);
@@ -651,12 +688,32 @@
   }
 
   async function updateLibraryScript(id, fields) {
-    // fields bisa berisi: content, brand_guideline_url, voucher_code, usp, brief_text, funnel_stage, ref_number
+    // fields bisa berisi: content, brand_guideline_url, voucher_code, usp, brief_text, funnel_stage, ref_number, reference_links
     // Catatan: kalau item ini UDAH di-assign (brief_id udah ada), edit di sini cuma ngubah
     // record library-nya aja — brief & script yang udah kebuat sebelumnya TIDAK ikut ke-update
     // otomatis (itu udah jadi record terpisah punya kreator).
-    const res = await sb.from('script_library').update(fields).eq('id', id);
+    const payload = Object.assign({}, fields);
+    if ('reference_links' in payload) payload.reference_links = normalizeRefLinks(payload.reference_links);
+    const res = await sb.from('script_library').update(payload).eq('id', id);
     if (res.error) throw new Error('Update script library gagal: ' + res.error.message);
+
+    // Pengecualian untuk reference_links: kalau item ini SUDAH di-assign (brief-nya udah
+    // kebuat), link referensinya ikut disinkron ke brief. Tanpa ini, admin yang nambah
+    // referensi SETELAH assign nggak akan sampai ke kreator — padahal itu use case
+    // paling sering (assign dulu, Referensi menyusul).
+    // Field lain (content, dll) tetap TIDAK ikut — itu udah jadi record terpisah
+    // punya kreator dan diubah lewat brief detail.
+    if ('reference_links' in payload) {
+      const item = (data.library || []).find(l => l.id === id);
+      if (item && item.brief_id) {
+        const briefUpd = await sb.from('briefs')
+          .update({ reference_links: payload.reference_links })
+          .eq('id', item.brief_id);
+        if (briefUpd.error) {
+          console.warn('[updateLibraryScript] sync reference_links ke brief gagal:', briefUpd.error.message);
+        }
+      }
+    }
     await refresh();
     document.dispatchEvent(new CustomEvent('adminapp:data-changed', { detail: { type: 'library-update', id, fields } }));
   }
